@@ -43,12 +43,13 @@ class HttpKernel extends Kernel
     {
         if( ($route = $this->router->resolve($request)) === false ){
 
-            // 404 or 405?
+            // 405 Method Not Allowed
             if( ($methods = $this->router->getMethodsForUri($request)) ){
                 throw new MethodNotAllowedHttpException($methods);
             }
 
-            throw new NotFoundHttpException();
+            // 404 Not Found
+            throw new NotFoundHttpException("Route not found");
         }
 
         return $route;

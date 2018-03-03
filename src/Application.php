@@ -4,8 +4,6 @@ namespace Limber;
 
 use Adbar\Dot;
 use Limber\Kernel\Kernel;
-use Limber\core\HttpKernel;
-
 
 class Application
 {

@@ -1,7 +1,11 @@
 {
     "name": "nimbly/limber",
-    "description": "An intentionally bare bones framework.",
+    "description": "An intentionally bare bones framework designed to be customized for your specific use case.",
     "type": "framework",
+    "keywords": [
+        "framework",
+        "minimal"
+    ],
     "license": "MIT",
     "authors": [
         {
@@ -10,10 +14,11 @@
         }
     ],
     "require": {
+        "php": "~7.0",
         "symfony/http-kernel": "^4.0",
         "adbario/php-dot-notation": "^2.0"
     },
-    "autoload-dev": {
+    "autoload": {
         "psr-4": {
             "Limber\\": "src\/"
         }
