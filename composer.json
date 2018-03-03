@@ -1,6 +1,6 @@
 {
     "name": "nimbly/limber",
-    "description": "Another PHP framework",
+    "description": "An intentionally bare bones framework.",
     "type": "framework",
     "license": "MIT",
     "authors": [
