@@ -1,0 +1,21 @@
+{
+    "name": "nimbly/limber",
+    "description": "Another PHP framework",
+    "type": "framework",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Brent Scheffler",
+            "email": "brent@nimbly.io"
+        }
+    ],
+    "require": {
+        "symfony/http-kernel": "^4.0",
+        "adbario/php-dot-notation": "^2.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Limber\\": "src\/"
+        }
+    }
+}
