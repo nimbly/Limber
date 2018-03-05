@@ -4,11 +4,11 @@ namespace Limber\Kernel;
 
 use Limber\Router\Route;
 use Limber\Router\Router;
-use Limber\Middleware\MiddlewareManager;
+use Limber\Middleware\Middleware;
+use Limber\Exception\NotFoundHttpException;
+use Limber\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 class HttpKernel extends Kernel
 {
@@ -45,7 +45,7 @@ class HttpKernel extends Kernel
 
             // 405 Method Not Allowed
             if( ($methods = $this->router->getMethodsForUri($request)) ){
-                throw new MethodNotAllowedHttpException($methods);
+                throw new MethodNotAllowedHttpException;
             }
 
             // 404 Not Found
@@ -59,9 +59,9 @@ class HttpKernel extends Kernel
      * Kernel invoker
      *
      * @param Request $request
-     * @return void
+     * @return mixed
      */
-    public function __invoke()
+    public function run()
     {
         // Resolve the route
         $route = $this->resolveRoute($this->request);
@@ -70,10 +70,10 @@ class HttpKernel extends Kernel
         $this->request->attributes->set(Route::class, $route);
 
         // Save the path parameters as request attributes
-        $this->request->attributes->add($route->getPathParams($request->getUri));
+        $this->request->attributes->add($route->getPathParams($this->request->getPathInfo()));
 
         // Build MiddlewareManager
-        $middlewareManager = new MiddlewareManager(array_merge($this->middleware, $route->middleware));
+        $middlewareManager = new Middleware(array_merge($this->middleware, $route->middleware));
 
         // Run the middleware stack, making self::dispatch method the core
         $response = $middlewareManager->run($this->request, [$this, 'dispatch']);
@@ -81,14 +81,13 @@ class HttpKernel extends Kernel
         return $response;
     }
 
-
     /**
-     * Dispatch the request
+     * Dispatch a request
      *
      * @param Request $request
-     * @return Response
+     * @return mixed
      */
-    private function dispatch(Request $request)
+    public function dispatch(Request $request)
     {
         /** @var Route */
         $route = $request->attributes->get(Route::class);
@@ -100,23 +99,48 @@ class HttpKernel extends Kernel
 
         // Class@Method style route
         else {
-            $action = class_method($route->action);
+            $action = $this->resolveClassMethod($route->action);
         }
 
-        return \call_user_func_array($action, $this->resolveDispatchParameters($requst, $action));
+        $params = $this->resolveActionParameters($request, $action);
+
+        return \call_user_func_array($action, $params);
+    }
+
+    /**
+     * Resolve a Class@Method string
+     *
+     * @param string $classMethod
+     * @return callable
+     */
+    private function resolveClassMethod($classMethod)
+    {
+        if( preg_match('/^([\\\d\w_]+)@([\d\w_]+)$/', $classMethod, $match) ){
+
+            if( class_exists($match[1]) ){
+
+                $instance = new $match[1];
+
+                if( \method_exists($instance, $match[2]) ){
+                    return [$instance, $match[2]];
+                }
+            }
+        }
+
+        throw new \ErrorException("Cannot resolve class method: {$classMethod}");
     }
 
     /**
      * Resolve the dispatch parameters
      *
-     * @param [type] $request
-     * @param [type] $target
+     * @param Request $request
+     * @param callable $target
      * @return void
      */
-    private function resolveDispatchParameters($request, $target)
+    private function resolveActionParameters($request, $target)
     {
         // Get the target's parameters
-        if( is_callable($target) ){
+        if( $target instanceof \Closure ){
             $functionParameters = (new \ReflectionFunction($target))->getParameters();
         }
 
@@ -137,7 +161,7 @@ class HttpKernel extends Kernel
              */
             // Check container first for an instance of this parameter type
             if( $parameter->getType() &&
-                $parameter->getType() === Request::class ){
+                (string) $parameter->getType() === Request::class ){
                 $params[$parameter->getPosition()] = $request;
             }
 

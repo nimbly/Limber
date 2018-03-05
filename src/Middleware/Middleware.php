@@ -3,9 +3,9 @@
 namespace Limber\Middleware;
 
 
-class MiddlewareManager
+class Middleware
 {
-    /** @var MiddlewareInterface[] */
+    /** @var Layer[] */
     protected $middlewareStack = [];
 
     /**
@@ -16,7 +16,7 @@ class MiddlewareManager
     {
         foreach( $layers as $layer ){
 
-            if( $layer instanceof MiddlewareInterface ){
+            if( $layer instanceof Layer ){
                 $this->add($layer);
             }
 
@@ -27,11 +27,11 @@ class MiddlewareManager
     }
 
     /**
-     * @param MiddlewareInterface $middleware
+     * @param Layer $layer
      */
-    public function add(MiddlewareInterface $middleware)
+    public function add(Layer $layer)
     {
-        $this->middlewareStack[] = $middleware;
+        $this->middlewareStack[] = $layer;
     }
 
     /**
@@ -53,7 +53,7 @@ class MiddlewareManager
      */
     public function run($object, callable $kernel)
     {
-        $next = array_reduce(array_reverse($this->middlewareStack), function(\Closure $next, MiddlewareInterface $layer) {
+        $next = array_reduce(array_reverse($this->middlewareStack), function(\Closure $next, Layer $layer) {
 
             return function($object) use ($next, $layer){
                 return $layer->handle($object, $next);
