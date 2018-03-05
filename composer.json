@@ -15,7 +15,7 @@
     ],
     "require": {
         "php": "~7.0",
-        "symfony\/http-foundation": "^4.0"
+        "symfony\/http-foundation": "~3.4"
     },
     "autoload": {
         "psr-4": {
@@ -23,5 +23,5 @@
             "test\\": "test\/"
         }
     },
-    "version": "0.1.0"
+    "version": "0.2.0"
 }
