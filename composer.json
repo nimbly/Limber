@@ -1,5 +1,5 @@
 {
-    "name": "nimbly/limber",
+    "name": "nimbly\/limber",
     "description": "An intentionally bare bones framework designed to be customized for your specific use case.",
     "type": "framework",
     "keywords": [
@@ -15,12 +15,13 @@
     ],
     "require": {
         "php": "~7.0",
-        "symfony/http-foundation": "^4.0"
+        "symfony\/http-foundation": "^4.0"
     },
     "autoload": {
         "psr-4": {
             "Limber\\": "src\/",
             "test\\": "test\/"
         }
-    }
+    },
+    "version": "0.1.0"
 }

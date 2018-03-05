@@ -2,7 +2,7 @@
 
 The Limber router lets you define the endpoints for your application and supports both closure and Class@Method based route actions. Define route groups to
 
-## Featues
+## Features
 * All major HTTP methods
 * Closure and Class@Method route actions
 * Route groups with nesting
