@@ -1,11 +1,17 @@
 {
-    "name": "nimbly\/limber",
-    "description": "An intentionally bare bones framework designed to be customized for your specific use case.",
-    "type": "framework",
-    "keywords": [
-        "framework",
-        "minimal"
-    ],
+    "name": "nimbly/limber",
+    "description": "Limber Framework",
+    "type": "library",
+    "require": {
+        "php": "^7.0",
+        "adbario/php-dot-notation": "^2.1",
+        "vlucas/phpdotenv": "^2.5",
+        "symfony/http-foundation": "^4.1",
+        "psr/container": "^1.0"
+    },
+    "require-dev": {
+        "symfony/var-dumper": "^4.1"
+    },
     "license": "MIT",
     "authors": [
         {
@@ -13,15 +19,9 @@
             "email": "brent@nimbly.io"
         }
     ],
-    "require": {
-        "php": "~7.0",
-        "symfony\/http-foundation": "~3.4"
-    },
     "autoload": {
         "psr-4": {
-            "Limber\\": "src\/",
-            "test\\": "test\/"
+            "Limber\\": "src\/"
         }
-    },
-    "version": "0.2.0"
+    }
 }

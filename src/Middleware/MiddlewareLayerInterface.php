@@ -5,7 +5,7 @@ namespace Limber\Middleware;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-interface Layer
+interface MiddlewareLayerInterface
 {
     /**
      * Handle the Middleware layer

@@ -3,9 +3,13 @@
 namespace Limber\Middleware;
 
 
-class Middleware
+class MiddlewareManager
 {
-    /** @var Layer[] */
+    /**
+     * Middleware stack to execute
+     *
+     * @var MiddlewareLayerInterface[]
+     */
     protected $middlewareStack = [];
 
     /**
@@ -16,7 +20,7 @@ class Middleware
     {
         foreach( $layers as $layer ){
 
-            if( $layer instanceof Layer ){
+            if( $layer instanceof MiddlewareLayerInterface ){
                 $this->add($layer);
             }
 
@@ -27,14 +31,18 @@ class Middleware
     }
 
     /**
-     * @param Layer $layer
+     * Add a layer to the stack.
+     * 
+     * @param MiddlewareLayerInterface $layer
      */
-    public function add(Layer $layer)
+    public function push(MiddlewareLayerInterface $layer)
     {
         $this->middlewareStack[] = $layer;
     }
 
     /**
+     * Remove a layer by its classname.
+     * 
      * @param $middlewareClass
      */
     public function remove($middlewareClass)
@@ -53,7 +61,7 @@ class Middleware
      */
     public function run($object, callable $kernel)
     {
-        $next = array_reduce(array_reverse($this->middlewareStack), function(\Closure $next, Layer $layer) {
+        $next = array_reduce(array_reverse($this->middlewareStack), function(\Closure $next, MiddlewareLayerInterface $layer) {
 
             return function($object) use ($next, $layer){
                 return $layer->handle($object, $next);

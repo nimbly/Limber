@@ -4,7 +4,7 @@ namespace Limber\Kernel;
 
 use Limber\Router\Route;
 use Limber\Router\Router;
-use Limber\Middleware\Middleware;
+use Limber\Middleware\MiddlewareManager;
 use Limber\Exception\NotFoundHttpException;
 use Limber\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,7 +18,11 @@ class HttpKernel extends Kernel
     /** @var Router */
     protected $router;
 
-    /** @var array */
+    /**
+     * Global middleware to execute on each HTTP request.
+     *
+     * @var array
+     */
     protected $middleware = [];
 
     /**
@@ -73,7 +77,7 @@ class HttpKernel extends Kernel
         $this->request->attributes->add($route->getPathParams($this->request->getPathInfo()));
 
         // Build MiddlewareManager
-        $middlewareManager = new Middleware(array_merge($this->middleware, $route->middleware));
+        $middlewareManager = new MiddlewareManager(array_merge($this->middleware, $route->middleware));
 
         // Run the middleware stack, making self::dispatch method the core
         $response = $middlewareManager->run($this->request, [$this, 'dispatch']);
@@ -99,35 +103,13 @@ class HttpKernel extends Kernel
 
         // Class@Method style route
         else {
-            $action = $this->resolveClassMethod($route->action);
+            $action = class_method($route->action);
         }
 
+        // Auto-resolve controller parameters
         $params = $this->resolveActionParameters($request, $action);
 
         return \call_user_func_array($action, $params);
-    }
-
-    /**
-     * Resolve a Class@Method string
-     *
-     * @param string $classMethod
-     * @return callable
-     */
-    private function resolveClassMethod($classMethod)
-    {
-        if( preg_match('/^([\\\d\w_]+)@([\d\w_]+)$/', $classMethod, $match) ){
-
-            if( class_exists($match[1]) ){
-
-                $instance = new $match[1];
-
-                if( \method_exists($instance, $match[2]) ){
-                    return [$instance, $match[2]];
-                }
-            }
-        }
-
-        throw new \ErrorException("Cannot resolve class method: {$classMethod}");
     }
 
     /**
