@@ -4,7 +4,7 @@ Limber uses a "Before & After" middleware approach. You can interact with both t
 
 ```php
 
-class MyMiddleware implements \Limber\Middleware\Layer
+class MyMiddleware implements \Limber\Middleware\MiddlewareLayerInterface
 {
     public function handle($request, \Closure $next)
     {

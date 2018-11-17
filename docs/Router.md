@@ -122,7 +122,7 @@ Limber will do its best to inject parameters into your route action (both closur
 
 For example, if you have a URI path parameter called ```{id}``` and your route action has a parameter called ```$id```, Limber will inject the path parameter into the action method.
 
-This work for path parameters as well as the ```Request``` object.
+This works for path parameters as well as the ```Request``` object.
 
 ```php
 
