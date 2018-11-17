@@ -2,47 +2,39 @@
 
 namespace Limber;
 
-use Adbar\Dot;
-use Limber\Container\EntryNotFoundException;
 use Psr\Container\ContainerInterface;
-use Limber\Bootstrap\RegisterRequest;
-use Limber\Bootstrap\RegisterRouter;
 
-class Application implements ContainerInterface
+class Application
 {
-    /**
-     * Config data
+     /**
+     * Container instance
      *
-     * @var Dot
+     * @var mixed
      */
-    protected $config;
+    protected $container;
 
     /**
-     * Framework required bootstraps
-     *
-     * @var array
+     * 
+     * Limber Framework Application constructor.
+     * 
      */
-    protected $bootstrap = [
-        RegisterRequest::class,
-        RegisterRouter::class,
-    ];
-
-    /**
-     * Container instances
-     *
-     * @var array
-     */
-    protected $instances = [];
-
-    public function __construct()
+    public function __construct($container)
     {
-        $this->config = new Dot;
+        $this->container = $container;
+    }
+
+    /**
+     * Get the container instance
+     *
+     * @return ContainerInterface
+     */
+    public function getContainer()
+    {
+        return $this->container;
     }
 
     /**
      * Get a config key
-     * 
-     * This method attempts to lazy-load config files until needed.
      *
      * @param string $key
      * @param mixed $default
@@ -50,31 +42,19 @@ class Application implements ContainerInterface
      */
     public function config($key, $default = null)
     {
-        // Attempt to lazy load
-        if( $this->config->has($key) == false ){
+        return $this->getContainer()->get(Config::class)->get($key, $default);
+    }
 
-            if( preg_match("/^([^\.]+)\.?/", $key, $match) ){
-
-                // Save the key
-                $key = $match[1];
-
-                // Build the file path
-                $file = APP_ROOT . "/config/{$key}.php";
-    
-                // Check for file's existence
-                if( file_exists($file) === false ){
-                    throw new \Exception("Config file not found: {$file}");
-                }
-    
-                // Pull config file in and add values into master config
-                $config = require_once $file;
-                $this->config->add([$key => $config]);
-
-            }
-
-        }
-
-        return $this->config->get($key, $default);
+    /**
+     * Make call on the container instance
+     *
+     * @param string $method
+     * @param array $params
+     * @return mixed
+     */
+    public function __call($method, array $params)
+    {
+        return $this->container->{$method}(...$params);
     }
 
     /**
@@ -84,51 +64,9 @@ class Application implements ContainerInterface
      */
     public function bootstrap()
     {
-        $bootstraps = array_merge(
-            $this->bootstrap,
-            $this->config('bootstrap', [])
-        );
-
-        foreach( $bootstraps as $bootstrap ){
-            (new $bootstrap)->bootstrap($this);
+        foreach( $this->config('bootstrap', []) as $file ){
+            $bootstrap = require_once(path($file));
+            $bootstrap($this);
         }
-    }
-
-    /**
-     * Set a container instance
-     *
-     * @param string $id
-     * @param mixed $value
-     * @return void
-     */
-    public function set($id, $value)
-    {
-        $this->instances[$id] = $value;
-    }
-
-    /**
-     * Get an instance from the container
-     *
-     * @param string $id
-     * @return mixed
-     */
-    public function get($id)
-    {
-        if( $this->has($id) ){
-            return $this->instances[$id];
-        }
-
-        throw new EntryNotFoundException();
-    }
-
-    /**
-     * Does the container have this instance?
-     *
-     * @param string $id
-     * @return boolean
-     */
-    public function has($id)
-    {
-        return array_key_exists($id, $this->instances);
     }
 }
