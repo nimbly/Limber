@@ -1,21 +1,23 @@
 <?php
 
 use Limber\Application;
+use Limber\Config;
+use Limber\Container\Container;
 use Symfony\Component\HttpFoundation\Response;
 
 if( !function_exists('path') ){
 
     /**
-     * @param string $relPath
+     * @param string $relativePath
      * @return string
      */
-    function path($relPath)
+    function path($relativePath)
     {
         if( defined('APP_ROOT') ){
-            return realpath(APP_ROOT . '/' . $relPath);
+            return realpath(APP_ROOT . '/' . $relativePath);
         }
 
-        return $relPath;
+        return $relativePath;
     }
 }
 
@@ -28,7 +30,7 @@ if( !function_exists('config') ){
      */
     function config($name = null, $default = null)
     {
-        return Application::getInstance()->config($name, $default);
+        return Container::getInstance()->get(Config::class)->get($name, $default);
     }
 }
 
@@ -77,12 +79,15 @@ if( !function_exists('redirect')){
 
 if( !function_exists('parse_http_query') ){
 
-    function parse_http_query($str)
+    /**
+     * @param string $string
+     * @return array
+     */
+    function parse_http_query($string)
     {
         $response = [];
 
-        foreach( explode('&', $str) as $item )
-        {
+        foreach( explode('&', $string) as $item ){
             list($key, $value) = explode('=', $item, 2);
 
             $response[$key] = urldecode($value);
