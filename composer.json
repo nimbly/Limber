@@ -1,16 +1,15 @@
 {
-    "name": "nimbly/limber",
-    "description": "Limber Framework",
+    "name": "limber/limber",
+    "description": "Limber core",
     "type": "library",
     "require": {
         "php": "^7.0",
         "adbario/php-dot-notation": "^2.1",
-        "vlucas/phpdotenv": "^2.5",
-        "symfony/http-foundation": "^4.1",
+        "symfony/http-foundation": "^3",
         "psr/container": "^1.0"
     },
     "require-dev": {
-        "symfony/var-dumper": "^4.1"
+        "symfony/var-dumper": "^3"
     },
     "license": "MIT",
     "authors": [
@@ -22,6 +21,14 @@
     "autoload": {
         "psr-4": {
             "Limber\\": "src\/"
+        },
+        "files": [
+            "src/functions.php"
+        ]
+    },
+    "config": {
+        "platform": {
+            "php": "7.0.22"
         }
     }
 }
