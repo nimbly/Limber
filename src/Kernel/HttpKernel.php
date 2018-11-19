@@ -10,12 +10,13 @@ use Limber\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class HttpKernel extends Kernel
+class HttpKernel
 {
-    /** @var Request */
-    protected $request;
-
-    /** @var Router */
+    /**
+     * Router instance.
+     *
+     * @var Router
+     */
     protected $router;
 
     /**
@@ -26,12 +27,12 @@ class HttpKernel extends Kernel
     protected $middleware = [];
 
     /**
-     * @param Request $request
+     * HttpKernel constructor
+     * 
      * @param Router $router
      */
-    public function __construct(Request $request, Router $router)
+    public function __construct(Router $router)
     {
-        $this->request = $request;
         $this->router = $router;
     }
     
@@ -65,24 +66,16 @@ class HttpKernel extends Kernel
      * @param Request $request
      * @return mixed
      */
-    public function run()
+    public function run(Request $request)
     {
         // Resolve the route
-        $route = $this->resolveRoute($this->request);
+        $route = $this->resolveRoute($request);
 
-        // Attach the route to the request
-        $this->request->attributes->set(Route::class, $route);
+        // Merge the path-based parameters into the request attributes
+        $request->attributes->add($route->getPathParams($request->getPathInfo()));
 
-        // Save the path parameters as request attributes
-        $this->request->attributes->add($route->getPathParams($this->request->getPathInfo()));
-
-        // Build MiddlewareManager
-        $middlewareManager = new MiddlewareManager(array_merge($this->middleware, $route->middleware));
-
-        // Run the middleware stack, making self::dispatch method the core
-        $response = $middlewareManager->run($this->request, [$this, 'dispatch']);
-
-        return $response;
+        // Dispatch the request
+        return $this->dispatch($request, $route);
     }
 
     /**
@@ -91,29 +84,34 @@ class HttpKernel extends Kernel
      * @param Request $request
      * @return mixed
      */
-    public function dispatch(Request $request)
+    public function dispatch(Request $request, Route $route)
     {
-        /** @var Route */
-        $route = $request->attributes->get(Route::class);
+        // Build MiddlewareManager
+        $middlewareManager = new MiddlewareManager(array_merge($this->middleware, $route->getMiddleware()));
 
-        // Callable/closure style route
-        if( is_callable($route->action) ){
-            $action = $route->action;
-        }
+        // Run the middleware stack
+        return $middlewareManager->run($request, function(Request $request) use ($route){
 
-        // Class@Method style route
-        else {
-            $action = class_method($route->action);
-        }
+            // Callable/closure style route
+            if( is_callable($route->getAction()) ){
+                $action = $route->getAction();
+            }
 
-        // Auto-resolve controller parameters
-        $params = $this->resolveActionParameters($request, $action);
+            // Class@Method style route
+            else {
+                $action = class_method($route->getAction());
+            }
 
-        return \call_user_func_array($action, $params);
+            // Auto-resolve controller parameters
+            $params = $this->resolveActionParameters($request, $action);
+
+            return \call_user_func_array($action, $params);
+
+        });
     }
 
     /**
-     * Resolve the dispatch parameters
+     * Resolve the action parameters for dependency injection.
      *
      * @param Request $request
      * @param callable $target
