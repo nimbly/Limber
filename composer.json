@@ -1,15 +1,15 @@
 {
-    "name": "limber/limber",
+    "name": "limber\/limber",
     "description": "Limber core",
     "type": "library",
     "require": {
         "php": "^7.0",
-        "adbario/php-dot-notation": "^2.1",
-        "symfony/http-foundation": "^3",
-        "psr/container": "^1.0"
+        "adbario\/php-dot-notation": "^2.1",
+        "symfony\/http-foundation": "^3",
+        "psr\/container": "^1.0"
     },
     "require-dev": {
-        "symfony/var-dumper": "^3"
+        "symfony\/var-dumper": "^3"
     },
     "license": "MIT",
     "authors": [
@@ -23,12 +23,13 @@
             "Limber\\": "src\/"
         },
         "files": [
-            "src/functions.php"
+            "src\/functions.php"
         ]
     },
     "config": {
         "platform": {
             "php": "7.0.22"
         }
-    }
+    },
+    "version": "0.3"
 }
