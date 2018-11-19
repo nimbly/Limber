@@ -9,12 +9,25 @@ class Router
     /**
      * @var array
      */
-    protected $config = [];
+    protected $config = [
+        'scheme' => '*',
+        'host' => '*',
+        'prefix' => null,
+        'namespace' => null,
+        'middleware' => [],
+    ];
 
     /**
      * @var Route[]
      */
     protected $routes = [];
+
+    /**
+     * Set of indexed pointers to routes.
+     *
+     * @var array
+     */
+    protected $indexes = [];
 
     /**
      * Route path parameter patterns
@@ -37,6 +50,10 @@ class Router
     {
         if( $routes ){
             $this->routes = $routes;
+            
+            foreach( $this->routes as &$route ){
+                $this->indexes[$route->getMethod()] = &$route;
+            }
         }
     }
 
@@ -80,8 +97,19 @@ class Router
             $methods = [$methods];
         }
 
+        // Create new Route instance
         $route = new Route($methods, $uri, $target, $this->config);
-        $this->routes[] = $route;
+
+        // Compute next index
+        $i = count($this->routes);
+
+        // Set the route
+        $this->routes[$i] = $route;
+
+        // Create an indexed pointer for each method
+        foreach( $methods as $method ){
+            $this->indexes[strtoupper($method)][] = &$this->routes[$i];
+        }
 
         return $route;
     }
@@ -162,16 +190,20 @@ class Router
      */
     public function resolve(Request $request)
     {
-        // Loop through routes and find match
-        foreach( $this->routes as $route )
-        {
-            if( $route->matchMethod($request->getMethod()) &&
-                $route->matchScheme($request->getScheme()) &&
-                $route->matchHost($request->getHost()) &&
-                $route->matchUri($request->getPathInfo()) ){
+        if( !empty($this->indexes[$request->getMethod()]) ){
 
-                return $route;
+            // Loop through indexed routes and find match
+            foreach( $this->indexes[$request->getMethod()] as $route )
+            {
+                if( $route->matchMethod($request->getMethod()) &&
+                    $route->matchScheme($request->getScheme()) &&
+                    $route->matchHostname($request->getHost()) &&
+                    $route->matchUri($request->getPathInfo()) ){
+
+                    return $route;
+                }
             }
+
         }
 
         return false;
@@ -185,13 +217,16 @@ class Router
     {
         $methods = [];
 
-        foreach( $this->routes as $route )
-        {
-            if( $route->matchScheme($request->getScheme()) &&
-                $route->matchHost($request->getHost()) &&
-                $route->matchUri($request->getPathInfo()) ){
-                $methods = array_merge($methods, $route->methods);
+        if( !empty($this->indexes[$request->getMethod()]) ){
+
+            foreach( $this->indexes[$request->getMethod()] as $route ) {
+                if( $route->matchScheme($request->getScheme()) &&
+                    $route->matchHostname($request->getHost()) &&
+                    $route->matchUri($request->getPathInfo()) ){
+                    $methods = array_merge($methods, $route->getMethods());
+                }
             }
+
         }
 
         return array_unique($methods);
@@ -199,11 +234,22 @@ class Router
 
     /**
      * Get the routes
-     * @return Route[]|null
+     * 
+     * @return Route[]
      */
     public function getRoutes()
     {
         return $this->routes;
+    }
+
+    /**
+     * Get the indexed route pointers
+     *
+     * @return array
+     */
+    public function getIndexes()
+    {
+        return $this->indexes;
     }
 
     /**
@@ -233,17 +279,9 @@ class Router
     {
         $config = $this->config;
 
-        if( array_key_exists('hostname', $groupConfig) ){
-            $config['hostname'] = $groupConfig['hostname'];
-        }
-
-        if( array_key_exists('prefix', $groupConfig) ){
-            $config['prefix'] = $groupConfig['prefix'];
-        }
-
-        if( array_key_exists('namespace', $groupConfig) ){
-            $config['namespace'] = $groupConfig['namespace'];
-        }
+        $config['hostname'] = $groupConfig['hostname'] ?? null;
+        $config['prefix'] = $groupConfig['prefix'] ?? null;
+        $config['namespace'] = $groupConfig['namespace'] ?? null;
 
         if( array_key_exists('middleware', $groupConfig) ){
 
