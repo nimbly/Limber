@@ -15,7 +15,7 @@ class Container implements ContainerInterface
     protected static $self;
 
     /**
-     * Singleton pattern.
+     * Get/create container instance.
      *
      * @return static
      */
@@ -29,22 +29,49 @@ class Container implements ContainerInterface
     }
 
     /**
-     * Container instances
+     * Container items
      *
      * @var array
      */
-    protected $instances = [];
+    protected $items = [];
 
     /**
      * Set a container instance
      *
      * @param string $id
      * @param mixed $value
-     * @return void
+     * @return static
      */
-    public function set($id, $value)
+    public function set($abstract, $concrete)
     {
-        $this->instances[$id] = $value;
+        $this->items[$abstract] = $concrete;
+        return $this;
+    }
+
+    /**
+     * Create a singleton builder.
+     *
+     * @param string $abstract
+     * @param callable $builder
+     * @return static
+     */
+    public function singleton($abstract, callable $builder)
+    {
+        $this->items[$abstract] = new Singleton($builder);
+        return $this;
+    }
+
+    /**
+     * Create a factory builder.
+     *
+     * @param string $abstract
+     * @param callable $builder
+     * @return static
+     */
+    public function factory($abstract, callable $builder)
+    {
+        $this->items[$asbtract] = new Factory($builder);
+        return $this;
     }
 
     /**
@@ -53,23 +80,29 @@ class Container implements ContainerInterface
      * @param string $id
      * @return mixed
      */
-    public function get($id)
+    public function get($abstract)
     {
-        if( $this->has($id) ){
-            return $this->instances[$id];
+        if( !$this->has($abstract) ){
+            throw new EntryNotFoundException;
         }
 
-        throw new EntryNotFoundException;
+        $concrete = $this->items[$abstract];
+
+        if( $concrete instanceof ContainerBuilder ){
+            return $concrete->make();
+        }
+
+        return $concrete;        
     }
 
     /**
      * Does the container have this instance?
      *
-     * @param string $id
+     * @param string $abstract
      * @return boolean
      */
-    public function has($id)
+    public function has($abstract)
     {
-        return array_key_exists($id, $this->instances);
+        return array_key_exists($abstract, $this->items);
     }
 }
