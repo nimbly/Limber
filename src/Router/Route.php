@@ -63,7 +63,7 @@ class Route
     /**
      * Route action
      *
-     * @var string|\Closure
+     * @var string|callable
      */
     protected $action;
 
@@ -87,7 +87,7 @@ class Route
      *
      * @param array $methods
      * @param string $uri
-     * @param string|\Callable $action
+     * @param string|callable $action
      * @param array $config Additional config data (usually passed in from group settings)
      *
      */
