@@ -70,7 +70,7 @@ class Container implements ContainerInterface
      */
     public function factory($abstract, callable $builder)
     {
-        $this->items[$asbtract] = new Factory($builder);
+        $this->items[$abstract] = new Factory($builder);
         return $this;
     }
 
