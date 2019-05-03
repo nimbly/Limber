@@ -10,7 +10,7 @@ class Container implements ContainerInterface
     /**
      * Singleton instance.
      *
-     * @var static
+     * @var Container
      */
     protected static $self;
 
@@ -19,7 +19,7 @@ class Container implements ContainerInterface
      *
      * @return static
      */
-    public static function getInstance()
+    public static function getInstance(): Container
     {
         if( empty(self::$self) ){
             self::$self = new static;
@@ -31,18 +31,18 @@ class Container implements ContainerInterface
     /**
      * Container items
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected $items = [];
 
     /**
      * Set a container instance
      *
-     * @param string $id
-     * @param mixed $value
-     * @return static
+     * @param string $abstract
+     * @param mixed $concrete
+     * @return Container
      */
-    public function set($abstract, $concrete)
+    public function set(string $abstract, $concrete): Container
     {
         $this->items[$abstract] = $concrete;
         return $this;
@@ -53,9 +53,9 @@ class Container implements ContainerInterface
      *
      * @param string $abstract
      * @param callable $builder
-     * @return static
+     * @return Container
      */
-    public function singleton($abstract, callable $builder)
+    public function singleton(string $abstract, callable $builder): Container
     {
         $this->items[$abstract] = new Singleton($builder);
         return $this;
@@ -66,9 +66,9 @@ class Container implements ContainerInterface
      *
      * @param string $abstract
      * @param callable $builder
-     * @return static
+     * @return Container
      */
-    public function factory($abstract, callable $builder)
+    public function factory(string $abstract, callable $builder): Container
     {
         $this->items[$abstract] = new Factory($builder);
         return $this;
@@ -80,13 +80,13 @@ class Container implements ContainerInterface
      * @param string $id
      * @return mixed
      */
-    public function get($abstract)
+    public function get($id)
     {
-        if( !$this->has($abstract) ){
+        if( !$this->has($id) ){
             throw new EntryNotFoundException;
         }
 
-        $concrete = $this->items[$abstract];
+        $concrete = $this->items[$id];
 
         if( $concrete instanceof ContainerBuilder ){
             return $concrete->make();
@@ -98,11 +98,11 @@ class Container implements ContainerInterface
     /**
      * Does the container have this instance?
      *
-     * @param string $abstract
+     * @param string $id
      * @return boolean
      */
-    public function has($abstract)
+    public function has($id): bool
     {
-        return array_key_exists($abstract, $this->items);
+        return array_key_exists($id, $this->items);
     }
 }

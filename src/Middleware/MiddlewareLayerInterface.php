@@ -11,8 +11,8 @@ interface MiddlewareLayerInterface
      * Handle the Middleware layer
      *
      * @param Request $request
-     * @param \Closure $next
+     * @param callable $next
      * @return Response
      */
-    public function handle($request, \Closure $next);
+    public function handle(Request $request, callable $next): Response;
 }

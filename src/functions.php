@@ -11,7 +11,7 @@ if( !function_exists('path') ){
      * @param string $relativePath
      * @return string
      */
-    function path($relativePath)
+    function path(string $relativePath): string
     {
         if( defined('APP_ROOT') ){
             return realpath(APP_ROOT . '/' . $relativePath);
@@ -25,10 +25,10 @@ if( !function_exists('config') ){
 
     /**
      * @param string $name
-     * @param string $default
+     * @param mixed $default
      * @return mixed
      */
-    function config($name = null, $default = null)
+    function config(string $name = null, mixed $default = null)
     {
         return Container::getInstance()->get(Config::class)->get($name, $default);
     }
@@ -39,10 +39,10 @@ if( !function_exists('class_method') ){
 
     /**
      * @param $classMethod
-     * @return array
+     * @return callable
      * @throws ErrorException
      */
-    function class_method($classMethod)
+    function class_method(string $classMethod): callable
     {
         if( preg_match('/^([\\\d\w_]+)@([\d\w_]+)$/', $classMethod, $match) ){
 
@@ -67,7 +67,7 @@ if( !function_exists('redirect')){
      * @param int $code
      * @return Response
      */
-    function redirect($url, $code = \Symfony\Component\HttpFoundation\Response::HTTP_FOUND)
+    function redirect(string $url, int $code = \Symfony\Component\HttpFoundation\Response::HTTP_FOUND): Response
     {
         return new \Symfony\Component\HttpFoundation\Response(
             null,
@@ -83,7 +83,7 @@ if( !function_exists('parse_http_query') ){
      * @param string $string
      * @return array
      */
-    function parse_http_query($string)
+    function parse_http_query(string $string): array
     {
         $response = [];
 
@@ -104,7 +104,7 @@ if( !function_exists('is_env') ){
      * @throws \Exception
      * @return bool
      */
-    function is_env($environment)
+    function is_env(string $environment): bool
     {
         return getenv('APP_ENV') == $environment;
     }

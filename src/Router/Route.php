@@ -5,18 +5,39 @@ namespace Limber\Router;
 class Route
 {
     /**
-     * Request scheme (http or https)
+     * The full URI.
      *
      * @var string
      */
-    protected $scheme;
+    protected $uri;
+
+    /**
+     * Respond to HTTP methods.
+     *
+     * @var array<string>
+     */
+    protected $methods = [];
+
+    /**
+     * Route action
+     *
+     * @var string|callable
+     */
+    protected $action;
+
+    /**
+     * Request scheme (http or https)
+     *
+     * @var array<string>
+     */
+    protected $schemes = [];
 
     /**
      * Request hostname
      *
-     * @var string
+     * @var array<string>
      */
-    protected $hostname;
+    protected $hostnames = [];
 
     /**
      * Controller namespace prefix
@@ -40,117 +61,73 @@ class Route
     protected $middleware = [];
 
     /**
-     * Respond to HTTP methods
+     * Pattern parts
      *
-     * @var array
+     * @var array<string>
      */
-    protected $methods = [];
+    protected $patternParts = [];
 
     /**
-     * Request URI
+     * Named URI params in route eg: "id" in books/{id}/authors
      *
-     * @var string
+     * @var array<string>
      */
-    protected $uri;
-
-    /**
-     * Request URI regex pattern
-     *
-     * @var string
-     */
-    protected $pattern;
-
-    /**
-     * Route action
-     *
-     * @var string|callable
-     */
-    protected $action;
-
-    /**
-     * Hydrated params
-     *
-     * @var array
-     */
-    public $params = [];
-
-    /**
-     * Named URI params in route eg: {id} in books/{id}/authors
-     *
-     * @var array
-     */
-    private $namedUriParams = [];
+    private $namedPathParameters = [];
 
 
     /**
      * Route constructor.
      *
-     * @param array $methods
+     * @param string|array $methods
      * @param string $uri
      * @param string|callable $action
      * @param array $config Additional config data (usually passed in from group settings)
      *
      */
-    public function __construct(array $methods, $uri, $action, array $config = [])
+    public function __construct($methods, string $uri, $action, array $config = [])
     {
         // Required bits
-        $this->methods = array_map('strtoupper', $methods);
-        $this->uri = $this->stripLeadingAndTrailingSlash($uri);
+        $this->methods = array_map('strtoupper', is_string($methods) ? [$methods] : $methods);
         $this->action = $action;
+        $this->uri = $this->stripLeadingAndTrailingSlash($uri);
 
         // Optional
-        $this->scheme = $config['scheme'] ?? null;
-        $this->hostname = $config['hostname'] ?? null;
-        $this->prefix = $config['prefix'] ?? null;
-        $this->namespace = $config['namespace'] ?? null;
-        $this->middleware = $config['middleware'] ?? [];
+        $this->setSchemes($config['scheme'] ?? []);
+        $this->setHostnames($config['hostname'] ?? []);
+        $this->setMiddleware($config['middleware'] ?? []);
+        $this->setPrefix($config['prefix'] ?? '');
+        $this->setNamespace($config['namespace'] ?? '');
 
-        // URI prefix
-        if( $this->prefix ){
-            $this->uri = $this->stripLeadingAndTrailingSlash($config['prefix']) . '/' . $this->uri;
-        }
+        foreach( explode("/", $this->getUri()) as $part ){
 
-        // Namespace
-        if( $this->namespace ){
-            if( is_string($this->action) ){
-                $this->action = trim($this->namespace, '\\') . '\\' . $this->action;
-            }
-        }
+            if( preg_match('/{([a-z0-9_]+)(?:\:([a-z0-9_]+))?}/i', $part, $match) ){
 
-        // Middleware
-        if( $this->middleware ){
-            if( !is_array($this->middleware) ){
-                $this->middleware = [$this->middleware];
-            }
-        }
-
-        // Build the URI regex pattern
-        $self = $this;
-        $this->pattern = preg_replace_callback('/{([a-z_]+)(\:([a-z_]+))?}/', function($match) use ($self) {
-
-            if( in_array($match[1], $this->namedUriParams) ){
-                throw new \Exception("Path parameter \"{$match[1]}\" already defined for route {$match[0]}");
-            }
-
-            // Predefined pattern
-            if( isset($match[2]) ){
-
-                if( ($pattern = Router::getPattern($match[3])) == false ){
-                    throw new \Exception('Router pattern not found: ' . $pattern[2]);
+                if( in_array($match[1], $this->namedPathParameters) ){
+                    throw new \Exception("Path parameter \"{$match[1]}\" already defined for route {$match[0]}");
                 }
+    
+                // Predefined pattern
+                if( isset($match[2]) ){
+    
+                    if( ($part = RouterAbstract::getPattern($match[2])) === null ){
+                        throw new \Exception("Router pattern not found: {$match[2]}");
+                    }
+                }
+    
+                // Match anything
+                else {
+    
+                    $part = '[^\/]+';
+                }
+
+                $part = "({$part})";
+
+                // Save the named path param
+                $this->namedPathParameters[] = $match[1];
             }
 
-            // Match anything
-            else {
-
-                $pattern = '[^\/]+';
-            }
-
-            $self->namedUriParams[] = $match[1];
-
-            return "({$pattern})";
-
-        }, str_replace('/', '\/', $this->uri));
+            $this->patternParts[] = $part;
+        }
     }
 
     /**
@@ -159,32 +136,42 @@ class Route
      */
 
     /**
-     * @param $scheme
-     * @return $this
+     * @param string|array $schemes
+     * @return Route
      */
-    public function setScheme($scheme)
+    public function setSchemes($schemes): Route
     {
-        $this->scheme = $scheme;
+        if( !is_array($schemes) ){
+            $schemes = [$schemes];
+        }
+
+        $this->schemes = $schemes;
         return $this;
     }
 
     /**
-     * @param $hostname
+     * @param string|array $hostnames
      * @return Route
      */
-    public function setHostname($hostname)
+    public function setHostnames($hostnames): Route
     {
-        $this->hostname = $hostname;
+        if( !is_array($hostnames) ){
+            $hostnames = [$hostnames];
+        }
+
+        $this->hostnames = $hostnames;
+
         return $this;
     }
 
     /**
-     * @param $prefix
+     * @param string $prefix
      * @return Route
      */
-    public function setPrefix($prefix)
+    public function setPrefix(string $prefix): Route
     {
-        $this->prefix = $prefix;
+        $this->prefix = $this->stripLeadingAndTrailingSlash($prefix);
+        
         return $this;
     }
 
@@ -194,9 +181,9 @@ class Route
      * @param string|array $middleware
      * @return Route
      */
-    public function setMiddleware($middleware)
+    public function setMiddleware($middleware): Route
     {
-        if( is_string($middleware) ){
+        if( !is_array($middleware) ){
             $middleware = [$middleware];
         }
 
@@ -211,7 +198,7 @@ class Route
      * @param string $namespace
      * @return Route
      */
-    public function setNamespace($namespace)
+    public function setNamespace(string $namespace): Route
     {
         $this->namespace = $namespace;
         return $this;
@@ -225,11 +212,45 @@ class Route
      */
 
      /**
-     * Get all methods this route respondes to.
+      * Get the full URI.
+      *
+      * @return string
+      */
+     public function getUri(): string
+     {
+         if( $this->prefix ){
+             return "{$this->prefix}/{$this->uri}";
+         }
+         
+         return $this->uri;
+     }
+
+    /**
+     * Get all schemes this route responds to.
      *
      * @return array
      */
-    public function getMethods()
+    public function getSchemes(): array
+    {
+        return $this->schemes;
+    }
+
+    /**
+     * Get all hostnames this route responds to.
+     *
+     * @return array
+     */
+    public function getHostnames(): array
+    {
+        return $this->hostnames;
+    }
+
+    /**
+     * Get all methods this route respondes to.
+     *
+     * @return array<string>
+     */
+    public function getMethods(): array
     {
         return $this->methods;
     }
@@ -237,19 +258,24 @@ class Route
     /**
      * Get route action.
      *
-     * @return string|\Closure
+     * @return string|callable
      */
     public function getAction()
     {
+        if( is_string($this->action) &&
+            $this->namespace ){
+            return trim($this->namespace, '\\') . '\\' . $this->action;
+        }
+
         return $this->action;
     }
 
     /**
-     * Get the route prefix.
+     * Get the URI prefix.
      *
      * @return string
      */
-    public function getPrefix()
+    public function getPrefix(): ?string
     {
         return $this->prefix;
     }
@@ -257,50 +283,67 @@ class Route
     /**
      * Get all middleware this route should apply.
      *
-     * @return array
+     * @return array<string>
      */
-    public function getMiddleware()
+    public function getMiddleware(): array
     {
         return $this->middleware;
     }
 
     /**
-     * Get URI of route
+     * Get namespace of route
      *
      * @return string
      */
-    public function getUri()
-    {
-        return $this->uri;
-    }
-
-    /**
-     * Get namespace of route
-     *
-     * @return void
-     */
-    public function getNamespace()
+    public function getNamespace(): ?string
     {
         return $this->namespace;
     }
 
+    /**
+     * Get the regex pattern used to match this route.
+     *
+     * @return array<string>
+     */
+    public function getPatternParts(): array
+    {
+        return $this->patternParts;
+    }
 
     /**
-     * Extract the path parameters for this given URI - if the URI matches this route.
+     * Extract the path parameters for the given URI.
      * 
-     * @param string $uri
-     * @return array
+     * Makes a key => value pair of path part names and their value.
+     * 
+     * Eg.
+     * 
+     * The route "books/{id}" with an actual URI of "books/1234"
+     * will return:
+     * 
+     * [
+     *      "id" => "1234",
+     * ]
+     * 
+     * These named path params are used during Dependency Injection resolution
+     * in the Kernel to pass off to the matched method parameter.
+     * 
+     * @param string $path
+     * @return array<string, string>
      */
-    public function getPathParams($uri)
+    public function getPathParams(string $path): array
     {
         $pathParams = [];
 
-        if( ($matches = $this->matchUri($uri)) ){
+        // Build out the regex
+        $pattern = implode("\/", $this->getPatternParts());
 
-            foreach( array_slice($matches, 1, count($matches) - 1) as $i => $param )
-            {
-                $pathParams[$this->namedUriParams[$i]] = $param;
+        if( preg_match("/^{$pattern}$/", $path, $parts) ){
+
+            // Grab all but the first match, because that will always be the full string.
+            foreach( array_slice($parts, 1, count($parts) - 1) as $i => $param ) {
+                $pathParams[$this->namedPathParameters[$i]] = $param;
             }
+            
         }
 
         return $pathParams;
@@ -318,39 +361,29 @@ class Route
      * @param string $scheme
      * @return bool
      */
-    public function matchScheme($scheme)
+    public function matchScheme($scheme): bool
     {
-        if( empty($this->scheme) ||
-            $this->scheme == '*' ){
+        if( empty($this->schemes) ){
             return true;
         }
 
-        if( is_array($this->scheme) ){
-            return (array_search(strtolower($scheme), array_map('strtolower', $this->scheme)) !== false);
-        }
-
-        return strtolower($scheme) == strtolower($this->scheme);
+        return array_search(strtolower($scheme), array_map('strtolower', $this->schemes)) !== false;
     }
 
 
     /**
      * Does the given hostname match the route's hostname?
      * 
-     * @param string $hostname
+     * @param string $hostnames
      * @return bool
      */
-    public function matchHostname($hostname)
+    public function matchHostname(string $hostnames): bool
     {
-        if( empty($this->hostname) ||
-            $this->hostname == '*' ){
+        if( empty($this->hostnames) ){
             return true;
         }
 
-        if( is_array($this->hostname) ){
-            return (array_search(strtolower($hostname), array_map('strtolower', $this->hostname)) !== false);
-        }
-
-        return strtolower($hostname) == strtolower($this->hostname);
+        return array_search(strtolower($hostnames), array_map('strtolower', $this->hostnames)) !== false;
     }
 
     /**
@@ -359,35 +392,30 @@ class Route
      * @param string $method
      * @return bool
      */
-    public function matchMethod($method)
+    public function matchMethod(string $method): bool
     {
         return in_array(strtoupper($method), $this->methods);
     }
 
-    
-
     /**
      * Does the given URI match the route's URI?
+     * 
      * @param string $uri
-     * @return array|bool
+     * @return bool
      */
-    public function matchUri($uri)
+    public function matchUri(string $uri): bool
     {
-        if( preg_match("/^{$this->pattern}$/i", $this->stripLeadingAndTrailingSlash($uri), $matches) ){
-            return $matches;
-        }
-
-        return false;
+        $pattern = implode("\/", $this->patternParts);
+        return preg_match("/^{$pattern}$/i", $this->stripLeadingAndTrailingSlash($uri)) != false;
     }
 
-
     /**
-     * Normalize URIs
+     * Normalize URIs by stripping off leading and trailing slashes.
      *
      * @param string $uri
      * @return string
      */
-    private function stripLeadingAndTrailingSlash($uri)
+    private function stripLeadingAndTrailingSlash(string $uri): string
     {
         return trim($uri, '/');
     }

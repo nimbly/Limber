@@ -2,12 +2,14 @@
 
 namespace Limber;
 
+use Psr\Container\ContainerInterface;
+
 class Application
 {
      /**
      * Container instance
      *
-     * @var Psr\Container\ContainterInterface
+     * @var ContainerInterface
      */
     protected $container;
 
@@ -15,9 +17,9 @@ class Application
      * 
      * Limber Framework Application constructor.
      * 
-     * @param Psr\Container\ContainerInterface $container
+     * @param ContainerInterface $container
      */
-    public function __construct($container)
+    public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
     }
@@ -29,9 +31,9 @@ class Application
      * @param mixed $default
      * @return mixed
      */
-    public function config($key, $default = null)
+    public function config(string $key, $default = null)
     {
-        return $this->get(Config::class)->get($key, $default);
+        return $this->container->get(Config::class)->get($key, $default);
     }
 
     /**
@@ -39,7 +41,7 @@ class Application
      *
      * @return void
      */
-    public function bootstrap()
+    public function bootstrap(): void
     {
         foreach( $this->config('bootstrap', []) as $file ){
             $bootstrap = require_once(path($file));
@@ -52,7 +54,7 @@ class Application
      *
      * @return ContainerInterface
      */
-    public function getContainer()
+    public function getContainer(): ContainerInterface
     {
         return $this->container;
     }
@@ -64,7 +66,7 @@ class Application
      * @param array $params
      * @return mixed
      */
-    public function __call($method, array $params)
+    public function __call(string $method, array $params)
     {
         return $this->container->{$method}(...$params);
     }

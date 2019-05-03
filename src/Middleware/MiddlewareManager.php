@@ -2,19 +2,22 @@
 
 namespace Limber\Middleware;
 
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class MiddlewareManager
 {
     /**
      * Middleware stack to execute
      *
-     * @var MiddlewareLayerInterface[]
+     * @var array<MiddlewareLayerInterface>
      */
     protected $middlewareStack = [];
 
     /**
-     * Manager constructor.
-     * @param array $layers
+     * MiddlewareManager constructor.
+     * 
+     * @param array<string>|array<MiddlewareLayerInterface> $layers
      */
     public function __construct(array $layers = [])
     {
@@ -35,7 +38,7 @@ class MiddlewareManager
      * 
      * @param MiddlewareLayerInterface $layer
      */
-    public function push(MiddlewareLayerInterface $layer)
+    public function add(MiddlewareLayerInterface $layer): void
     {
         $this->middlewareStack[] = $layer;
     }
@@ -43,9 +46,9 @@ class MiddlewareManager
     /**
      * Remove a layer by its classname.
      * 
-     * @param $middlewareClass
+     * @param string $middlewareClass
      */
-    public function remove($middlewareClass)
+    public function remove(string $middlewareClass): void
     {
         foreach( $this->middlewareStack as $i => $middleware ){
             if( $middleware instanceof $middlewareClass ){
@@ -55,22 +58,24 @@ class MiddlewareManager
     }
 
     /**
-     * @param $object
+     * Run the middleware stack.
+     * 
+     * @param Request $request
      * @param callable $kernel
-     * @return mixed
+     * @return Response
      */
-    public function run($object, callable $kernel)
+    public function run(Request $request, callable $kernel): Response
     {
-        $next = array_reduce(array_reverse($this->middlewareStack), function(\Closure $next, MiddlewareLayerInterface $layer) {
+        $next = array_reduce(array_reverse($this->middlewareStack), function(callable $next, MiddlewareLayerInterface $layer): \Closure {
 
-            return function($object) use ($next, $layer){
-                return $layer->handle($object, $next);
+            return function(Request $request) use ($next, $layer): Response {
+                return $layer->handle($request, $next);
             };
 
-        }, function($object) use ($kernel) {
-            return $kernel($object);
+        }, function(Request $request) use ($kernel): Response {
+            return $kernel($request);
         });
 
-        return $next($object);
+        return $next($request);
     }
 }

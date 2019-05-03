@@ -1,9 +1,9 @@
-#!/usr/bin/php
+#!/usr/bin/env php
 <?php
 
 $composer = json_decode(file_get_contents('composer.json'));
 
-echo "\nTag and submit a new release of {$composer->name}.\n\n";
+echo "\nTag and submit a new release of:\n\n*\n* {$composer->name}\n* {$composer->description}\n*\n";
 
 $currentVersion = file_get_contents('VERSION');
 echo "\nCurrent version: {$currentVersion}\n";
@@ -32,7 +32,7 @@ if( strtolower(trim(fgets($input))) !== 'yes' ){
 }
 
 // Update composer.json file with latest version number
-$composer->version = (string)$version;
+$composer->version = (string) $version;
 file_put_contents('composer.json', json_encode($composer, JSON_PRETTY_PRINT));
 
 // Write version number to disk

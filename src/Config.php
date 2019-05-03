@@ -8,7 +8,7 @@ class Config
     /**
      * Config structure.
      *
-     * @var array
+     * @var array<string, mixed>
      */
     protected $items = [];
 
@@ -19,7 +19,7 @@ class Config
      * @throws \Exception
      * @return mixed
      */
-    protected function resolve($key)
+    protected function resolve(string $key)
     {
         // Break the dotted notation keys into its parts
         $parts = explode(".", $key);
@@ -50,7 +50,7 @@ class Config
      * @param string $key
      * @return boolean
      */
-    public function has($key)
+    public function has(string $key): bool
     {
         try {
 
@@ -66,12 +66,14 @@ class Config
 
     /**
      * Lazy load configuration files.
+     * 
+     * @TODO How do we fallback to a default value?
      *
-     * @param mixed $key
+     * @param string $key
      * @param mixed|null $default
      * @return mixed
      */
-    public function get($key, $default = null)
+    public function get(string $key, $default = null)
     {
         // Attempt to lazy load keys.
         if( $this->has($key) === false ){
@@ -80,7 +82,7 @@ class Config
 
         }
 
-        return $this->resolve($key, $default);
+        return $this->resolve($key);
     }
 
     /**
@@ -90,7 +92,7 @@ class Config
      * @param mixed $value
      * @return void
      */
-    public function add($key, $value)
+    public function add(string $key, $value): void
     {
         $this->items[$key] = $value;
     }
@@ -98,10 +100,10 @@ class Config
     /**
      * Undocumented function
      *
-     * @param [type] $key
+     * @param string $key
      * @return void
      */
-    public function load($key)
+    public function load(string $key): void
     {
         if( preg_match("/^([^\.]+)\.?/", $key, $match) ){
 
@@ -122,7 +124,7 @@ class Config
      * @param string $file
      * @return void
      */
-    public function loadFile($key, $file)
+    public function loadFile(string $key, string $file): void
     {
         // Check for file's existence
         if( file_exists($file) === false ){

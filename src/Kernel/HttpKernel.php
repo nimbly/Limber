@@ -2,11 +2,11 @@
 
 namespace Limber\Kernel;
 
-use Limber\Router\Route;
-use Limber\Router\Router;
+use Limber\Exceptions\MethodNotAllowedHttpException;
+use Limber\Exceptions\NotFoundHttpException;
 use Limber\Middleware\MiddlewareManager;
-use Limber\Exception\NotFoundHttpException;
-use Limber\Exception\MethodNotAllowedHttpException;
+use Limber\Router\Route;
+use Limber\Router\RouterAbstract;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -15,23 +15,23 @@ class HttpKernel
     /**
      * Router instance.
      *
-     * @var Router
+     * @var RouterAbstract
      */
     protected $router;
 
     /**
      * Global middleware to execute on each HTTP request.
      *
-     * @var array
+     * @var array<string>
      */
     protected $middleware = [];
 
     /**
      * HttpKernel constructor
      * 
-     * @param Router $router
+     * @param RouterAbstract $router
      */
-    public function __construct(Router $router)
+    public function __construct(RouterAbstract $router)
     {
         $this->router = $router;
     }
@@ -44,9 +44,9 @@ class HttpKernel
      * @throws MethodNotAllowedHttpException
      * @return Route
      */
-    private function resolveRoute(Request $request)
+    private function resolveRoute(Request $request): Route
     {
-        if( ($route = $this->router->resolve($request)) === false ){
+        if( ($route = $this->router->resolve($request)) === null ){
 
             // 405 Method Not Allowed
             if( ($methods = $this->router->getMethodsForUri($request)) ){
@@ -64,9 +64,9 @@ class HttpKernel
      * Kernel invoker
      *
      * @param Request $request
-     * @return mixed
+     * @return Response
      */
-    public function run(Request $request)
+    public function run(Request $request): Response
     {
         // Resolve the route
         $route = $this->resolveRoute($request);
@@ -82,15 +82,15 @@ class HttpKernel
      * Dispatch a request
      *
      * @param Request $request
-     * @return mixed
+     * @return Response
      */
-    public function dispatch(Request $request, Route $route)
+    public function dispatch(Request $request, Route $route): Response
     {
         // Build MiddlewareManager
         $middlewareManager = new MiddlewareManager(array_merge($this->middleware, $route->getMiddleware()));
 
         // Run the middleware stack
-        return $middlewareManager->run($request, function(Request $request) use ($route){
+        return $middlewareManager->run($request, function(Request $request) use ($route): Response {
 
             // Callable/closure style route
             if( is_callable($route->getAction()) ){
@@ -98,8 +98,11 @@ class HttpKernel
             }
 
             // Class@Method style route
-            else {
+            elseif( is_string($route->getAction()) ) {
                 $action = class_method($route->getAction());
+            }
+            else {
+                throw new \Exception("Cannot dispatch route because target cannot be resolved.");
             }
 
             // Auto-resolve controller parameters
@@ -115,17 +118,17 @@ class HttpKernel
      *
      * @param Request $request
      * @param callable $target
-     * @return void
+     * @return array
      */
-    private function resolveActionParameters($request, $target)
+    private function resolveActionParameters(Request $request, callable $target): array
     {
         // Get the target's parameters
-        if( $target instanceof \Closure ){
-            $functionParameters = (new \ReflectionFunction($target))->getParameters();
+        if( is_array($target) ) {
+            $functionParameters = (new \ReflectionClass(get_class($target[0])))->getMethod($target[1])->getParameters();
         }
 
-        else {
-            $functionParameters = (new \ReflectionClass(get_class($target[0])))->getMethod($target[1])->getParameters();
+        else{
+            $functionParameters = (new \ReflectionFunction($target))->getParameters();
         }
 
         $params = [];
