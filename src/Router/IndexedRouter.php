@@ -4,7 +4,7 @@ namespace Limber\Router;
 
 use Symfony\Component\HttpFoundation\Request;
 
-class IndexedRouter extends RouterAbstract
+class IndexedRouter extends Router
 {
     /**
      * Set of indexed pointers to routes.

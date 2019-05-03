@@ -6,7 +6,7 @@ use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\Request;
 
-class TreeRouter extends RouterAbstract
+class TreeRouter extends Router
 {
     /**
      * Set of indexed RouteBranches

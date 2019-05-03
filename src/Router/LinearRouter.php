@@ -4,7 +4,7 @@ namespace Limber\Router;
 
 use Symfony\Component\HttpFoundation\Request;
 
-class LinearRouter extends RouterAbstract
+class LinearRouter extends Router
 {
     /**
      * @var array<Route>
