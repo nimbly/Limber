@@ -66,7 +66,7 @@ class IndexedRouter extends Router
      */
     public function resolve(Request $request): ?Route
     {
-        foreach( $this->indexes[$request->getMethod()] as $route ){
+        foreach( $this->indexes[$request->getMethod()] ?? [] as $route ){
 
             if( $route->matchUri($request->getPathInfo()) &&
                 $route->matchMethod($request->getMethod()) &&
