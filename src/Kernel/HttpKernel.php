@@ -6,7 +6,7 @@ use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
 use Limber\Middleware\MiddlewareManager;
 use Limber\Router\Route;
-use Limber\Router\RouterAbstract;
+use Limber\Router\Router;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -15,7 +15,7 @@ class HttpKernel
     /**
      * Router instance.
      *
-     * @var RouterAbstract
+     * @var Router
      */
     protected $router;
 
@@ -29,9 +29,9 @@ class HttpKernel
     /**
      * HttpKernel constructor
      * 
-     * @param RouterAbstract $router
+     * @param Router $router
      */
-    public function __construct(RouterAbstract $router)
+    public function __construct(Router $router)
     {
         $this->router = $router;
     }

@@ -109,7 +109,7 @@ class Route
                 // Predefined pattern
                 if( isset($match[2]) ){
     
-                    if( ($part = RouterAbstract::getPattern($match[2])) === null ){
+                    if( ($part = Router::getPattern($match[2])) === null ){
                         throw new \Exception("Router pattern not found: {$match[2]}");
                     }
                 }
