@@ -6,11 +6,39 @@ namespace Limber;
 class Config
 {
     /**
+     * Path on disk where config files are held.
+     *
+     * @var string
+     */
+    protected $configPath;
+
+    /**
      * Config structure.
      *
      * @var array<string, mixed>
      */
     protected $items = [];
+
+    /**
+     * Config constructor.
+     *
+     * @param array $items
+     */
+    public function __construct(string $configPath, array $items = [])
+    {
+        $this->configPath = $configPath;
+        $this->items = $items;
+    }
+
+    /**
+     * Get all config entries loaded.
+     *
+     * @return array<string, mixed>
+     */
+    public function all(): array
+    {
+        return $this->items;
+    }
 
     /**
      * Resolve the flattened key into the actual value.
@@ -21,9 +49,6 @@ class Config
      */
     protected function resolve(string $key)
     {
-        // Break the dotted notation keys into its parts
-        $parts = explode(".", $key);
-
         // Set the pointer at the root of the items array
         $pointer = &$this->items;
 
@@ -32,7 +57,7 @@ class Config
          * Loop through all the parts and see if the key exists.
          * 
          */
-        foreach( $parts as $part ){
+        foreach( explode(".", $key) as $part ){
 
             if( array_key_exists($part, $pointer) === false ){
                 throw new \Exception("Config key {$key} not found.");
@@ -67,8 +92,6 @@ class Config
     /**
      * Lazy load configuration files.
      * 
-     * @TODO How do we fallback to a default value?
-     *
      * @param string $key
      * @param mixed|null $default
      * @return mixed
@@ -79,10 +102,19 @@ class Config
         if( $this->has($key) === false ){
 
             $this->load($key);
-
         }
 
-        return $this->resolve($key);
+        try {
+
+            $configValue = $this->resolve($key);
+
+        } catch ( \Exception $exception ){
+
+            return $default;
+
+        }
+        
+        return $configValue;
     }
 
     /**
@@ -98,7 +130,7 @@ class Config
     }
 
     /**
-     * Undocumented function
+     * Load a config path from disk.
      *
      * @param string $key
      * @return void
@@ -106,14 +138,7 @@ class Config
     public function load(string $key): void
     {
         if( preg_match("/^([^\.]+)\.?/", $key, $match) ){
-
-            // Save the key
-            $key = $match[1];
-
-            // Build the file path
-            $file = path("config/{$key}.php");
-
-            $this->loadFile($key, $file);
+            $this->loadFile($match[1], "{$this->configPath}/{$match[1]}.php");
         }
     }
 
@@ -132,7 +157,7 @@ class Config
         }
 
         // Pull config file in and add values into master config
-        $config = require_once $file;
+        $config = include $file;
         $this->add($key, $config);
     }
 }

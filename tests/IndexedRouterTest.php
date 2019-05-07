@@ -2,8 +2,9 @@
 
 namespace Limber\Tests\Router;
 
-use Limber\Router\Route;
+use Limber\Exceptions\NotFoundHttpException;
 use Limber\Router\IndexedRouter as Router;
+use Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -80,5 +81,18 @@ class IndexedRouterTest extends TestCase
         );
 
         $this->assertEquals(["GET", "PATCH", "DELETE"], $methods);
+    }
+
+    public function test_resolving_method_that_is_not_indexed()
+    {
+        $router = new Router([
+            new Route("post", "books", "BooksController@create"),
+        ]);
+
+        $route = $router->resolve(
+            Request::create("https://example.com/authors/1234")
+        );
+
+        $this->assertNull($route);
     }
 }
