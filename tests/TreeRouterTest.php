@@ -2,10 +2,10 @@
 
 namespace Limber\Tests\Router;
 
+use Capsule\ServerRequest;
 use Limber\Router\Route;
 use Limber\Router\TreeRouter as Router;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * @covers Limber\Router\TreeRouter
@@ -24,15 +24,15 @@ class TreeRouterTest extends TestCase
         ]);
 
         $this->assertNotEmpty(
-            $router->resolve(Request::create('books'))
+            $router->resolve(ServerRequest::create('get', 'books', null, [], [], [], []))
         );
 
         $this->assertNotEmpty(
-            $router->resolve(Request::create('books/123'))
+            $router->resolve(ServerRequest::create('get', 'books/123', null, [], [], [], []))
         );
 
         $this->assertNotEmpty(
-            $router->resolve(Request::create('books', 'post'))
+            $router->resolve(ServerRequest::create('post', 'books', null, [], [], [], []))
         );
     }
 
@@ -45,19 +45,19 @@ class TreeRouterTest extends TestCase
         $this->assertEquals("books/edit", $route->getUri());
         $this->assertEquals("BooksController@edit", $route->getAction());
     }
-    
+
     public function test_resolve()
     {
         $router = new Router([
             new Route("get", "books/{id}", "BooksController@get"),
             new Route("post", "books", "BooksController@create"),
-            
+
             new Route("get", "authors/{id}", "AuthorsController@get"),
             new Route("post", "authors", "AuthorsController@create")
         ]);
 
         $route = $router->resolve(
-            Request::create("https://example.com/authors/1234")
+            ServerRequest::create("get", "https://example.com/authors/1234", null, [], [], [], [])
         );
 
         $this->assertEquals(["GET"], $route->getMethods());
@@ -71,13 +71,13 @@ class TreeRouterTest extends TestCase
             new Route("patch", "books/{id}", "BooksController@update"),
             new Route("delete", "books/{id}", "BooksController@delete"),
             new Route("post", "books", "BooksController@create"),
-            
+
             new Route("get", "authors/{id}", "AuthorsController@get"),
             new Route("post", "authors", "AuthorsController@create")
         ]);
 
         $methods = $router->getMethodsForUri(
-            Request::create("https://example.com/books/1234")
+            ServerRequest::create("get", "https://example.com/books/1234", null, [], [], [], [])
         );
 
         $this->assertEquals(["GET", "PATCH", "DELETE"], $methods);

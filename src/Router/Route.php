@@ -87,7 +87,7 @@ class Route
     public function __construct($methods, string $uri, $action, array $config = [])
     {
         // Required bits
-        $this->methods = array_map('strtoupper', is_string($methods) ? [$methods] : $methods);
+        $this->methods = \array_map('strtoupper', \is_string($methods) ? [$methods] : $methods);
         $this->action = $action;
         $this->uri = $this->stripLeadingAndTrailingSlash($uri);
 
@@ -98,25 +98,25 @@ class Route
         $this->setPrefix($config['prefix'] ?? '');
         $this->setNamespace($config['namespace'] ?? '');
 
-        foreach( explode("/", $this->getUri()) as $part ){
+        foreach( \explode("/", $this->getUri()) as $part ){
 
-            if( preg_match('/{([a-z0-9_]+)(?:\:([a-z0-9_]+))?}/i', $part, $match) ){
+            if( \preg_match('/{([a-z0-9_]+)(?:\:([a-z0-9_]+))?}/i', $part, $match) ){
 
-                if( in_array($match[1], $this->namedPathParameters) ){
+                if( \in_array($match[1], $this->namedPathParameters) ){
                     throw new \Exception("Path parameter \"{$match[1]}\" already defined for route {$match[0]}");
                 }
-    
+
                 // Predefined pattern
                 if( isset($match[2]) ){
-    
-                    if( ($part = Router::getPattern($match[2])) === null ){
+
+                    if( ($part = RouterAbstract::getPattern($match[2])) === null ){
                         throw new \Exception("Router pattern not found: {$match[2]}");
                     }
                 }
-    
+
                 // Match anything
                 else {
-    
+
                     $part = '[^\/]+';
                 }
 
@@ -131,7 +131,7 @@ class Route
     }
 
     /**
-     * 
+     *
      * SETters
      */
 
@@ -141,7 +141,7 @@ class Route
      */
     public function setSchemes($schemes): Route
     {
-        if( !is_array($schemes) ){
+        if( !\is_array($schemes) ){
             $schemes = [$schemes];
         }
 
@@ -155,7 +155,7 @@ class Route
      */
     public function setHostnames($hostnames): Route
     {
-        if( !is_array($hostnames) ){
+        if( !\is_array($hostnames) ){
             $hostnames = [$hostnames];
         }
 
@@ -171,7 +171,7 @@ class Route
     public function setPrefix(string $prefix): Route
     {
         $this->prefix = $this->stripLeadingAndTrailingSlash($prefix);
-        
+
         return $this;
     }
 
@@ -183,11 +183,11 @@ class Route
      */
     public function setMiddleware($middleware): Route
     {
-        if( !is_array($middleware) ){
+        if( !\is_array($middleware) ){
             $middleware = [$middleware];
         }
 
-        $this->middleware = array_merge($this->middleware, $middleware);
+        $this->middleware = \array_merge($this->middleware, $middleware);
 
         return $this;
     }
@@ -206,9 +206,9 @@ class Route
 
 
     /**
-     * 
+     *
      * GETters
-     * 
+     *
      */
 
      /**
@@ -221,7 +221,7 @@ class Route
          if( $this->prefix ){
              return "{$this->prefix}/{$this->uri}";
          }
-         
+
          return $this->uri;
      }
 
@@ -262,9 +262,9 @@ class Route
      */
     public function getAction()
     {
-        if( is_string($this->action) &&
+        if( \is_string($this->action) &&
             $this->namespace ){
-            return trim($this->namespace, '\\') . '\\' . $this->action;
+            return \trim($this->namespace, '\\') . '\\' . $this->action;
         }
 
         return $this->action;
@@ -279,7 +279,7 @@ class Route
     {
         return $this->prefix;
     }
-    
+
     /**
      * Get all middleware this route should apply.
      *
@@ -312,21 +312,21 @@ class Route
 
     /**
      * Extract the path parameters for the given URI.
-     * 
+     *
      * Makes a key => value pair of path part names and their value.
-     * 
+     *
      * Eg.
-     * 
+     *
      * The route "books/{id}" with an actual URI of "books/1234"
      * will return:
-     * 
+     *
      * [
      *      "id" => "1234",
      * ]
-     * 
+     *
      * These named path params are used during Dependency Injection resolution
      * in the Kernel to pass off to the matched method parameter.
-     * 
+     *
      * @param string $path
      * @return array<string, string>
      */
@@ -335,29 +335,29 @@ class Route
         $pathParams = [];
 
         // Build out the regex
-        $pattern = implode("\/", $this->getPatternParts());
+        $pattern = \implode("\/", $this->getPatternParts());
 
-        if( preg_match("/^{$pattern}$/", $path, $parts) ){
+        if( \preg_match("/^{$pattern}$/", \trim($path, "/"), $parts) ){
 
             // Grab all but the first match, because that will always be the full string.
-            foreach( array_slice($parts, 1, count($parts) - 1) as $i => $param ) {
+            foreach( \array_slice($parts, 1, \count($parts) - 1) as $i => $param ) {
                 $pathParams[$this->namedPathParameters[$i]] = $param;
             }
-            
+
         }
 
         return $pathParams;
     }
 
     /**
-     * 
+     *
      * MATCHing
-     * 
+     *
      */
 
     /**
      * Does the given scheme match this route's scheme?
-     * 
+     *
      * @param string $scheme
      * @return bool
      */
@@ -367,13 +367,13 @@ class Route
             return true;
         }
 
-        return array_search(strtolower($scheme), array_map('strtolower', $this->schemes)) !== false;
+        return \array_search(\strtolower($scheme), \array_map('strtolower', $this->schemes)) !== false;
     }
 
 
     /**
      * Does the given hostname match the route's hostname?
-     * 
+     *
      * @param string $hostnames
      * @return bool
      */
@@ -383,7 +383,7 @@ class Route
             return true;
         }
 
-        return array_search(strtolower($hostnames), array_map('strtolower', $this->hostnames)) !== false;
+        return \array_search(\strtolower($hostnames), \array_map('strtolower', $this->hostnames)) !== false;
     }
 
     /**
@@ -394,19 +394,19 @@ class Route
      */
     public function matchMethod(string $method): bool
     {
-        return in_array(strtoupper($method), $this->methods);
+        return \in_array(\strtoupper($method), $this->methods);
     }
 
     /**
      * Does the given URI match the route's URI?
-     * 
+     *
      * @param string $uri
      * @return bool
      */
     public function matchUri(string $uri): bool
     {
-        $pattern = implode("\/", $this->patternParts);
-        return preg_match("/^{$pattern}$/i", $this->stripLeadingAndTrailingSlash($uri)) != false;
+        $pattern = \implode("\/", $this->patternParts);
+        return \preg_match("/^{$pattern}$/i", $this->stripLeadingAndTrailingSlash($uri)) != false;
     }
 
     /**
@@ -417,6 +417,6 @@ class Route
      */
     private function stripLeadingAndTrailingSlash(string $uri): string
     {
-        return trim($uri, '/');
+        return \trim($uri, '/');
     }
 }

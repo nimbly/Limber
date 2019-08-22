@@ -2,17 +2,17 @@
 
 namespace Limber\Middleware;
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 interface MiddlewareLayerInterface
 {
     /**
-     * Handle the Middleware layer
+     * Handle the Middleware layer.
      *
-     * @param Request $request
+     * @param ServerRequestInterface $request
      * @param callable $next
-     * @return Response
+     * @return ResponseInterface
      */
-    public function handle(Request $request, callable $next): Response;
+    public function handle(ServerRequestInterface $request, callable $next): ResponseInterface;
 }

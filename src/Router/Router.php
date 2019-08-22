@@ -2,208 +2,92 @@
 
 namespace Limber\Router;
 
-use Symfony\Component\HttpFoundation\Request;
+use Psr\Http\Message\ServerRequestInterface;
 
-abstract class Router
+class Router extends RouterAbstract
 {
     /**
-     * @var array
-     */
-    protected $config = [
-        'scheme' => null,
-        'host' => null,
-        'prefix' => null,
-        'namespace' => null,
-        'middleware' => [],
-    ];
-
-    /**
-     * Route path parameter patterns
+     * Set of indexed pointers to routes.
      *
-     * @var array
+     * @var array<string, array<Route>>
      */
-    protected static $patterns = [
-        'alpha' => '[a-z]+',
-        'int' => '\d+',
-        'alphanumeric' => '[a-z0-9]+',
-        'uuid' => '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',
-        'hex' => '[a-f0-9]+',
-    ];
+    protected $indexes = [];
 
     /**
      * Router constructor.
      * @param array<Route>|null $routes
      */
-    abstract public function __construct(array $routes = null);
-
-    /**
-     * Add a route
-     *
-     * @param array $methods
-     * @param string $uri
-     * @param string|callable $target
-     * @return Route
-     */
-    abstract public function add($methods, string $uri, $target): Route;
-
-    /**
-     * Resolve the matching Route.
-     * 
-     * @param Request $request
-     * @return Route|null
-     */
-    abstract public function resolve(Request $request): ?Route;
-
-    /**
-     * Return all HTTP methods supported by the endpoint.
-     *
-     * @param Request $request
-     * @return array<string>
-     */
-    abstract public function getMethodsForUri(Request $request): array;
-
-    /**
-     * Create/overwrite a regex pattern
-     *
-     * @param string $name
-     * @param string $regex
-     * @return void
-     */
-    public static function setPattern(string $name, string $regex): void
+    public function __construct(array $routes = null)
     {
-        static::$patterns[$name] = $regex;
+        if( $routes ){
+            foreach( $routes as $route ){
+                $this->indexRoute($route);
+            }
+        }
     }
 
     /**
-     * Get a regex pattern by name
-     *
-     * @param string $name
-     * @return string|null
+     * @inheritDoc
      */
-    public static function getPattern(string $name): ?string
+    protected function indexRoute(Route $route): void
     {
-        if( array_key_exists($name, static::$patterns) ){
-            return static::$patterns[$name];
+        foreach( $route->getMethods() as $method ){
+            $this->indexes[$method][] = $route;
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function add(array $methods, string $uri, $target): Route
+    {
+        // Create new Route instance
+        $route = new Route($methods, $uri, $target, $this->config);
+
+        // Index the route
+        $this->indexRoute($route);
+
+        return $route;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function resolve(ServerRequestInterface $request): ?Route
+    {
+        foreach( $this->indexes[\strtoupper($request->getMethod())] ?? [] as $route ){
+
+            if( $route->matchUri($request->getUri()->getPath() ?? "") &&
+                $route->matchMethod($request->getMethod() ?? "") &&
+                $route->matchHostname($request->getUri()->getHost() ?? "") &&
+                $route->matchScheme($request->getUri()->getScheme() ?? "") ){
+
+                return $route;
+            }
         }
 
         return null;
     }
 
     /**
-     * @param string $uri
-     * @param string|callable $target
-     * @return Route
+     * @inheritDoc
      */
-    public function get($uri, $target): Route
+    public function getMethodsForUri(ServerRequestInterface $request): array
     {
-        return $this->add([Request::METHOD_GET], $uri, $target);
-    }
+        $methods = [];
 
-    /**
-     * @param string $uri
-     * @param string|callable $target
-     * @return Route
-     */
-    public function post($uri, $target): Route
-    {
-        return $this->add([Request::METHOD_POST], $uri, $target);
-    }
+        foreach( $this->indexes as $routes ) {
 
-    /**
-     * @param string $uri
-     * @param string|callable $target
-     * @return Route
-     */
-    public function put($uri, $target): Route
-    {
-        return $this->add([Request::METHOD_PUT], $uri, $target);
-    }
-
-    /**
-     * @param string $uri
-     * @param string|callable $target
-     * @return Route
-     */
-    public function patch($uri, $target): Route
-    {
-        return $this->add([Request::METHOD_PATCH], $uri, $target);
-    }
-
-    /**
-     * @param string $uri
-     * @param string|callable $target
-     * @return Route
-     */
-    public function delete(string $uri, $target): Route
-    {
-        return $this->add([Request::METHOD_DELETE], $uri, $target);
-    }
-
-    /**
-     * @param string $uri
-     * @param string|callable $target
-     * @return Route
-     */
-    public function head(string $uri, $target): Route
-    {
-        return $this->add([Request::METHOD_HEAD], $uri, $target);
-    }
-
-    /**
-     * @param string $uri
-     * @param string|callable $target
-     * @return Route
-     */
-    public function options(string $uri, $target): Route
-    {
-        return $this->add([Request::METHOD_OPTIONS], $uri, $target);
-    }
-
-    /**
-     * @param array $config
-     * @param \Closure $callback
-     * @return void
-     */
-    public function group(array $config, \Closure $callback): void
-    {
-        // Save current config
-        $previousConfig = $this->config;
-
-        // Merge config values
-        $this->config = $this->mergeGroupConfig($config);
-
-        // Process routes in closure
-        $callback($this);
-
-        // Restore previous config
-        $this->config = $previousConfig;
-    }
-
-    /**
-     * Merge parent route Group configs in with child group.
-     * 
-     * @param array<string> $groupConfig
-     * @return array
-     */
-    protected function mergeGroupConfig(array $groupConfig): array
-    {
-        $config = $this->config;
-
-        $config['hostname'] = $groupConfig['hostname'] ?? null;
-        $config['prefix'] = $groupConfig['prefix'] ?? null;
-        $config['namespace'] = $groupConfig['namespace'] ?? null;
-
-        if( array_key_exists('middleware', $groupConfig) ){
-
-            if( array_key_exists('middleware', $config) ){
-                $config['middleware'] = array_merge($config['middleware'], $groupConfig['middleware']);
+            foreach( $routes as $route ){
+                if( $route->matchUri($request->getUri()->getPath()) &&
+                    $route->matchHostname($request->getUri()->getHost()) &&
+                    $route->matchScheme($request->getUri()->getScheme()) ){
+                    $methods = \array_merge($methods, $route->getMethods());
+                }
             }
 
-            else {
-                $config['middleware'] = $groupConfig['middleware'];
-            }
         }
 
-        return $config;
+        return \array_unique($methods);
     }
 }

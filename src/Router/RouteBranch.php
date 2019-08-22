@@ -7,7 +7,7 @@ class RouteBranch
     /**
      * Full path.
      *
-     * @var string
+     * @var string|null
      */
     protected $path;
 
@@ -34,7 +34,7 @@ class RouteBranch
     {
         if( $path ){
             $this->path = $path;
-        }        
+        }
     }
 
     /**
@@ -45,7 +45,7 @@ class RouteBranch
      */
     public function getRouteForMethod(string $method): ?Route
     {
-        return $this->routes[$method] ?? null;
+        return $this->routes[\strtoupper($method)] ?? null;
     }
 
     /**
@@ -57,7 +57,7 @@ class RouteBranch
      */
     protected function addBranch(string $key): RouteBranch
     {
-        if( array_key_exists($key, $this->branches) ){
+        if( \array_key_exists($key, $this->branches) ){
             throw new \Exception("{$key} branch already exists for this node.");
         }
 
@@ -75,7 +75,7 @@ class RouteBranch
     {
         foreach( $route->getMethods() as $method ){
 
-            if( array_key_exists($method, $this->routes) ){
+            if( \array_key_exists($method, $this->routes) ){
                 throw new \Exception("{$method}#{$this->path} route has already been defined.");
             }
 
@@ -92,13 +92,13 @@ class RouteBranch
     public function findBranch(string $part): ?RouteBranch
     {
         // Try finding an exact match first.
-        if( array_key_exists($part, $this->branches) ){
+        if( \array_key_exists($part, $this->branches) ){
             return $this->branches[$part];
         }
 
         // Loop through each branch key and match it using a regex.
         foreach( $this->branches as $key => $branch ){
-            if( preg_match("/^{$key}$/", $part) ){
+            if( \preg_match("/^{$key}$/", $part) ){
                 return $branch;
             }
         }
@@ -115,7 +115,7 @@ class RouteBranch
     public function next(string $uriPart): RouteBranch
     {
         foreach( $this->branches as $key => $branch ){
-            
+
             if( $uriPart === $key ){
                 return $branch;
             }
@@ -131,6 +131,6 @@ class RouteBranch
      */
     public function getMethods(): array
     {
-        return array_keys($this->routes);
+        return \array_keys($this->routes);
     }
 }

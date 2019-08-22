@@ -2,15 +2,15 @@
 
 namespace Limber\Tests\Router;
 
+use Capsule\ServerRequest;
 use Limber\Exceptions\NotFoundHttpException;
-use Limber\Router\IndexedRouter as Router;
+use Limber\Router\Router;
 use Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
- * @covers Limber\Router\IndexedRouter
  * @covers Limber\Router\RouterAbstract
+ * @covers Limber\Router\Router
  * @covers Limber\Router\Route
  */
 class IndexedRouterTest extends TestCase
@@ -24,15 +24,15 @@ class IndexedRouterTest extends TestCase
         ]);
 
         $this->assertNotEmpty(
-            $router->resolve(Request::create('books'))
+            $router->resolve(ServerRequest::create('get', 'books', null, [], [], [], []))
         );
 
         $this->assertNotEmpty(
-            $router->resolve(Request::create('books/123'))
+            $router->resolve(ServerRequest::create('get', 'books/123', null, [], [], [], []))
         );
 
         $this->assertNotEmpty(
-            $router->resolve(Request::create('books', 'post'))
+            $router->resolve(ServerRequest::create('post', 'books', null, [], [], [], []))
         );
     }
 
@@ -51,14 +51,16 @@ class IndexedRouterTest extends TestCase
         $router = new Router([
             new Route("get", "books/{id}", "BooksController@get"),
             new Route("post", "books", "BooksController@create"),
-            
+
             new Route("get", "authors/{id}", "AuthorsController@get"),
             new Route("post", "authors", "AuthorsController@create")
-        ]);
+		]);
+
+		$request = ServerRequest::create("get", "https://example.com/authors/1234", null, [], [], [], []);
 
         $route = $router->resolve(
-            Request::create("https://example.com/authors/1234")
-        );
+            ServerRequest::create("get", "https://example.com/authors/1234", null, [], [], [], [])
+		);
 
         $this->assertEquals(["GET"], $route->getMethods());
         $this->assertEquals("AuthorsController@get", $route->getAction());
@@ -71,13 +73,13 @@ class IndexedRouterTest extends TestCase
             new Route("patch", "books/{id}", "BooksController@update"),
             new Route("delete", "books/{id}", "BooksController@delete"),
             new Route("post", "books", "BooksController@create"),
-            
+
             new Route("get", "authors/{id}", "AuthorsController@get"),
             new Route("post", "authors", "AuthorsController@create")
         ]);
 
         $methods = $router->getMethodsForUri(
-            Request::create("https://example.com/books/1234")
+            ServerRequest::create("get", "https://example.com/books/1234", null, [], [], [], [])
         );
 
         $this->assertEquals(["GET", "PATCH", "DELETE"], $methods);
@@ -90,7 +92,7 @@ class IndexedRouterTest extends TestCase
         ]);
 
         $route = $router->resolve(
-            Request::create("https://example.com/authors/1234")
+            ServerRequest::create("get", "https://example.com/authors/1234", null, [], [], [], [])
         );
 
         $this->assertNull($route);

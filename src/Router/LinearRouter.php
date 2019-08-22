@@ -2,9 +2,9 @@
 
 namespace Limber\Router;
 
-use Symfony\Component\HttpFoundation\Request;
+use Psr\Http\Message\ServerRequestInterface;
 
-class LinearRouter extends Router
+class LinearRouter extends RouterAbstract
 {
     /**
      * @var array<Route>
@@ -24,7 +24,7 @@ class LinearRouter extends Router
     /**
      * @inheritDoc
      */
-    public function add($methods, string $uri, $target): Route
+    public function add(array $methods, string $uri, $target): Route
     {
         // Create new Route instance
         $route = new Route($methods, $uri, $target, $this->config);
@@ -35,14 +35,14 @@ class LinearRouter extends Router
     /**
      * @inheritDoc
      */
-    public function resolve(Request $request): ?Route
+    public function resolve(ServerRequestInterface $request): ?Route
     {
         foreach( $this->routes as $route ){
 
-            if( $route->matchUri($request->getPathInfo()) &&
-                $route->matchMethod($request->getMethod()) &&
-                $route->matchHostname($request->getHost()) &&
-                $route->matchScheme($request->getScheme()) ){
+            if( $route->matchUri($request->getUri()->getPath() ?? "") &&
+                $route->matchMethod($request->getMethod() ?? "") &&
+                $route->matchHostname($request->getUri()->getHost() ?? "") &&
+                $route->matchScheme($request->getUri()->getScheme() ?? "") ){
 
                 return $route;
             }
@@ -54,17 +54,17 @@ class LinearRouter extends Router
     /**
      * @inheritDoc
      */
-    public function getMethodsForUri(Request $request): array
+    public function getMethodsForUri(ServerRequestInterface $request): array
     {
         $methods = [];
 
         foreach( $this->routes as $route ) {
-            if( $route->matchHostname($request->getHost()) &&
-                $route->matchUri($request->getPathInfo()) ){
-                $methods = array_merge($methods, $route->getMethods());
+            if( $route->matchHostname($request->getUri()->getHost()) &&
+                $route->matchUri($request->getUri()->getPath()) ){
+                $methods = \array_merge($methods, $route->getMethods());
             }
         }
 
-        return array_unique($methods);
+        return \array_unique($methods);
     }
 }

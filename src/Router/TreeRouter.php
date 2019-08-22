@@ -4,9 +4,9 @@ namespace Limber\Router;
 
 use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
-use Symfony\Component\HttpFoundation\Request;
+use Psr\Http\Message\ServerRequestInterface;
 
-class TreeRouter extends Router
+class TreeRouter extends RouterAbstract
 {
     /**
      * Set of indexed RouteBranches
@@ -50,7 +50,7 @@ class TreeRouter extends Router
     /**
      * @inheritDoc
      */
-    public function add($methods, string $uri, $target): Route
+    public function add(array $methods, string $uri, $target): Route
     {
         // Create new Route instance
         $route = new Route($methods, $uri, $target, $this->config);
@@ -60,14 +60,14 @@ class TreeRouter extends Router
 
         return $route;
     }
-    
+
     /**
      * @inheritDoc
      */
-    public function resolve(Request $request): ?Route
+    public function resolve(ServerRequestInterface $request): ?Route
     {
         // Break the request path apart
-        $pathParts = explode("/", trim($request->getPathInfo(), "/"));
+        $pathParts = \explode("/", \trim($request->getUri()->getPath(), "/"));
 
         // Set the starting node.
         $branch = $this->tree;
@@ -83,8 +83,8 @@ class TreeRouter extends Router
         }
 
         // Now match against the remaining criteria.
-        if( $route->matchScheme($request->getScheme()) &&
-            $route->matchHostname($request->getHost()) ){
+        if( $route->matchScheme($request->getUri()->getScheme() ?? "") &&
+            $route->matchHostname($request->getUri()->getHost() ?? "") ){
 
             return $route;
         }
@@ -95,10 +95,10 @@ class TreeRouter extends Router
     /**
      * @inheritDoc
      */
-    public function getMethodsForUri(Request $request): array
+    public function getMethodsForUri(ServerRequestInterface $request): array
     {
         // Break the request path apart
-        $pathParts = explode("/", trim($request->getPathInfo(), "/"));
+        $pathParts = \explode("/", \trim($request->getUri()->getPath(), "/"));
 
         // Set the starting node.
         $branch = $this->tree;

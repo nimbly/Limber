@@ -2,8 +2,8 @@
 
 namespace Limber\Middleware;
 
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 class MiddlewareManager
 {
@@ -16,7 +16,7 @@ class MiddlewareManager
 
     /**
      * MiddlewareManager constructor.
-     * 
+     *
      * @param array<string>|array<MiddlewareLayerInterface> $layers
      */
     public function __construct(array $layers = [])
@@ -35,7 +35,7 @@ class MiddlewareManager
 
     /**
      * Add a layer to the stack.
-     * 
+     *
      * @param MiddlewareLayerInterface $layer
      */
     public function add(MiddlewareLayerInterface $layer): void
@@ -45,7 +45,7 @@ class MiddlewareManager
 
     /**
      * Remove a layer by its classname.
-     * 
+     *
      * @param string $middlewareClass
      */
     public function remove(string $middlewareClass): void
@@ -59,20 +59,20 @@ class MiddlewareManager
 
     /**
      * Run the middleware stack.
-     * 
-     * @param Request $request
+     *
+     * @param ServerRequestInterface $request
      * @param callable $kernel
-     * @return Response
+     * @return ResponseInterface
      */
-    public function run(Request $request, callable $kernel): Response
+    public function run(ServerRequestInterface $request, callable $kernel): ResponseInterface
     {
-        $next = array_reduce(array_reverse($this->middlewareStack), function(callable $next, MiddlewareLayerInterface $layer): \Closure {
+        $next = \array_reduce(\array_reverse($this->middlewareStack), function(callable $next, MiddlewareLayerInterface $layer): \Closure {
 
-            return function(Request $request) use ($next, $layer): Response {
+            return function(ServerRequestInterface $request) use ($next, $layer): ResponseInterface {
                 return $layer->handle($request, $next);
             };
 
-        }, function(Request $request) use ($kernel): Response {
+        }, function(ServerRequestInterface $request) use ($kernel): ResponseInterface {
             return $kernel($request);
         });
 
