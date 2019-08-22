@@ -1,11 +1,21 @@
 # Limber
 
-A flexible minimal HTTP framework.
+A super minimal HTTP router that doesn't get in your way.
 
-## Features
-* 3 different routing engines to chose from
-* Middleware (Before &amp; After)
-* Bring Your Own PSR-7
+Limber is intended for advanced users who are comfortable setting up their own framework and pulling in packages best suited for their particular use case.
+
+## Limber *does not* ship with
+
+* PSR-7 implementation
+* An ORM
+* View rendering/template engine
+* Container
+* Event/subscriber system
+* Configuration file management
+* Session and cookie management
+* Cache library
+
+These are all application implementation details that are best suited for you to decide, dear developer.
 
 ## Installation
 
@@ -16,24 +26,28 @@ composer require nimbly/Limber
 ## Quick start
 
 ```php
+
+// Create Application instance with a Router
 $application = new Limber\Application(
-	$routes
+	$router
 );
 
+// Dispatch a PSR-7 ServerRequest instance
 $response = $application->dispatch(
 	$serverRequest
 );
 
+// Send the Response
 $application->send($response);
 ```
 
 ## PSR-7
-Limber does not ship with a PSR-7 (HTTP Message) implementation, so you will need to bring your own.
+Limber does not ship with a PSR-7 (HTTP Message) implementation so you will need to bring your own.
 
-* symfony/http-foundation
-* slim/psr7
-* nimbly/Capsule
-* zendframework/zend-diactoros
+* [symfony/http-foundation](https://symfony.com/components/HttpFoundation)
+* [slim/psr7](https://github.com/slimphp/Slim-Psr7)
+* [nimbly/Capsule](https://github.com/nimbly/Capsule)
+* [zendframework/zend-diactoros](https://github.com/zendframework/zend-diactoros)
 
 ## Router
 
@@ -114,7 +128,7 @@ You can group routes together using the ```group``` method and passing in parame
 
 * ```middleware``` &lt;array, string&gt; *or* &lt;array, MiddlewareLayerInterface&gt; An array of all middleware classes (fullname space) or actual instances of middleware.
 * ```prefix``` &lt;string&gt; A string prepended to all URIs when matching the request.
-* ```namespace``` &lt;string&gt; A string prepended to all string based actions before instantiating a new controoler.
+* ```namespace``` &lt;string&gt; A string prepended to all string based actions before instantiating a new controller.
 * ```hostname``` &lt;string&gt; A host name to be matched against.
 
 ```php
@@ -132,6 +146,52 @@ $router->group([
 	$router->post('books', 'BooksController@create');
 
 });
+```
+
+Groups can be nested and will inherit their parent group's settings unless the setting is overridden. Middleware settings however are merged in with their parent's settings.
+
+```php
+$router->group([
+	'hostname' => 'sub.domain.com',
+	'middleware' => [
+		FooMiddleware::class,
+		BarMiddleware::class
+	],
+	'namespace' => 'App\Sub.Domain\Controllers',
+	'prefix' => 'v1'
+], function($router){
+
+	$router->get('books/{isbn}', 'BooksController@getByIsbn');
+	$router->post('books', 'BooksController@create');
+
+	// This group will inherit all group settings from the parent group
+	// and will merge in an additional middleware (AdminMiddleware).
+	$router->group([
+		'middleware' => [
+			AdminMiddleware::class
+		]
+	], function($router) {
+
+		...
+
+	});
+
+});
+```
+### Loading routes from cache
+
+When instantiating a ```Router```, you can pass in array of ```Route``` instances that will be loaded directly into the router.
+
+This allows you to load your routes from disk or memory and inject directly into the router if you choose.
+
+```php
+// Load from disk
+$routes = require __DIR__ . "/cache/routes.php";
+$router = new Router($routes);
+
+// Load from a cache
+$routes = Cache::getItem("Limber\Routes");
+$router = new Router($routes);
 ```
 
 ## Middleware
@@ -156,9 +216,25 @@ class FooMiddleware implements MiddlewareLayerInterface
 }
 ```
 
+### Middleware as Closures
+
+Limber also supports any ```\callable``` as a middleware.
+
+```php
+$application->addMiddleware(function(ServerRequestInterface $request, callable $next): ResponseInterface {
+
+	Log::info("Received request!");
+
+	return $next($request);
+
+});
+```
+
 ### Global middleware
 
-Global middleware is applied on the Application instance using the ```setMiddleware``` method.
+Global middleware is registered on the Application instance using the ```setMiddleware``` method.
+
+Middleware is applied in the order they are registered.
 
 ```php
 $application = new Limber\Application($router);
@@ -167,6 +243,14 @@ $application->setMiddleware([
 	FooMiddleware::class,
 	BarMiddleware::class
 ]);
+```
+You may optionally register a middleware layer one at a time by using the ```addMiddleware``` method.
+
+```php
+$application = new Limber\Application($router);
+
+$application->addMiddleware(FooMiddleware::class);
+$application->addMiddleware(BarMiddleware::class);
 ```
 
 ### Route middleware

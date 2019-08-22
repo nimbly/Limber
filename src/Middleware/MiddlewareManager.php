@@ -17,17 +17,26 @@ class MiddlewareManager
     /**
      * MiddlewareManager constructor.
      *
-     * @param array<string>|array<MiddlewareLayerInterface> $layers
+     * @param array<string|MiddlewareLayerInterface|callable> $layers
      */
     public function __construct(array $layers = [])
     {
         foreach( $layers as $layer ){
 
-            if( $layer instanceof MiddlewareLayerInterface ){
+			if( $layer instanceof MiddlewareLayerInterface ){
                 $this->add($layer);
-            }
-
+			}
+			elseif( \is_callable($layer) ){
+				$this->add(
+					new CallableMiddlewareLayer($layer)
+				);
+			}
             else {
+
+				/**
+				 * @psalm-suppress InvalidStringClass
+				 * @psalm-suppress ArgumentTypeCoercion
+				 */
                 $this->add(new $layer);
             }
         }

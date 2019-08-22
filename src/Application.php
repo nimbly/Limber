@@ -42,13 +42,24 @@ class Application
     /**
      * Set the global middleware to run.
      *
-     * @param array<string>|array<MiddlewareLayerInterface> $middleware
+     * @param array<string|MiddlewareLayerInterface|callable> $middleware
      * @return void
      */
     public function setMiddleware(array $middleware): void
     {
         $this->middleware = $middleware;
-    }
+	}
+
+	/**
+	 * Add a middleware layer.
+	 *
+	 * @param string|MiddlewareLayerInterface|callable $middleware
+	 * @return void
+	 */
+	public function addMiddleware($middleware): void
+	{
+		$this->middleware[] = $middleware;
+	}
 
     /**
      * Dispatch a request.

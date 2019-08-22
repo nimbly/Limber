@@ -34,7 +34,14 @@ abstract class RouterAbstract
      * Router constructor.
      * @param array<Route>|null $routes
      */
-    abstract public function __construct(array $routes = null);
+	abstract public function __construct(array $routes = null);
+
+	/**
+	 * Get all routes.
+	 *
+	 * @return array<Route>
+	 */
+	abstract public function getRoutes(): array;
 
     /**
      * Add a route

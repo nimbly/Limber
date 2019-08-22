@@ -27,7 +27,32 @@ class TreeRouter extends RouterAbstract
                 $this->indexRoute($route);
             }
         }
-    }
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function getRoutes(): array
+	{
+		return $this->getRoutesFromBranch($this->tree);
+	}
+
+	/**
+	 * Recursive method to traverse tree and flatten out routes.
+	 *
+	 * @param RouteBranch $branch
+	 * @return array
+	 */
+	private function getRoutesFromBranch(RouteBranch $branch): array
+	{
+		$routes = \array_values($branch->getRoutes());
+
+		foreach( $branch->getBranches() as $branch ){
+			$routes = \array_merge($routes, $this->getRoutesFromBranch($branch));
+		}
+
+		return $routes;
+	}
 
     /**
      * Index the route.
@@ -83,8 +108,8 @@ class TreeRouter extends RouterAbstract
         }
 
         // Now match against the remaining criteria.
-        if( $route->matchScheme($request->getUri()->getScheme() ?? "") &&
-            $route->matchHostname($request->getUri()->getHost() ?? "") ){
+        if( $route->matchScheme($request->getUri()->getScheme()) &&
+            $route->matchHostname($request->getUri()->getHost()) ){
 
             return $route;
         }

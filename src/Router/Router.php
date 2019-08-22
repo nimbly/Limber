@@ -24,7 +24,20 @@ class Router extends RouterAbstract
                 $this->indexRoute($route);
             }
         }
-    }
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function getRoutes(): array
+	{
+		$routes = [];
+		foreach( $this->indexes as $indexedRoutes ){
+			$routes = \array_merge($routes, $indexedRoutes);
+		}
+
+		return $routes;
+	}
 
     /**
      * @inheritDoc
@@ -57,10 +70,10 @@ class Router extends RouterAbstract
     {
         foreach( $this->indexes[\strtoupper($request->getMethod())] ?? [] as $route ){
 
-            if( $route->matchUri($request->getUri()->getPath() ?? "") &&
-                $route->matchMethod($request->getMethod() ?? "") &&
-                $route->matchHostname($request->getUri()->getHost() ?? "") &&
-                $route->matchScheme($request->getUri()->getScheme() ?? "") ){
+            if( $route->matchUri($request->getUri()->getPath()) &&
+                $route->matchMethod($request->getMethod()) &&
+                $route->matchHostname($request->getUri()->getHost()) &&
+                $route->matchScheme($request->getUri()->getScheme()) ){
 
                 return $route;
             }

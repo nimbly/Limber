@@ -63,7 +63,17 @@ class RouteBranch
 
         $this->branches[$key] = new RouteBranch("{$this->path}/{$key}");
         return $this->branches[$key];
-    }
+	}
+
+	/**
+	 * Get all routes registered on this branch.
+	 *
+	 * @return array
+	 */
+	public function getRoutes(): array
+	{
+		return $this->routes;
+	}
 
     /**
      * Add route to this leaf.
@@ -81,7 +91,17 @@ class RouteBranch
 
             $this->routes[$method] = $route;
         }
-    }
+	}
+
+	/**
+	 * Get all the branches on this node.
+	 *
+	 * @return array
+	 */
+	public function getBranches(): array
+	{
+		return $this->branches;
+	}
 
     /**
      * Find the matching branch for the given URI path part.

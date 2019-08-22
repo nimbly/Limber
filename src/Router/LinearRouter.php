@@ -19,7 +19,15 @@ class LinearRouter extends RouterAbstract
         if( $routes ){
             $this->routes = $routes;
         }
-    }
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function getRoutes(): array
+	{
+		return $this->routes;
+	}
 
     /**
      * @inheritDoc
@@ -39,10 +47,10 @@ class LinearRouter extends RouterAbstract
     {
         foreach( $this->routes as $route ){
 
-            if( $route->matchUri($request->getUri()->getPath() ?? "") &&
-                $route->matchMethod($request->getMethod() ?? "") &&
-                $route->matchHostname($request->getUri()->getHost() ?? "") &&
-                $route->matchScheme($request->getUri()->getScheme() ?? "") ){
+            if( $route->matchUri($request->getUri()->getPath()) &&
+                $route->matchMethod($request->getMethod()) &&
+                $route->matchHostname($request->getUri()->getHost()) &&
+                $route->matchScheme($request->getUri()->getScheme()) ){
 
                 return $route;
             }
