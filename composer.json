@@ -15,8 +15,11 @@
     ],
     "autoload": {
         "psr-4": {
-            "Limber\\": "src\/"
-        }
+			"Limber\\": "src\/"
+		},
+		"files": [
+			"src/functions.php"
+		]
     },
     "config": {
         "platform": {
@@ -29,7 +32,6 @@
         "vimeo\/psalm": "^3.1",
         "symfony\/var-dumper": "^4.2",
         "php-coveralls\/php-coveralls": "^2.1",
-        "predis\/predis": "^1.1",
         "nimbly\/capsule": "^0.6.0"
     }
 }
