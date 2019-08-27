@@ -117,11 +117,11 @@ class Application
 	 * Run the request through the middleware.
 	 *
 	 * @param MiddlewareManager $middlewareManager
-	 * @param RequestInterface $request
+	 * @param ServerRequestInterface $request
 	 * @param Route $route
 	 * @return ResponseInterface
 	 */
-	private function runMiddleware(MiddlewareManager $middlewareManager, RequestInterface $request, Route $route): ResponseInterface
+	private function runMiddleware(MiddlewareManager $middlewareManager, ServerRequestInterface $request, Route $route): ResponseInterface
 	{
 		return $middlewareManager->run($request, function(ServerRequestInterface $request) use ($route): ResponseInterface {
 
