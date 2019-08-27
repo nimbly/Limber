@@ -5,6 +5,8 @@ if( !\function_exists('class_method') ){
 	/**
 	 * Return \callable array of Class and Method represented in string form.
 	 *
+	 * e.g. "\My\Class\Name@some_method"
+	 *
 	 * @param string $classMethod
 	 * @return callable
 	 */

@@ -104,7 +104,7 @@ class Application
     }
 
     /**
-     * Resolve to a Route instance or throw exception
+     * Resolve to a Route instance or throw exception.
      *
      * @param ServerRequestInterface $request
      * @throws NotFoundHttpException

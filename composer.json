@@ -26,7 +26,7 @@
             "php": "7.2"
         }
     },
-    "version": "0.5.1",
+    "version": "0.5.2",
     "require-dev": {
         "phpunit\/phpunit": "^8.0",
         "vimeo\/psalm": "^3.1",
