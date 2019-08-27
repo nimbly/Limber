@@ -88,8 +88,18 @@ class Application
      */
     public function dispatch(ServerRequestInterface $request): ResponseInterface
     {
-        // Resolve the route
-        $route = $this->resolveRoute($request);
+		// Resolve the route
+		// @todo Let's figure out a way to add the routing process to the middleware stack.
+		try {
+			$route = $this->resolveRoute($request);
+		} catch( Throwable $exception ){
+
+			if( empty($this->exceptionHandler) ){
+				throw $exception;
+			}
+
+			return \call_user_func($this->exceptionHandler, $exception);
+		}
 
         // Build MiddlewareManager
         $middlewareManager = new MiddlewareManager(
@@ -125,7 +135,6 @@ class Application
 			else {
 				throw new DispatchException("Cannot dispatch request because route action cannot be resolved into callable.");
 			}
-
 
 			try {
 
