@@ -104,7 +104,7 @@ class TreeRouter extends RouterAbstract
         }
 
         if( ($route = $branch->getRouteForMethod($request->getMethod())) === null ){
-            throw new MethodNotAllowedHttpException;
+            throw new MethodNotAllowedHttpException($this->getMethodsForUri($request));
         }
 
         // Now match against the remaining criteria.
