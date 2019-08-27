@@ -96,21 +96,7 @@ class Application
             \array_merge($this->middleware, $route->getMiddleware())
 		);
 
-		try {
-
-			$response = $this->runMiddleware($middlewareManager, $request, $route);
-
-		} catch( Throwable $exception ){
-
-			// If a custom exception handler was provided, send exception to it.
-			if( empty($this->exceptionHandler) ){
-				throw $exception;
-			}
-
-			$response = \call_user_func($this->exceptionHandler, $exception);
-		}
-
-		return $response;
+		return $this->runMiddleware($middlewareManager, $request, $route);
 	}
 
 	/**
@@ -135,15 +121,29 @@ class Application
 				$action = \class_method($route->getAction());
 			}
 
-			// Not sure what action is - throw DispatchException.
+			// Not sure what type route action is - throw DispatchException.
 			else {
 				throw new DispatchException("Cannot dispatch request because route action cannot be resolved into callable.");
 			}
 
-			return \call_user_func_array($action, \array_merge(
-				[$request],
-				\array_values($route->getPathParams($request->getUri()->getPath()))
-			));
+
+			try {
+
+				$response = \call_user_func_array($action, \array_merge(
+					[$request],
+					\array_values($route->getPathParams($request->getUri()->getPath()))
+				));
+
+			} catch( Throwable $exception ){
+
+				if( empty($this->exceptionHandler) ){
+					throw $exception;
+				}
+
+				$response = \call_user_func($this->exceptionHandler, $exception);
+			}
+
+			return $response;
 
 		});
 	}
