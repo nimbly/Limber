@@ -1,6 +1,6 @@
 {
     "name": "limber\/limber",
-    "description": "Limber core",
+    "description": "A minimal framework",
     "type": "library",
     "require": {
         "php": "^7.2",
