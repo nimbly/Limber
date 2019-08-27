@@ -2,6 +2,8 @@
 
 namespace Limber\Exceptions;
 
+use Exception;
+
 /**
  * 429 Too Many Requests exception.
  */

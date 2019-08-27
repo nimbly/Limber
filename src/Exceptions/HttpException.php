@@ -2,7 +2,9 @@
 
 namespace Limber\Exceptions;
 
-abstract class HttpException extends \Exception
+use Exception;
+
+abstract class HttpException extends Exception
 {
     /**
      * HTTP status code

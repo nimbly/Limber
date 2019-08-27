@@ -2,6 +2,8 @@
 
 namespace Limber\Exceptions;
 
+use Exception;
+
 /**
  * 401 Unauthorized exception.
  */

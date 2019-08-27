@@ -2,6 +2,8 @@
 
 namespace Limber\Exceptions;
 
+use Exception;
+
 /**
  * 405 Method Not Allowed exception.
  */

@@ -2,6 +2,8 @@
 
 namespace Limber\Exceptions;
 
+use Exception;
+
 /**
  * 503 Service Unavailable exception.
  */
