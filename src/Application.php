@@ -11,6 +11,7 @@ use Limber\Router\Route;
 use Limber\Router\RouterAbstract;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 
 class Application
 {
@@ -26,7 +27,14 @@ class Application
      *
      * @var array
      */
-    protected $middleware = [];
+	protected $middleware = [];
+
+	/**
+	 * Registered exception handler.
+	 *
+	 * @var ?callable
+	 */
+	protected $exceptionHandler;
 
     /**
      *
@@ -61,6 +69,17 @@ class Application
 		$this->middleware[] = $middleware;
 	}
 
+	/**
+	 * Add a default application-level exception handler.
+	 *
+	 * @param callable $exceptionHandler
+	 * @return void
+	 */
+	public function setExceptionHandler(callable $exceptionHandler): void
+	{
+		$this->exceptionHandler = $exceptionHandler;
+	}
+
     /**
      * Dispatch a request.
      *
@@ -75,33 +94,59 @@ class Application
         // Build MiddlewareManager
         $middlewareManager = new MiddlewareManager(
             \array_merge($this->middleware, $route->getMiddleware())
-        );
+		);
 
-        // Run the middleware stack
-        return $middlewareManager->run($request, function(ServerRequestInterface $request) use ($route): ResponseInterface {
+		try {
 
-            // Callable/closure style route
-            if( \is_callable($route->getAction()) ){
-                $action = $route->getAction();
-            }
+			$response = $this->runMiddleware($middlewareManager, $request, $route);
 
-            // Class@Method style route
-            elseif( \is_string($route->getAction()) ) {
-                $action = \class_method($route->getAction());
+		} catch( Throwable $exception ){
+
+			// If a custom exception handler was provided, send exception to it.
+			if( empty($this->exceptionHandler) ){
+				throw $exception;
+			}
+
+			$response = \call_user_func($this->exceptionHandler, $exception);
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Run the request through the middleware.
+	 *
+	 * @param MiddlewareManager $middlewareManager
+	 * @param RequestInterface $request
+	 * @param Route $route
+	 * @return ResponseInterface
+	 */
+	private function runMiddleware(MiddlewareManager $middlewareManager, RequestInterface $request, Route $route): ResponseInterface
+	{
+		return $middlewareManager->run($request, function(ServerRequestInterface $request) use ($route): ResponseInterface {
+
+			// Callable/closure style route
+			if( \is_callable($route->getAction()) ){
+				$action = $route->getAction();
+			}
+
+			// Class@Method style route
+			elseif( \is_string($route->getAction()) ) {
+				$action = \class_method($route->getAction());
 			}
 
 			// Not sure what action is - throw DispatchException.
-            else {
-                throw new DispatchException("Cannot dispatch request because route action cannot be resolved into callable.");
-            }
+			else {
+				throw new DispatchException("Cannot dispatch request because route action cannot be resolved into callable.");
+			}
 
-            return \call_user_func_array($action, \array_merge(
-                [$request],
-                \array_values($route->getPathParams($request->getUri()->getPath()))
-            ));
+			return \call_user_func_array($action, \array_merge(
+				[$request],
+				\array_values($route->getPathParams($request->getUri()->getPath()))
+			));
 
-        });
-    }
+		});
+	}
 
     /**
      * Resolve to a Route instance or throw exception.
