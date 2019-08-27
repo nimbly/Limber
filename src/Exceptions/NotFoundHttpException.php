@@ -7,10 +7,8 @@ namespace Limber\Exceptions;
  */
 class NotFoundHttpException extends HttpException
 {
-    /**
-     * HTTP status code.
-     *
-     * @var int
-     */
+	/**
+	 * @inheritDoc
+	 */
     protected $httpStatus = 404;
 }

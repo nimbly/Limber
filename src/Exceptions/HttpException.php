@@ -9,7 +9,14 @@ abstract class HttpException extends \Exception
      *
      * @var int
      */
-    protected $httpStatus;
+	protected $httpStatus;
+
+	/**
+	 * Additional headers to send with this exception.
+	 *
+	 * @var array<string, string>
+	 */
+	protected $headers = [];
 
     /**
      * Get the HTTP status code.
@@ -19,5 +26,15 @@ abstract class HttpException extends \Exception
     public function getHttpStatus(): int
     {
         return $this->httpStatus;
-    }
+	}
+
+	/**
+	 * Get additional headers that should be sent with this exception.
+	 *
+	 * @return array<string, string>
+	 */
+	public function getHeaders(): array
+	{
+		return $this->headers;
+	}
 }
