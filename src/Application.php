@@ -88,9 +88,11 @@ class Application
             // Class@Method style route
             elseif( \is_string($route->getAction()) ) {
                 $action = \class_method($route->getAction());
-            }
+			}
+
+			// Not sure what action is - throw DispatchException.
             else {
-                throw new DispatchException("Cannot dispatch route because target cannot be resolved.");
+                throw new DispatchException("Cannot dispatch request because route action cannot be resolved into callable.");
             }
 
             return \call_user_func_array($action, \array_merge(
@@ -115,7 +117,7 @@ class Application
 
             // 405 Method Not Allowed
             if( ($methods = $this->router->getMethodsForUri($request)) ){
-                throw new MethodNotAllowedHttpException;
+                throw new MethodNotAllowedHttpException($methods);
             }
 
             // 404 Not Found
