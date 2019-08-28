@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests;
+namespace Limber\Tests;
 
 use Limber\Exceptions\BadGatewayHttpException;
 use Limber\Exceptions\BadRequestHttpException;

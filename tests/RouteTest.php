@@ -26,16 +26,16 @@ class RouteTest extends TestCase
                 ],
             ]
         );
-        
-        $this->assertTrue(in_array("POST", $route->getMethods()));
-        $this->assertEquals("v1/books/{id}", $route->getUri());
+
+        $this->assertTrue(\in_array("POST", $route->getMethods()));
+        $this->assertEquals("v1/books/{id}", $route->getPath());
         $this->assertEquals("Controllers\BooksController@edit", $route->getAction());
 
-        $this->assertTrue(in_array("https", $route->getSchemes()));
-        $this->assertTrue(in_array("localhost", $route->getHostnames()));
+        $this->assertTrue(\in_array("https", $route->getSchemes()));
+        $this->assertTrue(\in_array("localhost", $route->getHostnames()));
         $this->assertEquals("v1", $route->getPrefix());
         $this->assertEquals("Controllers", $route->getNamespace());
-        $this->assertEquals(["App\Middleware\SomeMiddleware"], $route->getMiddleware());        
+        $this->assertEquals(["App\Middleware\SomeMiddleware"], $route->getMiddleware());
     }
 
     public function test_set_schemes_works_with_string()
@@ -71,7 +71,7 @@ class RouteTest extends TestCase
         $route = new Route("get", "books", "BooksController@get");
         $route->setPrefix("v1");
         $this->assertEquals("v1", $route->getPrefix());
-        $this->assertEquals("v1/books", $route->getUri());
+        $this->assertEquals("v1/books", $route->getPath());
     }
 
     public function test_set_middleware_as_string()
@@ -129,8 +129,6 @@ class RouteTest extends TestCase
         $this->assertFalse($route->matchScheme("https"));
     }
 
-
-
     public function test_match_single_hostname()
     {
         $route = new Route("get", "books/{bookId}/comments/{commentId}", "BooksController@get");
@@ -172,15 +170,15 @@ class RouteTest extends TestCase
         $this->assertFalse($route->matchMethod("post"));
     }
 
-    public function test_match_uri()
+    public function test_match_path()
     {
         $route = new Route("get", "books/{bookId}/comments/{commentId}", "BooksController@get");
-        $this->assertTrue($route->matchUri("books/1234/comments/5678"));
+        $this->assertTrue($route->matchPath("books/1234/comments/5678"));
     }
 
-    public function test_non_matching_uri()
+    public function test_non_matching_path()
     {
         $route = new Route("get", "books/{bookId}/comments/{commentId}", "BooksController@get");
-        $this->assertFalse($route->matchUri("books/1234"));
+        $this->assertFalse($route->matchPath("books/1234"));
     }
 }

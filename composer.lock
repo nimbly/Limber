@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "ab45d74670e8384be2728d1057d1509c",
+    "content-hash": "ec92c700f0713223f7dba5e298963133",
     "packages": [
         {
             "name": "psr/http-message",
@@ -716,16 +716,16 @@
         },
         {
             "name": "nimbly/capsule",
-            "version": "0.6",
+            "version": "0.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nimbly/Capsule.git",
-                "reference": "3d8b1acf2df37172b3c0a0fa8dcc90e8628a8366"
+                "reference": "da9162d5ca47b281c8d024b99573c5b3ef1d3a61"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nimbly/Capsule/zipball/3d8b1acf2df37172b3c0a0fa8dcc90e8628a8366",
-                "reference": "3d8b1acf2df37172b3c0a0fa8dcc90e8628a8366",
+                "url": "https://api.github.com/repos/nimbly/Capsule/zipball/da9162d5ca47b281c8d024b99573c5b3ef1d3a61",
+                "reference": "da9162d5ca47b281c8d024b99573c5b3ef1d3a61",
                 "shasum": ""
             },
             "require": {
@@ -755,7 +755,7 @@
                 }
             ],
             "description": "PSR-7 implementation",
-            "time": "2019-08-22T16:54:54+00:00"
+            "time": "2019-08-27T18:04:54+00:00"
         },
         {
             "name": "ocramius/package-versions",

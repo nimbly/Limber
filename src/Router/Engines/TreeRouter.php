@@ -1,32 +1,39 @@
 <?php
 
-namespace Limber\Router;
+namespace Limber\Router\Engines;
 
-use Limber\Exceptions\MethodNotAllowedHttpException;
-use Limber\Exceptions\NotFoundHttpException;
+use Limber\Router\Route;
+use Limber\Router\RouterInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class TreeRouter extends RouterAbstract
+class TreeRouter implements RouterInterface
 {
     /**
      * Set of indexed RouteBranches
      *
      * @var RouteBranch
      */
-    protected $tree;
+    protected $root;
 
     /**
-     * @inheritDoc
+     * TreeRouter constructor.
+	 *
+	 * @param array<Route> $routes
      */
-    public function __construct(array $routes = null)
+    public function __construct(array $routes = [])
     {
-        $this->tree = new RouteBranch;
+		$this->root = new RouteBranch;
+		$this->load($routes);
+	}
 
-        if( $routes ){
-            foreach( $routes as $route ){
-                $this->indexRoute($route);
-            }
-        }
+	/**
+	 * @inheritDoc
+	 */
+	public function load(array $routes): void
+	{
+		foreach( $routes as $route ){
+			$this->indexRoute($route);
+		}
 	}
 
 	/**
@@ -34,11 +41,11 @@ class TreeRouter extends RouterAbstract
 	 */
 	public function getRoutes(): array
 	{
-		return $this->getRoutesFromBranch($this->tree);
+		return $this->getRoutesFromBranch($this->root);
 	}
 
 	/**
-	 * Recursive method to traverse tree and flatten out routes.
+	 * Recursive method to traverse tree from given branch and flatten out routes.
 	 *
 	 * @param RouteBranch $branch
 	 * @return array
@@ -62,7 +69,7 @@ class TreeRouter extends RouterAbstract
      */
     protected function indexRoute(Route $route): void
     {
-        $currentBranch = $this->tree;
+        $currentBranch = $this->root;
         $patternParts = $route->getPatternParts();
 
         foreach( $patternParts as $pattern ){
@@ -75,10 +82,10 @@ class TreeRouter extends RouterAbstract
     /**
      * @inheritDoc
      */
-    public function add(array $methods, string $uri, $target): Route
+    public function add(array $methods, string $uri, $target, array $config = []): Route
     {
         // Create new Route instance
-        $route = new Route($methods, $uri, $target, $this->config);
+        $route = new Route($methods, $uri, $target, $config);
 
         // Index the route
         $this->indexRoute($route);
@@ -95,38 +102,40 @@ class TreeRouter extends RouterAbstract
         $pathParts = \explode("/", \trim($request->getUri()->getPath(), "/"));
 
         // Set the starting node.
-        $branch = $this->tree;
+        $branch = $this->root;
 
         foreach( $pathParts as $part ){
             if( ($branch = $branch->findBranch($part)) === null ){
-                throw new NotFoundHttpException("Route not found.");
+                return null;
             }
-        }
+		}
 
-        if( ($route = $branch->getRouteForMethod($request->getMethod())) === null ){
-            throw new MethodNotAllowedHttpException($this->getMethodsForUri($request));
-        }
+		$route = $branch->getRouteForMethod($request->getMethod());
+
+		if( empty($route) ){
+			return null;
+		}
 
         // Now match against the remaining criteria.
         if( $route->matchScheme($request->getUri()->getScheme()) &&
             $route->matchHostname($request->getUri()->getHost()) ){
 
             return $route;
-        }
+		}
 
-        throw new NotFoundHttpException("Route not found.");
+		return null;
     }
 
     /**
      * @inheritDoc
      */
-    public function getMethodsForUri(ServerRequestInterface $request): array
+    public function getMethods(ServerRequestInterface $request): array
     {
         // Break the request path apart
         $pathParts = \explode("/", \trim($request->getUri()->getPath(), "/"));
 
         // Set the starting node.
-        $branch = $this->tree;
+        $branch = $this->root;
 
         foreach( $pathParts as $part ){
             if( ($branch = $branch->findBranch($part)) === null ){

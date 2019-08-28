@@ -2,15 +2,15 @@
 
 namespace Limber\Tests;
 
-use Limber\Router\LinearRouter as Router;
+use Limber\Router\Router;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers Limber\Router\RouterAbstract
- * @covers Limber\Router\LinearRouter
+ * @covers Limber\Router\Router
+ * @covers Limber\Router\Engines\DefaultRouter
  * @covers Limber\Router\Route
  */
-class RouterAbstractTest extends TestCase
+class RouterTest extends TestCase
 {
     public function test_set_pattern()
     {

@@ -1,6 +1,8 @@
 <?php
 
-namespace Limber\Router;
+namespace Limber\Router\Engines;
+
+use Limber\Router\Route;
 
 class RouteBranch
 {
@@ -129,19 +131,19 @@ class RouteBranch
     /**
      * Get the next branch or create a new one.
      *
-     * @param string $uriPart
+     * @param string $pathPart
      * @return RouteBranch
      */
-    public function next(string $uriPart): RouteBranch
+    public function next(string $pathPart): RouteBranch
     {
         foreach( $this->branches as $key => $branch ){
 
-            if( $uriPart === $key ){
+            if( $pathPart === $key ){
                 return $branch;
             }
         }
 
-        return $this->addBranch($uriPart);
+        return $this->addBranch($pathPart);
     }
 
     /**

@@ -8,7 +8,7 @@ use Limber\Exceptions\NotFoundHttpException;
 use Limber\Middleware\MiddlewareLayerInterface;
 use Limber\Middleware\MiddlewareManager;
 use Limber\Router\Route;
-use Limber\Router\RouterAbstract;
+use Limber\Router\Router;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
@@ -42,7 +42,7 @@ class Application
      *
      * @param RouterAbstract $router
      */
-    public function __construct(RouterAbstract $router)
+    public function __construct(Router $router)
     {
         $this->router = $router;
     }
@@ -84,21 +84,19 @@ class Application
      * Dispatch a request.
      *
      * @param ServerRequestInterface $request
+	 * @throws Throwable
      * @return ResponseInterface
      */
     public function dispatch(ServerRequestInterface $request): ResponseInterface
     {
-		// Resolve the route
-		// @todo Let's figure out a way to add the routing process to the middleware stack.
 		try {
+
 			$route = $this->resolveRoute($request);
+
 		} catch( Throwable $exception ){
 
-			if( empty($this->exceptionHandler) ){
-				throw $exception;
-			}
+			return $this->handleException($exception);
 
-			return \call_user_func($this->exceptionHandler, $exception);
 		}
 
         // Build MiddlewareManager
@@ -106,7 +104,11 @@ class Application
             \array_merge($this->middleware, $route->getMiddleware())
 		);
 
-		return $this->runMiddleware($middlewareManager, $request, $route);
+		return $this->runMiddleware(
+			$middlewareManager,
+			$request,
+			$route
+		);
 	}
 
 	/**
@@ -121,35 +123,18 @@ class Application
 	{
 		return $middlewareManager->run($request, function(ServerRequestInterface $request) use ($route): ResponseInterface {
 
-			// Callable/closure style route
-			if( \is_callable($route->getAction()) ){
-				$action = $route->getAction();
-			}
-
-			// Class@Method style route
-			elseif( \is_string($route->getAction()) ) {
-				$action = \class_method($route->getAction());
-			}
-
-			// Not sure what type route action is - throw DispatchException.
-			else {
-				throw new DispatchException("Cannot dispatch request because route action cannot be resolved into callable.");
-			}
-
 			try {
 
-				$response = \call_user_func_array($action, \array_merge(
+				$kernel = $this->resolveAction($route);
+
+				$response = \call_user_func_array($kernel, \array_merge(
 					[$request],
 					\array_values($route->getPathParams($request->getUri()->getPath()))
 				));
 
 			} catch( Throwable $exception ){
 
-				if( empty($this->exceptionHandler) ){
-					throw $exception;
-				}
-
-				$response = \call_user_func($this->exceptionHandler, $exception);
+				$response = $this->handleException($exception);
 			}
 
 			return $response;
@@ -170,7 +155,7 @@ class Application
         if( ($route = $this->router->resolve($request)) === null ){
 
             // 405 Method Not Allowed
-            if( ($methods = $this->router->getMethodsForUri($request)) ){
+            if( ($methods = $this->router->getMethods($request)) ){
                 throw new MethodNotAllowedHttpException($methods);
             }
 
@@ -179,7 +164,45 @@ class Application
         }
 
         return $route;
-    }
+	}
+
+	/**
+	 * Resolve the route action into a callable.
+	 *
+	 * @param Route $route
+	 * @return callable
+	 */
+	private function resolveAction(Route $route): callable
+	{
+		// Callable/closure style route
+		if( \is_callable($route->getAction()) ){
+			return $route->getAction();
+		}
+
+		// Class@Method style route
+		elseif( \is_string($route->getAction()) ) {
+			return \class_method($route->getAction());
+		}
+
+		throw new DispatchException("Cannot dispatch request because route action cannot be resolved into callable.");
+	}
+
+	/**
+	 * Handle an exception by trying to resolve to a Response. If no exception handler
+	 * was provided, throw the exception again.
+	 *
+	 * @param Throwable $exception
+	 * @throws Throwable
+	 * @return ResponseInterface
+	 */
+	private function handleException(Throwable $exception): ResponseInterface
+	{
+		if( empty($this->exceptionHandler) ){
+			throw $exception;
+		}
+
+		return \call_user_func($this->exceptionHandler, $exception);
+	}
 
     /**
      * Send a response back to calling client.

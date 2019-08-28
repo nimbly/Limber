@@ -1,17 +1,17 @@
 <?php
 
-namespace Limber\Tests\Router;
+namespace Limber\Tests;
 
 use Capsule\ServerRequest;
 use Limber\Router\Route;
-use Limber\Router\TreeRouter as Router;
+use Limber\Router\Engines\TreeRouter as Router;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers Limber\Router\TreeRouter
- * @covers Limber\Router\RouterAbstract
+ * @covers Limber\Router\Engines\TreeRouter
+ * @covers Limber\Router\Router
  * @covers Limber\Router\Route
- * @covers Limber\Router\RouteBranch
+ * @covers Limber\Router\Engines\RouteBranch
  */
 class TreeRouterTest extends TestCase
 {
@@ -42,7 +42,7 @@ class TreeRouterTest extends TestCase
         $route = $router->add(["get", "post"], "books/edit", "BooksController@edit");
 
         $this->assertEquals(["GET", "POST"], $route->getMethods());
-        $this->assertEquals("books/edit", $route->getUri());
+        $this->assertEquals("books/edit", $route->getPath());
         $this->assertEquals("BooksController@edit", $route->getAction());
     }
 
@@ -64,7 +64,7 @@ class TreeRouterTest extends TestCase
         $this->assertEquals("AuthorsController@get", $route->getAction());
     }
 
-    public function test_get_methods_for_uri()
+    public function test_get_methods()
     {
         $router = new Router([
             new Route("get", "books/{id}", "BooksController@get"),
@@ -76,7 +76,7 @@ class TreeRouterTest extends TestCase
             new Route("post", "authors", "AuthorsController@create")
         ]);
 
-        $methods = $router->getMethodsForUri(
+        $methods = $router->getMethods(
             ServerRequest::create("get", "https://example.com/books/1234", null, [], [], [], [])
         );
 

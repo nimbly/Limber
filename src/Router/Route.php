@@ -5,14 +5,14 @@ namespace Limber\Router;
 class Route
 {
     /**
-     * The full URI.
+     * Path to match
      *
      * @var string
      */
-    protected $uri;
+    protected $path;
 
     /**
-     * Respond to HTTP methods.
+     * Methods to match
      *
      * @var array<string>
      */
@@ -68,7 +68,7 @@ class Route
     protected $patternParts = [];
 
     /**
-     * Named URI params in route eg: "id" in books/{id}/authors
+     * Named path params in route eg: "id" in books/{id}/authors
      *
      * @var array<string>
      */
@@ -79,17 +79,17 @@ class Route
      * Route constructor.
      *
      * @param string|array $methods
-     * @param string $uri
+     * @param string $path
      * @param string|callable $action
      * @param array $config Additional config data (usually passed in from group settings)
      *
      */
-    public function __construct($methods, string $uri, $action, array $config = [])
+    public function __construct($methods, string $path, $action, array $config = [])
     {
         // Required bits
         $this->methods = \array_map('strtoupper', \is_string($methods) ? [$methods] : $methods);
         $this->action = $action;
-        $this->uri = $this->stripLeadingAndTrailingSlash($uri);
+        $this->path = $this->stripLeadingAndTrailingSlash($path);
 
         // Optional
         $this->setSchemes($config['scheme'] ?? []);
@@ -98,7 +98,7 @@ class Route
         $this->setPrefix($config['prefix'] ?? '');
         $this->setNamespace($config['namespace'] ?? '');
 
-        foreach( \explode("/", $this->getUri()) as $part ){
+        foreach( \explode("/", $this->getPath()) as $part ){
 
             if( \preg_match('/{([a-z0-9_]+)(?:\:([a-z0-9_]+))?}/i', $part, $match) ){
 
@@ -212,17 +212,17 @@ class Route
      */
 
      /**
-      * Get the full URI.
+      * Get the full path.
       *
       * @return string
       */
-     public function getUri(): string
+     public function getPath(): string
      {
          if( $this->prefix ){
-             return "{$this->prefix}/{$this->uri}";
+             return "{$this->prefix}/{$this->path}";
          }
 
-         return $this->uri;
+         return $this->path;
      }
 
     /**
@@ -271,7 +271,7 @@ class Route
     }
 
     /**
-     * Get the URI prefix.
+     * Get the path prefix.
      *
      * @return string
      */
@@ -311,13 +311,13 @@ class Route
     }
 
     /**
-     * Extract the path parameters for the given URI.
+     * Extract the path parameters for the given path.
      *
      * Makes a key => value pair of path part names and their value.
      *
      * Eg.
      *
-     * The route "books/{id}" with an actual URI of "books/1234"
+     * The route "books/{id}" with an actual path of "books/1234"
      * will return:
      *
      * [
@@ -398,25 +398,25 @@ class Route
     }
 
     /**
-     * Does the given URI match the route's URI?
+     * Does the given path match the route's path?
      *
-     * @param string $uri
+     * @param string $path
      * @return bool
      */
-    public function matchUri(string $uri): bool
+    public function matchPath(string $path): bool
     {
         $pattern = \implode("\/", $this->patternParts);
-        return \preg_match("/^{$pattern}$/i", $this->stripLeadingAndTrailingSlash($uri)) != false;
+        return \preg_match("/^{$pattern}$/i", $this->stripLeadingAndTrailingSlash($path)) != false;
     }
 
     /**
-     * Normalize URIs by stripping off leading and trailing slashes.
+     * Normalize paths by stripping off leading and trailing slashes.
      *
-     * @param string $uri
+     * @param string $path
      * @return string
      */
-    private function stripLeadingAndTrailingSlash(string $uri): string
+    private function stripLeadingAndTrailingSlash(string $path): string
     {
-        return \trim($uri, '/');
+        return \trim($path, '/');
     }
 }

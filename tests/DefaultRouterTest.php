@@ -1,16 +1,14 @@
 <?php
 
-namespace Limber\Tests\Router;
+namespace Limber\Tests;
 
 use Capsule\ServerRequest;
-use Limber\Exceptions\NotFoundHttpException;
-use Limber\Router\Router;
+use Limber\Router\Engines\DefaultRouter as Router;
 use Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers Limber\Router\RouterAbstract
- * @covers Limber\Router\Router
+ * @covers Limber\Router\Engines\DefaultRouter
  * @covers Limber\Router\Route
  */
 class IndexedRouterTest extends TestCase
@@ -42,7 +40,7 @@ class IndexedRouterTest extends TestCase
         $route = $router->add(["get", "post"], "books/edit", "BooksController@edit");
 
         $this->assertEquals(["GET", "POST"], $route->getMethods());
-        $this->assertEquals("books/edit", $route->getUri());
+        $this->assertEquals("books/edit", $route->getPath());
         $this->assertEquals("BooksController@edit", $route->getAction());
     }
 
@@ -66,7 +64,7 @@ class IndexedRouterTest extends TestCase
         $this->assertEquals("AuthorsController@get", $route->getAction());
     }
 
-    public function test_get_methods_for_uri()
+    public function test_get_methods()
     {
         $router = new Router([
             new Route("get", "books/{id}", "BooksController@get"),
@@ -78,7 +76,7 @@ class IndexedRouterTest extends TestCase
             new Route("post", "authors", "AuthorsController@create")
         ]);
 
-        $methods = $router->getMethodsForUri(
+        $methods = $router->getMethods(
             ServerRequest::create("get", "https://example.com/books/1234", null, [], [], [], [])
         );
 

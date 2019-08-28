@@ -1,10 +1,12 @@
 <?php
 
-namespace Limber\Router;
+namespace Limber\Router\Engines;
 
+use Limber\Router\Route;
+use Limber\Router\RouterInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class LinearRouter extends RouterAbstract
+class FlatRouter implements RouterInterface
 {
     /**
      * @var array<Route>
@@ -14,11 +16,17 @@ class LinearRouter extends RouterAbstract
     /**
      * @inheritDoc
      */
-    public function __construct(array $routes = null)
+    public function __construct(array $routes = [])
     {
-        if( $routes ){
-            $this->routes = $routes;
-        }
+        $this->load($routes);
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	public function load(array $routes): void
+	{
+		$this->routes = $routes;
 	}
 
 	/**
@@ -32,10 +40,10 @@ class LinearRouter extends RouterAbstract
     /**
      * @inheritDoc
      */
-    public function add(array $methods, string $uri, $target): Route
+    public function add(array $methods, string $path, $action, array $config = []): Route
     {
         // Create new Route instance
-        $route = new Route($methods, $uri, $target, $this->config);
+        $route = new Route($methods, $path, $action, $config);
         $this->routes[] = $route;
         return $route;
     }
@@ -47,7 +55,7 @@ class LinearRouter extends RouterAbstract
     {
         foreach( $this->routes as $route ){
 
-            if( $route->matchUri($request->getUri()->getPath()) &&
+            if( $route->matchPath($request->getUri()->getPath()) &&
                 $route->matchMethod($request->getMethod()) &&
                 $route->matchHostname($request->getUri()->getHost()) &&
                 $route->matchScheme($request->getUri()->getScheme()) ){
@@ -62,13 +70,13 @@ class LinearRouter extends RouterAbstract
     /**
      * @inheritDoc
      */
-    public function getMethodsForUri(ServerRequestInterface $request): array
+    public function getMethods(ServerRequestInterface $request): array
     {
         $methods = [];
 
         foreach( $this->routes as $route ) {
             if( $route->matchHostname($request->getUri()->getHost()) &&
-                $route->matchUri($request->getUri()->getPath()) ){
+                $route->matchPath($request->getUri()->getPath()) ){
                 $methods = \array_merge($methods, $route->getMethods());
             }
         }

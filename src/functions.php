@@ -19,6 +19,6 @@ if( !\function_exists('class_method') ){
 			}
 		}
 
-		throw new \Exception("Class {$match[1]} could not be found.");
+		throw new \Exception("Callable string {$classMethod} could not be resolved.");
 	}
 }
