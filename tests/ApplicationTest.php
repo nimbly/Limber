@@ -16,6 +16,16 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
+/**
+ * @covers Limber\Application
+ * @covers Limber\Router\Router
+ * @covers Limber\Router\Engines\DefaultRouter
+ * @covers Limber\Router\Route
+ * @covers Limber\Middleware\MiddlewareManager
+ * @covers Limber\Exceptions\HttpException
+ * @covers Limber\Exceptions\MethodNotAllowedHttpException
+ * @covers ::class_method
+ */
 class ApplicationTest extends TestCase
 {
 	public function test_constructor()
