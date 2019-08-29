@@ -103,6 +103,16 @@ class Router
 	}
 
 	/**
+	 * Get all registered routes.
+	 *
+	 * @return array
+	 */
+	public function getRoutes(): array
+	{
+		return $this->engine->getRoutes();
+	}
+
+	/**
 	 * Get the HTTP methods supported by a particular path.
 	 *
 	 * @param ServerRequestInterface $request
@@ -135,7 +145,7 @@ class Router
      */
     public function get($path, $action): Route
     {
-        return $this->engine->add(["GET"], $path, $action);
+        return $this->add(["GET"], $path, $action);
     }
 
     /**
@@ -147,7 +157,7 @@ class Router
      */
     public function post($path, $action): Route
     {
-        return $this->engine->add(["POST"], $path, $action);
+        return $this->add(["POST"], $path, $action);
     }
 
     /**
@@ -159,7 +169,7 @@ class Router
      */
     public function put($path, $action): Route
     {
-        return $this->engine->add(["PUT"], $path, $action);
+        return $this->add(["PUT"], $path, $action);
     }
 
     /**
@@ -171,7 +181,7 @@ class Router
      */
     public function patch($path, $action): Route
     {
-        return $this->engine->add(["PATCH"], $path, $action);
+        return $this->add(["PATCH"], $path, $action);
     }
 
     /**
@@ -183,7 +193,7 @@ class Router
      */
     public function delete(string $path, $action): Route
     {
-        return $this->engine->add(["DELETE"], $path, $action);
+        return $this->add(["DELETE"], $path, $action);
     }
 
     /**
@@ -195,7 +205,7 @@ class Router
      */
     public function head(string $path, $action): Route
     {
-        return $this->engine->add(["HEAD"], $path, $action);
+        return $this->add(["HEAD"], $path, $action);
     }
 
     /**
@@ -207,23 +217,23 @@ class Router
      */
     public function options(string $path, $action): Route
     {
-        return $this->engine->add(["OPTIONS"], $path, $action);
+        return $this->add(["OPTIONS"], $path, $action);
     }
 
     /**
 	 * Group routes together with a set of shared configuration options.
 	 *
      * @param array $config
-     * @param \Closure $callback
+     * @param \closure $callback
      * @return void
      */
-    public function group(array $config, \Closure $callback): void
+    public function group(array $groupConfig, \closure $callback): void
     {
         // Save current config
         $previousConfig = $this->config;
 
-        // Merge config values
-        $this->config = $this->mergeGroupConfig($config);
+        // Merge group config values with current config
+		$this->config = $this->mergeGroupConfig($this->config, $groupConfig);
 
         // Process routes in closure
         \call_user_func($callback, $this);
@@ -235,28 +245,21 @@ class Router
     /**
      * Merge parent route Group configs in with child group.
      *
+	 * @param array<string, mixed> $config
      * @param array<string, mixed> $groupConfig
      * @return array<string, mixed>
      */
-    protected function mergeGroupConfig(array $groupConfig): array
+    protected function mergeGroupConfig(array $config, array $groupConfig): array
     {
-        $config = $this->config;
+		$mergedConfig['scheme'] = $groupConfig['scheme'] ?? $config['scheme'] ?? null;
+        $mergedConfig['hostname'] = $groupConfig['hostname'] ?? $config['hostname'] ?? null;
+        $mergedConfig['prefix'] = $groupConfig['prefix'] ?? $config['pregix'] ?? null;
+		$mergedConfig['namespace'] = $groupConfig['namespace'] ?? $config['namespace'] ?? null;
+		$mergedConfig['middleware'] = \array_merge(
+			$config['middleware'] ?? [],
+			$groupConfig['middleware'] ?? []
+		);
 
-        $config['hostname'] = $groupConfig['hostname'] ?? null;
-        $config['prefix'] = $groupConfig['prefix'] ?? null;
-        $config['namespace'] = $groupConfig['namespace'] ?? null;
-
-        if( \array_key_exists('middleware', $groupConfig) ){
-
-            if( \array_key_exists('middleware', $config) ){
-                $config['middleware'] = \array_merge($config['middleware'], $groupConfig['middleware']);
-            }
-
-            else {
-                $config['middleware'] = $groupConfig['middleware'];
-            }
-        }
-
-        return $config;
+        return $mergedConfig;
     }
 }

@@ -16,7 +16,12 @@ class RouterTest extends TestCase
     {
         Router::setPattern("isbn", "\d{3}\-\d\-\d{3}\-\d{5}\-\d");
         $this->assertEquals(Router::getPattern("isbn"), "\d{3}\-\d\-\d{3}\-\d{5}\-\d");
-    }
+	}
+
+	public function test_get_pattern_not_found()
+	{
+		$this->assertNull(Router::getPattern("ean13"));
+	}
 
     public function test_adding_get_route()
     {
@@ -71,5 +76,109 @@ class RouterTest extends TestCase
         $route = $router->options("books", "BooksController@options");
 
         $this->assertEquals(["OPTIONS"], $route->getMethods());
-    }
+	}
+
+	public function test_group()
+	{
+		$router = new Router;
+		$router->group([
+			"scheme" => "https",
+			"hostname" => "example.org",
+			"prefix" => "v1",
+			"namespace" => "App\\Controllers",
+			"middleware" => [
+				"App\\Middleware\\MiddlewareLayer1"
+			]
+		], function($router){
+			$router->get("/books", "BooksController@all");
+		});
+
+		$routes = $router->getRoutes();
+
+		$this->assertEquals(["https"], $routes[0]->getSchemes());
+		$this->assertEquals(["example.org"], $routes[0]->getHostnames());
+		$this->assertEquals("v1", $routes[0]->getPrefix());
+		$this->assertEquals("App\\Controllers", $routes[0]->getNamespace());
+		$this->assertEquals([
+			"App\\Middleware\\MiddlewareLayer1"
+		], $routes[0]->getMiddleware());
+	}
+
+	public function test_group_nested()
+	{
+		$router = new Router;
+		$router->group([
+			"scheme" => "https",
+			"hostname" => "example.org",
+			"prefix" => "v1",
+			"namespace" => "App\\Controllers",
+			"middleware" => [
+				"App\\Middleware\\MiddlewareLayer1"
+			]
+		], function($router){
+
+			$router->group([
+				"scheme" => "http",
+				"hostname" => "sub.example.org",
+				"prefix" => "v2",
+				"namespace" => "App\\Controllers\\v2",
+				"middleware" => [
+					"App\\Middleware\\MiddlewareLayer2"
+				]
+			], function($router){
+				$router->get("/books", "BooksController@all");
+			});
+
+		});
+
+		$routes = $router->getRoutes();
+
+		$this->assertEquals(["http"], $routes[0]->getSchemes());
+		$this->assertEquals(["sub.example.org"], $routes[0]->getHostnames());
+		$this->assertEquals("v2", $routes[0]->getPrefix());
+		$this->assertEquals("App\\Controllers\\v2", $routes[0]->getNamespace());
+		$this->assertEquals([
+			"App\\Middleware\\MiddlewareLayer1",
+			"App\\Middleware\\MiddlewareLayer2"
+		], $routes[0]->getMiddleware());
+	}
+
+	public function test_merge_group_config()
+	{
+		$router = new Router;
+
+		$reflection = new \ReflectionClass($router);
+		$method = $reflection->getMethod('mergeGroupConfig');
+		$method->setAccessible(true);
+
+		$config = $method->invokeArgs($router, [
+			[
+				"hostname" => "example.org",
+				"prefix" => "v1",
+				"namespace" => "App\Controller",
+				"middleware" => [
+					"App\Middleware\MiddlewareLayer1"
+				],
+			],
+			[
+				"hostname" => "sub.example.org",
+				"prefix" => "v2",
+				"namespace" => "App\\v2\\Controller",
+				"middleware" => [
+					"App\Middleware\MiddlewareLayer2"
+				]
+			]
+		]);
+
+		$this->assertEquals([
+			"scheme" => null,
+			"hostname" => "sub.example.org",
+			"prefix" => "v2",
+			"namespace" => "App\\v2\\Controller",
+			"middleware" => [
+				"App\Middleware\MiddlewareLayer1",
+				"App\Middleware\MiddlewareLayer2"
+			]
+		], $config);
+	}
 }

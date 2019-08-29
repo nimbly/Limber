@@ -50,21 +50,17 @@ class MiddlewareManager
     public function add(MiddlewareLayerInterface $layer): void
     {
         $this->middlewareStack[] = $layer;
-    }
+	}
 
-    /**
-     * Remove a layer by its classname.
-     *
-     * @param string $middlewareClass
-     */
-    public function remove(string $middlewareClass): void
-    {
-        foreach( $this->middlewareStack as $i => $middleware ){
-            if( $middleware instanceof $middlewareClass ){
-                unset($this->middlewareStack[$i]);
-            }
-        }
-    }
+	/**
+	 * Get the middleware stack.
+	 *
+	 * @return array<MiddlewareLayerInterface>
+	 */
+	public function getMiddleware(): array
+	{
+		return $this->middlewareStack;
+	}
 
     /**
      * Run the middleware stack.
@@ -75,7 +71,7 @@ class MiddlewareManager
      */
     public function run(ServerRequestInterface $request, callable $kernel): ResponseInterface
     {
-        $next = \array_reduce(\array_reverse($this->middlewareStack), function(callable $next, MiddlewareLayerInterface $layer): \Closure {
+        $next = \array_reduce(\array_reverse($this->getMiddleware()), function(callable $next, MiddlewareLayerInterface $layer): \closure {
 
             return function(ServerRequestInterface $request) use ($next, $layer): ResponseInterface {
                 return $layer->handle($request, $next);

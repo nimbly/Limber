@@ -33,5 +33,10 @@
         "symfony\/var-dumper": "^4.2",
         "php-coveralls\/php-coveralls": "^2.1",
         "nimbly\/capsule": "^0.6.0"
-    }
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Limber\\Tests\\": "tests\/"
+		}
+	}
 }
