@@ -2,6 +2,9 @@
 
 namespace Limber\Router;
 
+use Limber\Exceptions\ApplicationException;
+use Throwable;
+
 class Route
 {
     /**
@@ -103,14 +106,14 @@ class Route
             if( \preg_match('/{([a-z0-9_]+)(?:\:([a-z0-9_]+))?}/i', $part, $match) ){
 
                 if( \in_array($match[1], $this->namedPathParameters) ){
-                    throw new \Exception("Path parameter \"{$match[1]}\" already defined for route {$match[0]}");
+                    throw new ApplicationException("Path parameter \"{$match[1]}\" already defined for route {$match[0]}");
                 }
 
                 // Predefined pattern
                 if( isset($match[2]) ){
 
-                    if( ($part = RouterAbstract::getPattern($match[2])) === null ){
-                        throw new \Exception("Router pattern not found: {$match[2]}");
+                    if( ($part = Router::getPattern($match[2])) === null ){
+                        throw new ApplicationException("Router pattern not found: {$match[2]}");
                     }
                 }
 
@@ -268,7 +271,22 @@ class Route
         }
 
         return $this->action;
-    }
+	}
+
+	/**
+	 * Get the callable action for this route.
+	 *
+	 * @throws Throwable
+	 * @return callable
+	 */
+	public function getCallableAction(): callable
+	{
+		if( \is_callable($this->action) ){
+			return $this->action;
+		}
+
+		return \class_method($this->action);
+	}
 
     /**
      * Get the path prefix.

@@ -1,5 +1,7 @@
 <?php
 
+use Limber\Exceptions\ApplicationException;
+
 if( !\function_exists('class_method') ){
 
 	/**
@@ -8,6 +10,7 @@ if( !\function_exists('class_method') ){
 	 * e.g. "\My\Class\Name@some_method"
 	 *
 	 * @param string $classMethod
+	 * @throws ApplicationException
 	 * @return callable
 	 */
 	function class_method(string $classMethod): callable
@@ -19,6 +22,6 @@ if( !\function_exists('class_method') ){
 			}
 		}
 
-		throw new \Exception("Callable string {$classMethod} could not be resolved.");
+		throw new ApplicationException("Callable string {$classMethod} could not be resolved.");
 	}
 }

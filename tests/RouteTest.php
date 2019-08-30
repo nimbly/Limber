@@ -2,11 +2,15 @@
 
 namespace Limber\Tests;
 
+use Capsule\Response;
+use Capsule\ResponseStatus;
 use Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 
 /**
  * @covers Limber\Router\Route
+ * @covers ::class_method
  */
 class RouteTest extends TestCase
 {
@@ -180,5 +184,38 @@ class RouteTest extends TestCase
     {
         $route = new Route("get", "books/{bookId}/comments/{commentId}", "BooksController@get");
         $this->assertFalse($route->matchPath("books/1234"));
-    }
+	}
+
+	public function test_get_callable_action_string()
+	{
+		$route = new Route("get", "books/{bookId}/comments/{commentId}", static::class . "@test_get_callable_action_string");
+		$this->assertTrue(
+			\is_callable($route->getCallableAction())
+		);
+	}
+
+	public function test_get_callable_action_unresolvable()
+	{
+		$route = new Route("get", "/books", new \StdClass);
+
+		$this->expectException(Throwable::class);
+		$route->getCallableAction();
+	}
+
+	public function test_get_callable_action_closure()
+	{
+		$handler = function(ServerRequestInterface $request){
+			return new Response(
+				ResponseStatus::OK,
+				"OK"
+			);
+		};
+
+		$route = new Route("get", "/books", $handler);
+
+		$this->assertSame(
+			$handler,
+			$route->getCallableAction()
+		);
+	}
 }

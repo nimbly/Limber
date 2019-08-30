@@ -2,15 +2,18 @@
 
 namespace Limber;
 
+use Limber\Exceptions\ApplicationException;
 use Limber\Exceptions\DispatchException;
 use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
-use Limber\Middleware\MiddlewareLayerInterface;
-use Limber\Middleware\MiddlewareManager;
+use Limber\Middleware\CallableMiddleware;
+use Limber\Middleware\RequestHandler;
 use Limber\Router\Route;
 use Limber\Router\Router;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Throwable;
 
 class Application
@@ -18,7 +21,7 @@ class Application
     /**
      * Router instance.
      *
-     * @var RouterAbstract
+     * @var Router
      */
     protected $router;
 
@@ -40,33 +43,42 @@ class Application
      *
      * Limber Framework Application constructor.
      *
-     * @param RouterAbstract $router
+     * @param Router $router
      */
     public function __construct(Router $router)
     {
-        $this->router = $router;
+		$this->router = $router;
     }
 
     /**
      * Set the global middleware to run.
      *
-     * @param array<string|MiddlewareLayerInterface|callable> $middleware
+     * @param array<MiddlewareInterface|callable> $middlewares
      * @return void
      */
-    public function setMiddleware(array $middleware): void
+    public function setMiddleware(array $middlewares): void
     {
-        $this->middleware = $middleware;
+		foreach( $middlewares as $middleware ){
+			$this->addMiddleware($middleware);
+		}
 	}
 
-	/**
-	 * Add a middleware layer.
-	 *
-	 * @param string|MiddlewareLayerInterface|callable $middleware
-	 * @return void
-	 */
-	public function addMiddleware($middleware): void
-	{
-		$this->middleware[] = $middleware;
+    /**
+     * Add a middleware to the stack.
+     *
+     * @param MiddlewareInterface|callable $middleware
+     */
+    public function addMiddleware($middleware): void
+    {
+		if( \is_callable($middleware) ){
+			$middleware = new CallableMiddleware($middleware);
+		}
+
+		if( $middleware instanceof MiddlewareInterface === false ){
+			throw new ApplicationException("Provided middleware must be either instance of \callable or Psr\Http\Server\MiddlewareInterface.");
+		}
+
+        $this->middleware[] = $middleware;
 	}
 
 	/**
@@ -89,107 +101,83 @@ class Application
      */
     public function dispatch(ServerRequestInterface $request): ResponseInterface
     {
-		try {
+		// Resolve the route now to check for Routed middleware.
+		$route = $this->router->resolve($request);
 
-			$route = $this->resolveRoute($request);
-
-		} catch( Throwable $exception ){
-
-			return $this->handleException($exception);
-
-		}
-
-        // Build MiddlewareManager
-        $middlewareManager = new MiddlewareManager(
-            \array_merge($this->middleware, $route->getMiddleware())
+		// Create final stack of middleware to compile
+		$middleware = \array_merge(
+			$this->middleware,
+			$route ? $route->getMiddleware() : []
 		);
 
-		return $this->runMiddleware(
-			$middlewareManager,
-			$request,
-			$route
+		$requestHandler = $this->compileMiddleware(
+			$middleware,
+			new RequestHandler(function(ServerRequestInterface $request) use ($route): ResponseInterface {
+
+				try {
+
+					if( empty($route) ){
+
+						// 405 Method Not Allowed
+						if( ($methods = $this->router->getMethods($request)) ){
+							throw new MethodNotAllowedHttpException($methods);
+						}
+
+						// 404 Not Found
+						throw new NotFoundHttpException("Route not found");
+					}
+
+					return \call_user_func_array(
+						$route->getCallableAction(),
+						\array_merge(
+							[$request],
+							\array_values(
+								$route->getPathParams($request->getUri()->getPath())
+							)
+						)
+					);
+
+				} catch( Throwable $exception ){
+
+					$this->handleException($exception);
+				}
+
+			})
 		);
+
+		return $requestHandler->handle($request);
 	}
 
 	/**
-	 * Run the request through the middleware.
+	 * Compile a middleware stack.
 	 *
-	 * @param MiddlewareManager $middlewareManager
-	 * @param ServerRequestInterface $request
-	 * @param Route $route
-	 * @return ResponseInterface
+	 * @param array<MiddlewareInterface>
+	 * @param RequestHandlerInterface $kernel
+	 * @return RequestHandlerInterface
 	 */
-	private function runMiddleware(MiddlewareManager $middlewareManager, ServerRequestInterface $request, Route $route): ResponseInterface
+	private function compileMiddleware(array $middleware, RequestHandlerInterface $kernel): RequestHandler
 	{
-		return $middlewareManager->run($request, function(ServerRequestInterface $request) use ($route): ResponseInterface {
+		$middleware = \array_reverse($middleware);
 
-			try {
+		return \array_reduce($middleware, function(RequestHandlerInterface $handler, MiddlewareInterface $middleware) {
 
-				$kernel = $this->resolveAction($route);
+			return new RequestHandler(function(ServerRequestInterface $request) use ($handler, $middleware): ResponseInterface {
 
-				$response = \call_user_func_array($kernel, \array_merge(
-					[$request],
-					\array_values($route->getPathParams($request->getUri()->getPath()))
-				));
+				try {
+					return $middleware->process($request, $handler);
+				}
+				catch( Throwable $exception ){
+					$this->handleException($exception);
+				}
 
-			} catch( Throwable $exception ){
+			});
 
-				$response = $this->handleException($exception);
-			}
-
-			return $response;
-
-		});
-	}
-
-    /**
-     * Resolve to a Route instance or throw exception.
-     *
-     * @param ServerRequestInterface $request
-     * @throws NotFoundHttpException
-     * @throws MethodNotAllowedHttpException
-     * @return Route
-     */
-    private function resolveRoute(ServerRequestInterface $request): Route
-    {
-        if( ($route = $this->router->resolve($request)) === null ){
-
-            // 405 Method Not Allowed
-            if( ($methods = $this->router->getMethods($request)) ){
-                throw new MethodNotAllowedHttpException($methods);
-            }
-
-            // 404 Not Found
-            throw new NotFoundHttpException("Route not found");
-        }
-
-        return $route;
+		}, $kernel);
 	}
 
 	/**
-	 * Resolve the route action into a callable.
-	 *
-	 * @param Route $route
-	 * @return callable
-	 */
-	private function resolveAction(Route $route): callable
-	{
-		// Callable/closure style route
-		if( \is_callable($route->getAction()) ){
-			return $route->getAction();
-		}
-
-		// Class@Method style route
-		elseif( \is_string($route->getAction()) ) {
-			return \class_method($route->getAction());
-		}
-
-		throw new DispatchException("Cannot dispatch request because route action cannot be resolved into callable.");
-	}
-
-	/**
-	 * Handle an exception by trying to resolve to a Response. If no exception handler
-	 * was provided, throw the exception again.
+	 * Handle a thrown exception by either passing it to user provided exception handler
+	 * or throwing it.
 	 *
 	 * @param Throwable $exception
 	 * @throws Throwable
@@ -197,11 +185,11 @@ class Application
 	 */
 	private function handleException(Throwable $exception): ResponseInterface
 	{
-		if( empty($this->exceptionHandler) ){
-			throw $exception;
-		}
+		if( $this->exceptionHandler ){
+			return \call_user_func($this->exceptionHandler, $exception);
+		};
 
-		return \call_user_func($this->exceptionHandler, $exception);
+		throw $exception;
 	}
 
     /**

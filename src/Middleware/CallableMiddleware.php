@@ -4,8 +4,10 @@ namespace Limber\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-class CallableMiddlewareLayer implements MiddlewareLayerInterface
+class CallableMiddleware implements MiddlewareInterface
 {
 	/**
 	 * Callback instance
@@ -27,8 +29,8 @@ class CallableMiddlewareLayer implements MiddlewareLayerInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function handle(ServerRequestInterface $request, callable $next): ResponseInterface
+	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
 	{
-		return \call_user_func_array($this->callback, [$request, $next]);
+		return \call_user_func_array($this->callback, [$request, $handler]);
 	}
 }

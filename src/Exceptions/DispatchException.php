@@ -2,7 +2,13 @@
 
 namespace Limber\Exceptions;
 
-class DispatchException extends \Exception
-{
+use Exception;
 
+/**
+ *
+ * Route resolving and dispatching exceptions.
+ *
+ */
+class DispatchException extends Exception
+{
 }
