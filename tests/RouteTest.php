@@ -11,6 +11,7 @@ use Throwable;
 
 /**
  * @covers Limber\Router\Route
+ * @covers Limber\Router\Router
  * @covers ::class_method
  */
 class RouteTest extends TestCase

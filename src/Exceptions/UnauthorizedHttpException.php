@@ -27,6 +27,6 @@ class UnauthorizedHttpException extends HttpException
 	public function __construct(string $authMethod, ?string $message = null, ?int $code = null, ?Exception $previous = null)
 	{
 		$this->headers["WWW-Authenticate"] = $authMethod;
-		parent::__construct($message, $code, $previous);
+		parent::__construct($message ?? "Unauthorized", $code ?? $this->httpStatus, $previous);
 	}
 }

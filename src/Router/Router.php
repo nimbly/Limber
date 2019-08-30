@@ -223,7 +223,7 @@ class Router
     /**
 	 * Group routes together with a set of shared configuration options.
 	 *
-     * @param array $config
+     * @param array $groupConfig
      * @param \closure $callback
      * @return void
      */
@@ -251,15 +251,15 @@ class Router
      */
     protected function mergeGroupConfig(array $config, array $groupConfig): array
     {
-		$mergedConfig['scheme'] = $groupConfig['scheme'] ?? $config['scheme'] ?? null;
-        $mergedConfig['hostname'] = $groupConfig['hostname'] ?? $config['hostname'] ?? null;
-        $mergedConfig['prefix'] = $groupConfig['prefix'] ?? $config['pregix'] ?? null;
-		$mergedConfig['namespace'] = $groupConfig['namespace'] ?? $config['namespace'] ?? null;
-		$mergedConfig['middleware'] = \array_merge(
-			$config['middleware'] ?? [],
-			$groupConfig['middleware'] ?? []
-		);
-
-        return $mergedConfig;
+		return [
+			'scheme'=> $groupConfig['scheme'] ?? $config['scheme'] ?? null,
+			'hostname' => $groupConfig['hostname'] ?? $config['hostname'] ?? null,
+			'prefix' => $groupConfig['prefix'] ?? $config['pregix'] ?? null,
+			'namespace' => $groupConfig['namespace'] ?? $config['namespace'] ?? null,
+			'middleware' => \array_merge(
+				$config['middleware'] ?? [],
+				$groupConfig['middleware'] ?? []
+			)
+		];
     }
 }

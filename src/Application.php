@@ -151,15 +151,15 @@ class Application
 	/**
 	 * Compile a middleware stack.
 	 *
-	 * @param array<MiddlewareInterface>
+	 * @param array<MiddlewareInterface> $middleware
 	 * @param RequestHandlerInterface $kernel
 	 * @return RequestHandlerInterface
 	 */
-	private function compileMiddleware(array $middleware, RequestHandlerInterface $kernel): RequestHandler
+	private function compileMiddleware(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
 	{
 		$middleware = \array_reverse($middleware);
 
-		return \array_reduce($middleware, function(RequestHandlerInterface $handler, MiddlewareInterface $middleware) {
+		return \array_reduce($middleware, function(RequestHandlerInterface $handler, MiddlewareInterface $middleware): RequestHandler {
 
 			return new RequestHandler(function(ServerRequestInterface $request) use ($handler, $middleware): ResponseInterface {
 

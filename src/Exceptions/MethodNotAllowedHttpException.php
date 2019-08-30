@@ -27,6 +27,6 @@ class MethodNotAllowedHttpException extends HttpException
 	public function __construct(array $methodsAllowed, ?string $message = null, ?int $code = null, ?Exception $previous = null)
 	{
 		$this->headers['Allow'] = \implode(", ", $methodsAllowed);
-		parent::__construct($message, $code, $previous);
+		parent::__construct($message ?? "Method not allowed", $code ?? $this->httpStatus, $previous);
 	}
 }

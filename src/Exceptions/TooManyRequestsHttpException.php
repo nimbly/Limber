@@ -27,6 +27,6 @@ class TooManyRequestsHttpException extends HttpException
 	public function __construct(string $retryAfter, ?string $message = null, ?int $code = null, ?Exception $previous = null)
 	{
 		$this->headers["Retry-After"] = $retryAfter;
-		parent::__construct($message, $code, $previous);
+		parent::__construct($message ?? "Too many requests", $code ?? $this->httpStatus, $previous);
 	}
 }

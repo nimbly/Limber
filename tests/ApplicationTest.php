@@ -240,6 +240,8 @@ class ApplicationTest extends TestCase
 		$this->assertEquals("OK", $response->getBody()->getContents());
 	}
 
+
+
 	public function test_send()
 	{
 		$application = new Application(new Router);
