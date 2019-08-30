@@ -286,10 +286,14 @@ class Route
 			return $this->action;
 		}
 
-		return \class_method(
-			($this->namespace ? \trim($this->namespace, '\\') . '\\' : "") .
-			$this->action
-		);
+		if( \is_string($this->action) ){
+			return \class_method(
+				($this->namespace ? \trim($this->namespace, '\\') . '\\' : "") .
+				$this->action
+			);
+		}
+
+		throw new RouteException("Route cannot be resolved to a callable.");
 	}
 
     /**
