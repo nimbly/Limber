@@ -3,6 +3,7 @@
 namespace Limber\Router;
 
 use Limber\Exceptions\ApplicationException;
+use Limber\Exceptions\RouteException;
 use Throwable;
 
 class Route
@@ -106,15 +107,15 @@ class Route
             if( \preg_match('/{([a-z0-9_]+)(?:\:([a-z0-9_]+))?}/i', $part, $match) ){
 
                 if( \in_array($match[1], $this->namedPathParameters) ){
-                    throw new ApplicationException("Path parameter \"{$match[1]}\" already defined for route {$match[0]}");
-                }
+                    throw new RouteException("Path parameter \"{$match[1]}\" already defined for route {$match[0]}");
+				}
 
                 // Predefined pattern
                 if( isset($match[2]) ){
 
                     if( ($part = Router::getPattern($match[2])) === null ){
-                        throw new ApplicationException("Router pattern not found: {$match[2]}");
-                    }
+                        throw new RouteException("Router pattern not found: {$match[2]}");
+					}
                 }
 
                 // Match anything

@@ -6,6 +6,7 @@ use Capsule\Response;
 use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
 use Limber\Application;
+use Limber\Exceptions\ApplicationException;
 use Limber\Exceptions\BadRequestHttpException;
 use Limber\Exceptions\DispatchException;
 use Limber\Exceptions\MethodNotAllowedHttpException;
@@ -103,6 +104,16 @@ class ApplicationTest extends TestCase
 		);
 	}
 
+	public function test_add_middleware_with_unsupported_type()
+	{
+		$application = new Application(
+			new Router
+		);
+
+		$this->expectException(ApplicationException::class);
+		$application->addMiddleware(new \StdClass);
+	}
+
 	public function test_set_exception_handler()
 	{
 		$application = new Application(
@@ -167,6 +178,45 @@ class ApplicationTest extends TestCase
 
 		$application->dispatch(
 			ServerRequest::create("get", "http://example.org/authors", null, [], [], [], [])
+		);
+	}
+
+	public function test_dispatch_with_unresolvable_route_but_other_methods_allowed()
+	{
+		$router = new Router;
+		$router->get("books", "GetBooks");
+		$router->post("books", "CreateBook");
+
+		$application = new Application($router);
+
+		$this->expectException(MethodNotAllowedHttpException::class);
+		$application->dispatch(
+			ServerRequest::create("delete", "/books", null, [], [], [], [])
+		);
+	}
+
+	public function test_methods_returned_in_method_not_allowed_exception()
+	{
+		$router = new Router;
+		$router->get("books", "GetBooks");
+		$router->post("books", "CreateBook");
+
+		$application = new Application($router);
+
+		try {
+			$application->dispatch(
+				ServerRequest::create("delete", "/books", null, [], [], [], [])
+			);
+		}
+		catch( MethodNotAllowedHttpException $exception ){
+
+			$headers = $exception->getHeaders();
+
+		}
+
+		$this->assertEquals(
+			["Allow" => "GET, POST"],
+			$headers ?? []
 		);
 	}
 

@@ -139,7 +139,7 @@ class Application
 
 				} catch( Throwable $exception ){
 
-					$this->handleException($exception);
+					return $this->handleException($exception);
 				}
 
 			})
@@ -164,10 +164,13 @@ class Application
 			return new RequestHandler(function(ServerRequestInterface $request) use ($handler, $middleware): ResponseInterface {
 
 				try {
+
 					return $middleware->process($request, $handler);
+
 				}
 				catch( Throwable $exception ){
-					$this->handleException($exception);
+
+					return $this->handleException($exception);
 				}
 
 			});

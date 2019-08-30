@@ -4,6 +4,7 @@ namespace Limber\Tests;
 
 use Capsule\Response;
 use Capsule\ResponseStatus;
+use Limber\Exceptions\RouteException;
 use Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
 use Throwable;
@@ -40,7 +41,19 @@ class RouteTest extends TestCase
         $this->assertEquals("v1", $route->getPrefix());
         $this->assertEquals("Controllers", $route->getNamespace());
         $this->assertEquals(["App\Middleware\SomeMiddleware"], $route->getMiddleware());
-    }
+	}
+
+	public function test_route_with_multiple_same_path_name()
+	{
+		$this->expectException(RouteException::class);
+		$route = new Route(["get"], "books/{id}/comments/{id}", "callable");
+	}
+
+	public function test_route_referencing_unknown_pattern()
+	{
+		$this->expectException(RouteException::class);
+		$route = new Route(["get"], "/books/{id:isbn}", "callable");
+	}
 
     public function test_set_schemes_works_with_string()
     {
@@ -178,7 +191,19 @@ class RouteTest extends TestCase
     {
         $route = new Route("get", "books/{bookId}/comments/{commentId}", "BooksController@get");
         $this->assertTrue($route->matchPath("books/1234/comments/5678"));
-    }
+	}
+
+	public function test_match_path_with_pattern()
+	{
+		$route = new Route("get", "books/{bookId:int}/comments/{commentId:hex}", "BooksController@get");
+        $this->assertTrue($route->matchPath("books/1234/comments/a5f9"));
+	}
+
+	public function test_match_path_with_pattern_fails()
+	{
+		$route = new Route("get", "books/{bookId:int}/comments", "BooksController@get");
+        $this->assertFalse($route->matchPath("books/book-23"));
+	}
 
     public function test_non_matching_path()
     {
