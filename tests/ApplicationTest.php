@@ -23,7 +23,8 @@ use Psr\Http\Server\RequestHandlerInterface;
  * @covers Limber\Router\Router
  * @covers Limber\Router\Engines\DefaultRouter
  * @covers Limber\Router\Route
- * @covers Limber\Middleware\MiddlewareManager
+ * @covers Limber\Middleware\CallableMiddleware
+ * @covers Limber\Middleware\RequestHandler
  * @covers Limber\Exceptions\HttpException
  * @covers Limber\Exceptions\MethodNotAllowedHttpException
  * @covers ::class_method
