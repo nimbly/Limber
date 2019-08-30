@@ -286,7 +286,10 @@ class Route
 			return $this->action;
 		}
 
-		return \class_method($this->action);
+		return \class_method(
+			($this->namespace ? \trim($this->namespace, '\\') . '\\' : "") .
+			$this->action
+		);
 	}
 
     /**
