@@ -121,6 +121,20 @@ class ApplicationTest extends TestCase
 		);
 	}
 
+	public function test_normalize_middleware_throws_exception_if_unknown_type()
+	{
+		$application = new Application(
+			new Router
+		);
+
+		$reflection = new \ReflectionClass($application);
+		$method = $reflection->getMethod('normalizeMiddleware');
+		$method->setAccessible(true);
+
+		$this->expectException(ApplicationException::class);
+		$method->invoke($application, [new \stdClass]);
+	}
+
 	public function test_set_exception_handler()
 	{
 		$application = new Application(
