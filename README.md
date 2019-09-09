@@ -1,5 +1,10 @@
 # Limber
 
+[![Latest Stable Version](https://img.shields.io/packagist/v/nimbly/Limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
+[![Build Status](https://img.shields.io/travis/nimbly/Limber.svg?style=flat-square)](https://travis-ci.org/nimbly/Limber)
+[![Code Coverage](https://img.shields.io/coveralls/github/nimbly/Limber.svg?style=flat-square)](https://coveralls.io/github/nimbly/Limber)
+[![License](https://img.shields.io/github/license/nimbly/Limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
+
 A super minimal HTTP framework that doesn't get in your way.
 
 Limber is intended for advanced users who are comfortable setting up their own framework and pulling in packages best suited for their particular use case.
@@ -319,7 +324,7 @@ $application->setExceptionHandler(function(Throwable $exception): ResponseInterf
 });
 ```
 
-**NOTE** Exceptions thrown *outside* of the middleware chain will continue to bubble up.
+**NOTE** Exceptions thrown *outside* of the middleware chain will continue to bubble up unless caught elsewhere.
 
 ### Handling a Request
 
