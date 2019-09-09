@@ -1,6 +1,13 @@
 {
-    "name": "limber\/limber",
-    "description": "A minimal framework",
+    "name": "nimbly\/limber",
+	"description": "A super minimal HTTP framework that doesn't get in your way.",
+	"keywords": [
+		"http",
+		"api",
+		"framework",
+		"router",
+		"middleware"
+	],
     "type": "library",
     "require": {
         "php": "^7.2",
@@ -17,11 +24,6 @@
     "autoload": {
         "psr-4": {
             "Limber\\": "src\/"
-        }
-    },
-    "config": {
-        "platform": {
-            "php": "7.2"
         }
     },
     "version": "0.6.2",
