@@ -286,6 +286,9 @@ class Route
 			return $this->action;
 		}
 
+		/**
+		 * @psalm-suppress RedundantConditionGivenDocblockType
+		 */
 		if( \is_string($this->action) ){
 			$callable = $this->makeCallableFromString(
 				($this->namespace ? \trim($this->namespace, '\\') . '\\' : "") .

@@ -73,6 +73,7 @@ class EmptyStream implements StreamInterface
 
     /**
      * @inheritDoc
+	 * @return void
      */
     public function seek($offset, $whence = SEEK_SET)
     {
@@ -81,11 +82,11 @@ class EmptyStream implements StreamInterface
 
     /**
      * @inheritDoc
-     * @return bool
+	 * @return void
      */
     public function rewind()
     {
-        return $this->seek(0);
+        $this->seek(0);
     }
 
     /**

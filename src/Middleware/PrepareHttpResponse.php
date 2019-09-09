@@ -25,7 +25,7 @@ class PrepareHttpResponse implements MiddlewareInterface
 		// Set Content-Length header if none provided.
 		elseif( $response->hasHeader('Transfer-Encoding') === false &&
 				$response->hasHeader('Content-Length') === false ){
-			$response = $response->withHeader('Content-Length', $response->getBody()->getSize());
+			$response = $response->withHeader('Content-Length', (string) ($response->getBody()->getSize() ?? 0));
 		}
 
 		// Remove Content-Length header if Transfer-Encoding header is present.
