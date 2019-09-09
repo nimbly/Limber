@@ -1,21 +1,18 @@
 # Limber
 
-A super minimal HTTP router that doesn't get in your way.
+A super minimal HTTP framework that doesn't get in your way.
 
 Limber is intended for advanced users who are comfortable setting up their own framework and pulling in packages best suited for their particular use case.
 
-## Limber *does not* ship with
-
-* PSR-7 implementation
-* An ORM
-* View rendering/template engine
-* Container
-* Event/subscriber system
-* Configuration file management
-* Session and cookie management
-* Cache library
-
-These are all application implementation details that are best suited for you to decide, dear developer.
+## Limber includes
+* A router
+* PSR-15 middleware support
+* A thin Application layer to:
+	* Attach router
+	* Add middleweare
+	* Add middleware exception handler
+	* Dispatch PSR-7 ServerRequest
+	* Send PSR-7 Response
 
 ## Installation
 
@@ -26,23 +23,33 @@ composer require nimbly/Limber
 ## Quick start
 
 ```php
+// Create a Router instance and define routes
+$router = new Limber\Router\Router;
+$router->get("/", function(ServerRequestInterface $request): ResponseInterface {
 
-// Create Application instance with a Router
+	return new Response(
+		\render("home/index")
+	);
+
+});
+
+// Create Application instance with the Router
 $application = new Limber\Application(
 	$router
 );
 
-// Dispatch a PSR-7 ServerRequest instance
+// Dispatch a PSR-7 ServerRequestInterface instance and get back a PSR-7 ResponseInterface instance
 $response = $application->dispatch(
-	$serverRequest
+	Some\Psr7\ServerRequest::createFromGlobals()
 );
 
-// Send the Response
+// Send the ResponseInterface instance
 $application->send($response);
 ```
 
 ## PSR-7
-Limber does not ship with a PSR-7 (HTTP Message) implementation so you will need to bring your own.
+
+Limber *does not ship* with a PSR-7 (HTTP Message) implementation so you will need to bring your own.
 
 * [symfony/http-foundation](https://symfony.com/components/HttpFoundation)
 * [slim/psr7](https://github.com/slimphp/Slim-Psr7)
@@ -53,17 +60,26 @@ Limber does not ship with a PSR-7 (HTTP Message) implementation so you will need
 
 ### Defining routes
 
-There are convenience methods for all major HTTP verbs (get, post, put, patch, and delete).
+Create a ```Router``` instance and begin defining your routes. There are convenience methods for all major HTTP verbs (get, post, put, patch, and delete).
 
 ```php
+$router = new Limber\Router\Router;
 $router->get('/fruits', 'FruitsController@all');
+$router->post('/fruits', 'FruitsController@create');
 $router->patch('/fruits/{id}', 'FruitsController@update');
+$router->delete('/fruits/{id}', 'FruitsContoller@delete');
 ```
+
 A route can respond to any number of HTTP verbs.
 
 ```php
 $router->add(['get', 'post'], '/fruits', 'FruitsController@create');
 ```
+
+### HEAD requests
+
+By default, Limber will add a ```HEAD``` method to each ```GET``` route.
+
 ### Router paths
 
 Paths can be static or contain place holders.
@@ -80,12 +96,9 @@ $router->get('/books/{isbn}', 'BooksController@getByIsbn');
 
 Your path place holders can also enforce a specific regular expression pattern when being matched.
 
-```php
-RouterAbstract::setPattern('isbn', "\d{9}[\d|X]");
-$router->get('/books/{id:isbn}', 'BooksController@getByIsbn');
-```
+Just add the pattern after the placeholder name with a colon.
 
-Limber has several predefined path patterns you can use (or create you own!):
+Limber has several predefined path patterns you can use:
 
 * ```alpha``` Alphabetic characters only (A-Z), of any length
 * ```int``` Integer number of any length
@@ -93,39 +106,44 @@ Limber has several predefined path patterns you can use (or create you own!):
 * ```uuid``` A Universally Unique Identifier
 * ```hex``` A hexidecimal value, of any length
 
+```php
+// Get a book by its ID and match the ID to a UUID.
+$router->get('/books/{id:uuid}', 'BooksController@get');
+```
+
+You can define your own patterns to match using ```Router::setPattern()``` static method.
+
+```php
+Router::setPattern('isbn', '\d{9}[\d|X]');
+$router->get('/books/{id:isbn}', 'BooksController@getByIsbn');
+```
+
 ### Router actions
 
-Router actions may either be a ```\callable``` or a string in the format **ClassName@Method**.
+Router actions may either be a ```\callable``` or a string in the format **Fully\Qualified\Namespace\ClassName@Method**.
+
+When a Request is dispatched to the Route action, Limber will always pass the ```ServerRequestInterface``` instance in as the *first* parameter. Any path parameters defined in the route will be passed into the action as well, in the order they appear in the Route URI pattern.
+
+Route actions *must* return a ```ResponseInterface``` instance.
 
 ```php
 // Closure based actions
 $router->get("/books", function(ServerRequestInterface $request): ResponseInterface {
 
-	return new Response(200, "Oh hai!");
+	return new Response(
+		\json_encode(Books::all())
+	);
 
 });
 
 // String references to ClassName@Method
-$router->patch("/books/{isbn}", "App\Controllers\BooksController@update");
-```
-
-When a Request is dispatched to the Route action, Limber will always pass the RequestInterface instance in as the first parameter. Any path parameters defined in the route will be passed into the action as well, in the order they appear in the Route URI pattern.
-
-```php
-$router->get('/books/{isbn}/comments/{id}', 'BooksController@getByIsbn');
-
-class BooksController
-{
-	public function getByIsbn(ServerRequestInterface $request, string $isbn, string $id): ResponseInterface
-	{
-		....
-	}
-}
+$router->patch("/books/{id:isbn}", "App\Controllers\BooksController@update");
 ```
 
 ### Route groups
 You can group routes together using the ```group``` method and passing in parameters that you want applied to all routes within that group.
 
+* ```scheme``` &lt;string&gt; The HTTP scheme (http or https) to match against.
 * ```middleware``` &lt;array, string&gt; *or* &lt;array, MiddlewareLayerInterface&gt; An array of all middleware classes (fullname space) or actual instances of middleware.
 * ```prefix``` &lt;string&gt; A string prepended to all URIs when matching the request.
 * ```namespace``` &lt;string&gt; A string prepended to all string based actions before instantiating a new controller.
@@ -148,7 +166,7 @@ $router->group([
 });
 ```
 
-Groups can be nested and will inherit their parent group's settings unless the setting is overridden. Middleware settings however are merged in with their parent's settings.
+Groups can be nested and will inherit their parent group's settings unless the setting is overridden. Middleware settings however are *merged* with their parent's settings.
 
 ```php
 $router->group([
@@ -194,65 +212,6 @@ $routes = Cache::getItem("Limber\Routes");
 $router = new Router($routes);
 ```
 
-## Middleware
-Limber uses a Before &amp; After middleware approach.
-
-Middleware instances must implement the ```MiddlewareLayerInterface```.
-
-```php
-class FooMiddleware implements MiddlewareLayerInterface
-{
-	public function handle(ServerRequestInterface $request, callable $next): ResponseInterface
-	{
-		// Add a custom header to the request before sending to route handler
-		$request = $request->withAddedHeader('X-Foo', 'Bar');
-
-		// Pass request off to next middleware layer
-		$response = $next($request);
-
-		// Add a custom header to the response before sending back to client
-		return $response->withAddedHeader('X-Custom-Header', 'Foo');
-	}
-}
-```
-
-### Middleware as Closures
-
-Limber also supports any ```\callable``` as a middleware.
-
-```php
-$application->addMiddleware(function(ServerRequestInterface $request, callable $next): ResponseInterface {
-
-	Log::info("Received request!");
-
-	return $next($request);
-
-});
-```
-
-### Global middleware
-
-Global middleware is registered on the Application instance using the ```setMiddleware``` method.
-
-Middleware is applied in the order they are registered.
-
-```php
-$application = new Limber\Application($router);
-
-$application->setMiddleware([
-	FooMiddleware::class,
-	BarMiddleware::class
-]);
-```
-You may optionally register a middleware layer one at a time by using the ```addMiddleware``` method.
-
-```php
-$application = new Limber\Application($router);
-
-$application->addMiddleware(FooMiddleware::class);
-$application->addMiddleware(BarMiddleware::class);
-```
-
 ### Route middleware
 
 Route middleware can be applied per route or per route group.
@@ -275,4 +234,107 @@ $route->group([
 	...
 
 });
+```
+
+## Middleware
+
+Limber use PSR-15 middleware. All middleware must implement ```Psr\Http\Server\MiddlewareInterface```.
+
+```php
+class FooMiddleware implements MiddlewareInterface
+{
+	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+	{
+		// Add a custom header to the request before sending to route handler
+		$request = $request->withAddedHeader('X-Foo', 'Bar');
+
+		$response = $handler->handle($request);
+
+		// Add a custom header to the response before sending back to client
+		return $response->withAddedHeader('X-Custom-Header', 'Foo');
+	}
+}
+```
+
+### Middleware as Closures
+
+Limber supports any ```\callable``` as a middleware as long as the ```\callable``` signature matches ```Psr\Http\Server\MiddlewareInterface```.
+
+```php
+$application->addMiddleware(function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
+
+	Log::info("Received request!");
+	return $handler->handle($request);
+
+});
+```
+
+## Application
+
+### Instantiating
+
+An ```Application``` instance requires only a ```Router``` instance.
+
+```php
+$application = new Application($router);
+```
+
+### Setting global middleware
+
+You can set global middleware directly on the ```Application``` instance. Middleware is applied in the order they are registered.
+
+```php
+$application->setMiddleware([
+	new GlobalMiddleware1,
+	new GlobalMiddleware2,
+	new GlobalMiddleware3
+]);
+```
+
+Or you can add middleware individually.
+
+```php
+$application->addMiddleware(new GlobalMiddleware1);
+$application->addMiddleware(new GlobalMiddleware2);
+$application->addMiddleware(new GlobalMiddleware3);
+```
+
+### Exception handling
+
+You can set a custom exception handler that will process any exception thrown *within* the middleware chain.
+
+The exception handler must be a ```\callable``` and accept an instance of ```Throwable``` as its only argument and return an instance of ```ResponseInterface```.
+
+```php
+$application->setExceptionHandler(function(Throwable $exception): ResponseInterface {
+
+	return new Response(
+		\render("errors/" . $exception->getHttpStatus()),
+		$exception->getHttpStatus(),
+		[
+			'Content-Type' => 'text/html'
+		]
+	);
+
+});
+```
+
+**NOTE** Exceptions thrown *outside* of the middleware chain will continue to bubble up.
+
+### Handling a Request
+
+To handle an incoming request, simply ```dispatch``` a PSR-7 ```ServerRequestInterface``` instance and capture the response.
+
+```php
+$response = $application->dispatch(
+	new ServerRequest
+);
+```
+
+### Sending the Response
+
+To send a PSR-7 ```ResponseInterface``` instance, call the ```send``` method.
+
+```php
+$application->send($response);
 ```

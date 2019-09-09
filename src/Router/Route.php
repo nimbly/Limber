@@ -287,13 +287,35 @@ class Route
 		}
 
 		if( \is_string($this->action) ){
-			return \class_method(
+			$callable = $this->makeCallableFromString(
 				($this->namespace ? \trim($this->namespace, '\\') . '\\' : "") .
 				$this->action
 			);
+
+			if( $callable ){
+				return $callable;
+			}
 		}
 
-		throw new RouteException("Route cannot be resolved to a callable.");
+		throw new RouteException("Route action cannot be resolved to a callable.");
+	}
+
+	/**
+	 * Turn a Class@Method type string and covert to a callable.
+	 *
+	 * @param string $classMethod
+	 * @return callable|null
+	 */
+	private function makeCallableFromString(string $classMethod): ?callable
+	{
+		if( \preg_match("/^(.+)@(.+)$/", $classMethod, $match) ){
+
+			if( \class_exists($match[1]) ){
+				return [new $match[1], $match[2]];
+			}
+		}
+
+		return null;
 	}
 
     /**

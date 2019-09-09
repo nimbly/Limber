@@ -17,10 +17,7 @@
     "autoload": {
         "psr-4": {
             "Limber\\": "src\/"
-        },
-        "files": [
-            "src\/functions.php"
-        ]
+        }
     },
     "config": {
         "platform": {

@@ -7,6 +7,7 @@ use Limber\Exceptions\DispatchException;
 use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
 use Limber\Middleware\CallableMiddleware;
+use Limber\Middleware\PrepareHttpResponse;
 use Limber\Middleware\RequestHandler;
 use Limber\Router\Route;
 use Limber\Router\Router;
@@ -40,8 +41,7 @@ class Application
 	protected $exceptionHandler;
 
     /**
-     *
-     * Limber Framework Application constructor.
+     * Application constructor.
      *
      * @param Router $router
      */
@@ -58,26 +58,16 @@ class Application
      */
     public function setMiddleware(array $middlewares): void
     {
-		foreach( $middlewares as $middleware ){
-			$this->addMiddleware($middleware);
-		}
+		$this->middleware = $middlewares;
 	}
 
     /**
      * Add a middleware to the stack.
      *
-     * @param MiddlewareInterface|callable $middleware
+     * @param MiddlewareInterface|callable|string $middleware
      */
     public function addMiddleware($middleware): void
     {
-		if( \is_callable($middleware) ){
-			$middleware = new CallableMiddleware($middleware);
-		}
-
-		if( $middleware instanceof MiddlewareInterface === false ){
-			throw new ApplicationException("Provided middleware must be either instance of \callable or Psr\Http\Server\MiddlewareInterface.");
-		}
-
         $this->middleware[] = $middleware;
 	}
 
@@ -104,13 +94,17 @@ class Application
 		// Resolve the route now to check for Routed middleware.
 		$route = $this->router->resolve($request);
 
-		// Create final stack of middleware to compile
-		$middleware = \array_merge(
-			$this->middleware,
-			$route ? $route->getMiddleware() : []
+		// Normalize the middlewares to be array<MiddlewareInterface>
+		$middleware = $this->normalizeMiddleware(
+			\array_merge(
+				$this->middleware, // Global user-space middleware
+				$route ? $route->getMiddleware() : [], // Route specific middleware
+				[PrepareHttpResponse::class] // Application specific middleware
+			)
 		);
 
-		$requestHandler = $this->compileMiddleware(
+		// Build the request handler chain
+		$requestHandler = $this->buildHandlerChain(
 			$middleware,
 			new RequestHandler(function(ServerRequestInterface $request) use ($route): ResponseInterface {
 
@@ -149,13 +143,42 @@ class Application
 	}
 
 	/**
-	 * Compile a middleware stack.
+	 * Normalize the given middlewares into instances of MiddlewareInterface.
+	 *
+	 * @param array<MiddlewareInterface|callable|string> $middlewares
+	 * @throws ApplicationException
+	 * @return array<MiddlewareInterface>
+	 */
+	private function normalizeMiddleware(array $middlewares): array
+	{
+		return \array_map(function($middleware): MiddlewareInterface {
+
+			if( \is_callable($middleware) ){
+				$middleware = new CallableMiddleware($middleware);
+			}
+
+			if( \is_string($middleware) &&
+				\class_exists($middleware) ){
+				$middleware = new $middleware;
+			}
+
+			if( $middleware instanceof MiddlewareInterface === false ){
+				throw new ApplicationException("Provided middleware must be a string, a \callable, or an instance of Psr\Http\Server\MiddlewareInterface.");
+			}
+
+			return $middleware;
+
+		}, $middlewares);
+	}
+
+	/**
+	 * Build a RequestHandler chain out of middleware using provided Kernel as the final RequestHandler.
 	 *
 	 * @param array<MiddlewareInterface> $middleware
 	 * @param RequestHandlerInterface $kernel
 	 * @return RequestHandlerInterface
 	 */
-	private function compileMiddleware(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
+	private function buildHandlerChain(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
 	{
 		$middleware = \array_reverse($middleware);
 
@@ -180,7 +203,7 @@ class Application
 
 	/**
 	 * Handle a thrown exception by either passing it to user provided exception handler
-	 * or throwing it.
+	 * or throwing it if no handler registered with application.
 	 *
 	 * @param Throwable $exception
 	 * @throws Throwable
@@ -211,12 +234,15 @@ class Application
             foreach( $response->getHeaders() as $header => $values ){
                 foreach( $values as $value ){
                     \header(
-                        \sprintf("%s: %s", $header, $value)
+						\sprintf("%s: %s", $header, $value),
+						false
                     );
                 }
-            }
+			}
         }
 
-        echo $response->getBody()->getContents();
+		if( $response->getStatusCode() !== 204 ){
+			echo $response->getBody()->getContents();
+		}
     }
 }

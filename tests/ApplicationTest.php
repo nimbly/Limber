@@ -13,6 +13,7 @@ use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
 use Limber\Middleware\CallableMiddleware;
 use Limber\Middleware\MiddlewareManager;
+use Limber\Middleware\RequestHandler;
 use Limber\Router\Router;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
@@ -26,9 +27,9 @@ use Psr\Http\Server\RequestHandlerInterface;
  * @covers Limber\Router\Route
  * @covers Limber\Middleware\CallableMiddleware
  * @covers Limber\Middleware\RequestHandler
+ * @covers Limber\Middleware\PrepareHttpResponse
  * @covers Limber\Exceptions\HttpException
  * @covers Limber\Exceptions\MethodNotAllowedHttpException
- * @covers ::class_method
  */
 class ApplicationTest extends TestCase
 {
@@ -71,9 +72,7 @@ class ApplicationTest extends TestCase
 		$property->setAccessible(true);
 
 		$this->assertEquals(
-			[
-				new CallableMiddleware($middleware),
-			],
+			[$middleware],
 			$property->getValue($application)
 		);
 	}
@@ -97,21 +96,29 @@ class ApplicationTest extends TestCase
 		$property->setAccessible(true);
 
 		$this->assertEquals(
-			[
-				new CallableMiddleware($middleware)
-			],
+			[$middleware],
 			$property->getValue($application)
 		);
 	}
 
-	public function test_add_middleware_with_unsupported_type()
+	public function test_normalize_middleware()
 	{
 		$application = new Application(
 			new Router
 		);
 
-		$this->expectException(ApplicationException::class);
-		$application->addMiddleware(new \StdClass);
+		$middleware = function(ServerRequestInterface $request, RequestHandler $handler): ResponseInterface {
+			return $handler->handle($request);
+		};
+
+		$reflection = new \ReflectionClass($application);
+		$method = $reflection->getMethod('normalizeMiddleware');
+		$method->setAccessible(true);
+
+		$this->assertEquals(
+			[new CallableMiddleware($middleware)],
+			$method->invoke($application, [$middleware])
+		);
 	}
 
 	public function test_set_exception_handler()
@@ -215,7 +222,7 @@ class ApplicationTest extends TestCase
 		}
 
 		$this->assertEquals(
-			["Allow" => "GET, POST"],
+			["Allow" => "GET, HEAD, POST"],
 			$headers ?? []
 		);
 	}

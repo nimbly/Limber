@@ -12,7 +12,6 @@ use Throwable;
 /**
  * @covers Limber\Router\Route
  * @covers Limber\Router\Router
- * @covers ::class_method
  */
 class RouteTest extends TestCase
 {
@@ -53,7 +52,7 @@ class RouteTest extends TestCase
 	public function test_route_referencing_unknown_pattern()
 	{
 		$this->expectException(RouteException::class);
-		$route = new Route(["get"], "/books/{id:isbn}", "callable");
+		$route = new Route(["get"], "/books/{id:unknown_pattern}", "callable");
 	}
 
     public function test_set_schemes_works_with_string()

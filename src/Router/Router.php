@@ -145,7 +145,7 @@ class Router
      */
     public function get($path, $action): Route
     {
-        return $this->add(["GET"], $path, $action);
+        return $this->add(["GET", "HEAD"], $path, $action);
     }
 
     /**

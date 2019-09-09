@@ -27,7 +27,7 @@ class RouterTest extends TestCase
     {
         $router = new Router;
         $route = $router->get("books/{id}", "BooksController@get");
-        $this->assertEquals(["GET"], $route->getMethods());
+        $this->assertEquals(["GET", "HEAD"], $route->getMethods());
     }
 
     public function test_adding_post_route()
