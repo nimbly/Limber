@@ -3,13 +3,11 @@
 namespace Limber;
 
 use Limber\Exceptions\ApplicationException;
-use Limber\Exceptions\DispatchException;
 use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
 use Limber\Middleware\CallableMiddleware;
 use Limber\Middleware\PrepareHttpResponse;
 use Limber\Middleware\RequestHandler;
-use Limber\Router\Route;
 use Limber\Router\Router;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
