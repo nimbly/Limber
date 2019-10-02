@@ -181,4 +181,34 @@ class RouterTest extends TestCase
 			]
 		], $config);
 	}
+
+	public function test_nested_groups_inherit_from_parent()
+	{
+		$router = new Router;
+		$router->group([
+			"scheme" => "https",
+			"hostname" => "example.org",
+			"prefix" => "v1",
+			"namespace" => "App\\Controllers\\v1",
+			"middleware" => [
+				"App\\Middleware\\MiddlewareLayer1"
+			]
+		], function($router){
+
+			$router->group([], function($router){
+				$router->get("/books", "BooksController@all");
+			});
+
+		});
+
+		$routes = $router->getRoutes();
+
+		$this->assertEquals(["https"], $routes[0]->getSchemes());
+		$this->assertEquals(["example.org"], $routes[0]->getHostnames());
+		$this->assertEquals("v1", $routes[0]->getPrefix());
+		$this->assertEquals("App\\Controllers\\v1", $routes[0]->getNamespace());
+		$this->assertEquals([
+			"App\\Middleware\\MiddlewareLayer1"
+		], $routes[0]->getMiddleware());
+	}
 }

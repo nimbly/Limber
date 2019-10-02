@@ -254,7 +254,7 @@ class Router
 		return [
 			'scheme'=> $groupConfig['scheme'] ?? $config['scheme'] ?? null,
 			'hostname' => $groupConfig['hostname'] ?? $config['hostname'] ?? null,
-			'prefix' => $groupConfig['prefix'] ?? $config['pregix'] ?? null,
+			'prefix' => $groupConfig['prefix'] ?? $config['prefix'] ?? null,
 			'namespace' => $groupConfig['namespace'] ?? $config['namespace'] ?? null,
 			'middleware' => \array_merge(
 				$config['middleware'] ?? [],
