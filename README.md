@@ -14,8 +14,8 @@ Limber is intended for advanced users who are comfortable setting up their own f
 * PSR-15 middleware support
 * A thin Application layer to:
 	* Attach router
-	* Add middleweare
-	* Add middleware exception handler
+	* Add global middleware
+	* Add exception handler
 	* Dispatch PSR-7 ServerRequest
 	* Send PSR-7 Response
 
@@ -148,8 +148,8 @@ $router->patch("/books/{id:isbn}", "App\Controllers\BooksController@update");
 ### Route groups
 You can group routes together using the ```group``` method and passing in parameters that you want applied to all routes within that group.
 
-* ```scheme``` &lt;string&gt; The HTTP scheme (http or https) to match against.
-* ```middleware``` &lt;array, string&gt; *or* &lt;array, MiddlewareLayerInterface&gt; An array of all middleware classes (fullname space) or actual instances of middleware.
+* ```scheme``` *string* The HTTP scheme (http or https) to match against.
+* ```middleware``` *array&lt;string&gt;* or *array&lt;MiddlewareInterface&gt;* or *array&lt;callable&gt;* An array of all middleware classes (fullname space) or actual instances of middleware.
 * ```prefix``` &lt;string&gt; A string prepended to all URIs when matching the request.
 * ```namespace``` &lt;string&gt; A string prepended to all string based actions before instantiating a new controller.
 * ```hostname``` &lt;string&gt; A host name to be matched against.
@@ -203,7 +203,7 @@ $router->group([
 ```
 ### Loading routes from cache
 
-When instantiating a ```Router```, you can pass in array of ```Route``` instances that will be loaded directly into the router.
+When instantiating a ```Router```, you can pass in an array of ```Route``` instances that will be loaded directly into the router.
 
 This allows you to load your routes from disk or memory and inject directly into the router if you choose.
 
@@ -243,7 +243,7 @@ $route->group([
 
 ## Middleware
 
-Limber use PSR-15 middleware. All middleware must implement ```Psr\Http\Server\MiddlewareInterface```.
+Limber uses PSR-15 middleware. All middleware must implement ```Psr\Http\Server\MiddlewareInterface```.
 
 ```php
 class FooMiddleware implements MiddlewareInterface
