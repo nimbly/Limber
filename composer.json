@@ -1,5 +1,5 @@
 {
-    "name": "nimbly\/limber",
+    "name": "nimbly/limber",
     "description": "A super minimal HTTP framework that doesn't get in your way.",
     "keywords": [
         "http",
@@ -10,9 +10,9 @@
     ],
     "type": "library",
     "require": {
-        "php": "^7.2",
-        "psr\/http-message": "^1.0",
-        "psr\/http-server-middleware": "^1.0"
+        "php": ">=7.2",
+        "psr/http-message": "^1.0",
+        "psr/http-server-middleware": "^1.0"
     },
     "license": "MIT",
     "authors": [
@@ -23,20 +23,19 @@
     ],
     "autoload": {
         "psr-4": {
-            "Limber\\": "src\/"
+            "Limber\\": "src/"
         }
     },
-    "version": "1.0.1",
     "require-dev": {
-        "phpunit\/phpunit": "^8.0",
-        "vimeo\/psalm": "^3.1",
-        "symfony\/var-dumper": "^4.2",
-        "php-coveralls\/php-coveralls": "^2.1",
-        "nimbly\/capsule": "^0.7"
+        "phpunit/phpunit": "^8.0",
+        "vimeo/psalm": "^3.1",
+        "symfony/var-dumper": "^4.2",
+        "php-coveralls/php-coveralls": "^2.1",
+        "nimbly/capsule": "^0.7"
     },
     "autoload-dev": {
         "psr-4": {
-            "Limber\\Tests\\": "tests\/"
+            "Limber\\Tests\\": "tests/"
         }
     }
 }
