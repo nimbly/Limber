@@ -6,23 +6,23 @@ use Capsule\Response;
 use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
 use Limber\EmptyStream;
-use Limber\Middleware\PrepareHttpResponse;
+use Limber\Middleware\PrepareHttpResponseMiddleware;
 use Limber\Middleware\RequestHandler;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * @covers Limber\Middleware\PrepareHttpResponse
+ * @covers Limber\Middleware\PrepareHttpResponseMiddleware
  * @covers Limber\Middleware\RequestHandler
  */
-class PrepareHttpResponseTest extends TestCase
+class PrepareHttpResponseMiddlewareTest extends TestCase
 {
 	public function test_204_no_content_responses_removes_content_based_headers()
 	{
-		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
+		$PrepareHttpResponseMiddlewareMiddleware = new PrepareHttpResponseMiddleware;
 
-		$response = $prepareHttpResponseMiddleware->process(
+		$response = $PrepareHttpResponseMiddlewareMiddleware->process(
 			ServerRequest::create('get', 'http://example.org/foo', null, [], [], [], []),
 			new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
 
@@ -45,9 +45,9 @@ class PrepareHttpResponseTest extends TestCase
 
 	public function test_204_no_content_responses_replaces_body_with_empty_stream()
 	{
-		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
+		$PrepareHttpResponseMiddlewareMiddleware = new PrepareHttpResponseMiddleware;
 
-		$response = $prepareHttpResponseMiddleware->process(
+		$response = $PrepareHttpResponseMiddlewareMiddleware->process(
 			ServerRequest::create('get', 'http://example.org/foo', null, [], [], [], []),
 			new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
 
@@ -71,9 +71,9 @@ class PrepareHttpResponseTest extends TestCase
 
 	public function test_setting_content_length_header_if_none_provided()
 	{
-		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
+		$PrepareHttpResponseMiddlewareMiddleware = new PrepareHttpResponseMiddleware;
 
-		$response = $prepareHttpResponseMiddleware->process(
+		$response = $PrepareHttpResponseMiddlewareMiddleware->process(
 			ServerRequest::create('get', 'http://example.org/foo', null, [], [], [], []),
 			new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
 
@@ -90,9 +90,9 @@ class PrepareHttpResponseTest extends TestCase
 
 	public function test_removing_content_length_header_if_transfer_encoding_header_present()
 	{
-		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
+		$PrepareHttpResponseMiddlewareMiddleware = new PrepareHttpResponseMiddleware;
 
-		$response = $prepareHttpResponseMiddleware->process(
+		$response = $PrepareHttpResponseMiddlewareMiddleware->process(
 			ServerRequest::create('get', 'http://example.org/foo', null, [], [], [], []),
 			new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
 
@@ -112,9 +112,9 @@ class PrepareHttpResponseTest extends TestCase
 
 	public function test_head_methods_return_an_empty_stream()
 	{
-		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
+		$PrepareHttpResponseMiddlewareMiddleware = new PrepareHttpResponseMiddleware;
 
-		$response = $prepareHttpResponseMiddleware->process(
+		$response = $PrepareHttpResponseMiddlewareMiddleware->process(
 			ServerRequest::create('head', 'http://example.org/foo', null, [], [], [], []),
 			new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
 

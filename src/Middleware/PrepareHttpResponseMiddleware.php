@@ -9,8 +9,15 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 
-class PrepareHttpResponse implements MiddlewareInterface
+class PrepareHttpResponseMiddleware implements MiddlewareInterface
 {
+	/**
+	 * Normalize the ResponseInterface instance so that it better conforms to HTTP specifications.
+	 *
+	 * @param ServerRequestInterface $request
+	 * @param RequestHandlerInterface $handler
+	 * @return ResponseInterface
+	 */
 	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
 	{
 		$response = $handler->handle($request);
