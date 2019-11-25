@@ -1,6 +1,6 @@
 # Limber
 
-[![Latest Stable Version](https://img.shields.io/packagist/v/nimbly/limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
+[![Latest Stable Version](https://img.shields.io/packagist/v/nimbly/Limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
 [![Build Status](https://img.shields.io/travis/nimbly/Limber.svg?style=flat-square)](https://travis-ci.org/nimbly/Limber)
 [![Code Coverage](https://img.shields.io/coveralls/github/nimbly/Limber.svg?style=flat-square)](https://coveralls.io/github/nimbly/Limber)
 [![License](https://img.shields.io/github/license/nimbly/Limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
@@ -83,7 +83,7 @@ $router->add(['get', 'post'], '/fruits', 'FruitsController@create');
 
 ### HEAD requests
 
-By default, Limber will add a `HEAD` method to each `GET` route.
+By default, Limber will add a ```HEAD``` method to each ```GET``` route.
 
 ### Router paths
 
@@ -105,18 +105,18 @@ Just add the pattern after the placeholder name with a colon.
 
 Limber has several predefined path patterns you can use:
 
-* `alpha` Alphabetic characters only (A-Z), of any length
-* `int` Integer number of any length
-* `alphanumeric` Any combination of number or alphabetic character
-* `uuid` A Universally Unique Identifier
-* `hex` A hexidecimal value, of any length
+* ```alpha``` Alphabetic characters only (A-Z), of any length
+* ```int``` Integer number of any length
+* ```alphanumeric``` Any combination of number or alphabetic character
+* ```uuid``` A Universally Unique Identifier
+* ```hex``` A hexidecimal value, of any length
 
 ```php
 // Get a book by its ID and match the ID to a UUID.
 $router->get('/books/{id:uuid}', 'BooksController@get');
 ```
 
-You can define your own patterns to match using `Router::setPattern()` static method.
+You can define your own patterns to match using ```Router::setPattern()``` static method.
 
 ```php
 Router::setPattern('isbn', '\d{9}[\d|X]');
@@ -125,11 +125,11 @@ $router->get('/books/{id:isbn}', 'BooksController@getByIsbn');
 
 ### Router actions
 
-Router actions may either be a `\callable` or a string in the format **Fully\Qualified\Namespace\ClassName@Method**.
+Router actions may either be a ```\callable``` or a string in the format **Fully\Qualified\Namespace\ClassName@Method**.
 
-When a Request is dispatched to the Route action, Limber will always pass the `ServerRequestInterface` instance in as the *first* parameter. Any path parameters defined in the route will be passed into the action as well, in the order they appear in the Route URI pattern.
+When a Request is dispatched to the Route action, Limber will always pass the ```ServerRequestInterface``` instance in as the *first* parameter. Any path parameters defined in the route will be passed into the action as well, in the order they appear in the Route URI pattern.
 
-Route actions *must* return a `ResponseInterface` instance.
+Route actions *must* return a ```ResponseInterface``` instance.
 
 ```php
 // Closure based actions
@@ -146,13 +146,13 @@ $router->patch("/books/{id:isbn}", "App\Controllers\BooksController@update");
 ```
 
 ### Route groups
-You can group routes together using the `group` method and passing in parameters that you want applied to all routes within that group.
+You can group routes together using the ```group``` method and passing in parameters that you want applied to all routes within that group.
 
-* `scheme` *string* The HTTP scheme (http or https) to match against.
-* `middleware` *array&lt;string&gt;* or *array&lt;MiddlewareInterface&gt;* or *array&lt;callable&gt;* An array of all middleware classes (fullname space) or actual instances of middleware.
-* `prefix` &lt;string&gt; A string prepended to all URIs when matching the request.
-* `namespace` &lt;string&gt; A string prepended to all string based actions before instantiating a new controller.
-* `hostname` &lt;string&gt; A host name to be matched against.
+* ```scheme``` *string* The HTTP scheme (http or https) to match against.
+* ```middleware``` *array&lt;string&gt;* or *array&lt;MiddlewareInterface&gt;* or *array&lt;callable&gt;* An array of all middleware classes (fullname space) or actual instances of middleware.
+* ```prefix``` &lt;string&gt; A string prepended to all URIs when matching the request.
+* ```namespace``` &lt;string&gt; A string prepended to all string based actions before instantiating a new controller.
+* ```hostname``` &lt;string&gt; A host name to be matched against.
 
 ```php
 $router->group([
@@ -203,7 +203,7 @@ $router->group([
 ```
 ### Loading routes from cache
 
-When instantiating a `Router`, you can pass in an array of `Route` instances that will be loaded directly into the router.
+When instantiating a ```Router```, you can pass in an array of ```Route``` instances that will be loaded directly into the router.
 
 This allows you to load your routes from disk or memory and inject directly into the router if you choose.
 
@@ -222,6 +222,7 @@ $router = new Router($routes);
 Route middleware can be applied per route or per route group.
 
 ```php
+
 // Middleware applied to single route
 $route->get('/books/{id:isbn}', 'BooksController@getByIsbn')->setMiddleware([
 	FooMiddleware::class
@@ -242,7 +243,7 @@ $route->group([
 
 ## Middleware
 
-Limber uses PSR-15 middleware. All middleware must implement `Psr\Http\Server\MiddlewareInterface`.
+Limber uses PSR-15 middleware. All middleware must implement ```Psr\Http\Server\MiddlewareInterface```.
 
 ```php
 class FooMiddleware implements MiddlewareInterface
@@ -262,7 +263,7 @@ class FooMiddleware implements MiddlewareInterface
 
 ### Middleware as Closures
 
-Limber supports any `\callable` as a middleware as long as the `\callable` signature matches `Psr\Http\Server\MiddlewareInterface`.
+Limber supports any ```\callable``` as a middleware as long as the ```\callable``` signature matches ```Psr\Http\Server\MiddlewareInterface```.
 
 ```php
 $application->addMiddleware(function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
@@ -277,7 +278,7 @@ $application->addMiddleware(function(ServerRequestInterface $request, RequestHan
 
 ### Instantiating
 
-An `Application` instance requires only a `Router` instance.
+An ```Application``` instance requires only a ```Router``` instance.
 
 ```php
 $application = new Application($router);
@@ -285,7 +286,7 @@ $application = new Application($router);
 
 ### Setting global middleware
 
-You can set global middleware directly on the `Application` instance. Middleware is applied in the order they are registered.
+You can set global middleware directly on the ```Application``` instance. Middleware is applied in the order they are registered.
 
 ```php
 $application->setMiddleware([
@@ -303,19 +304,11 @@ $application->addMiddleware(new GlobalMiddleware2);
 $application->addMiddleware(new GlobalMiddleware3);
 ```
 
-### Preparing HTTP response
-
-An internal middleware is provided by Limber to normalize HTTP responses to be better compliant with HTTP specifications. To enable this middleware, call the `enablePrepareResponse()` method on the `Application` instance. Once called, the `Limber\Middleware\PrepareHttpResponseMiddleware` will be added to the global middleware.
-
-```php
-$application->enablePrepareResponse();
-````
-
 ### Exception handling
 
 You can set a custom exception handler that will process any exception thrown *within* the middleware chain.
 
-The exception handler must be a `\callable` and accept an instance of `Throwable` as its only argument and return an instance of `ResponseInterface`.
+The exception handler must be a ```\callable``` and accept an instance of ```Throwable``` as its only argument and return an instance of ```ResponseInterface```.
 
 ```php
 $application->setExceptionHandler(function(Throwable $exception): ResponseInterface {
@@ -335,86 +328,18 @@ $application->setExceptionHandler(function(Throwable $exception): ResponseInterf
 
 ### Handling a Request
 
-To handle an incoming request, simply `dispatch` a PSR-7 `ServerRequestInterface` instance and capture the response.
+To handle an incoming request, simply ```dispatch``` a PSR-7 ```ServerRequestInterface``` instance and capture the response.
 
 ```php
 $response = $application->dispatch(
-	ServerRequest::createFromGlobals()
+	new ServerRequest
 );
 ```
 
 ### Sending the Response
 
-To send a PSR-7 `ResponseInterface` instance, call the `send` method.
+To send a PSR-7 ```ResponseInterface``` instance, call the ```send``` method.
 
 ```php
 $application->send($response);
-```
-
-## Using with React
-
-Because Limber is PSR-7 compliant, you can easily create standalone HTTP services by using React's HTTP component.
-
-### Install React/Http
-
-```bash
-composer require react/http
-```
-
-### Service
-
-Create a service entry point to run.
-
-In this example, we'll name this file `main.php`.
-
-```php
-<?php
-
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\ResponseInterface;
-
-require __DIR__ . "/vendor/autoload.php";
-
-// Create Router instance and define routes.
-$router = new Limber\Router;
-$router->get("/books", "App\Controllers\BooksController@get");
-$router->post("/books", "App\Controllers\BooksController@create");
-
-// Create Application instance with Router
-$application = new Limber\Application(
-	$router
-);
-
-// Create React HTTP server instance with handler callback
-$server = new React\Http\Server(function(ServerRequestInterface $request) use ($application): ResponseInterface {
-
-	/**
-	 * Because Limber is PSR-7 compliant (as is React Http), you can pass its $request
-	 * directly to Limber's Application instance to be dispatched to your controller/handler.
-	 *
-	 * Your controller/handler code should return a ResponseInterface instance which React
-	 * will send automatically.
-	 */
-    return $application->dispatch($request);
-
-});
-
-// Create the event loop
-$eventLoop = React\EventLoop\Factory::create();
-
-// Listen on port 8000
-$server->listen(
-    new React\Socket\Server("0.0.0.0:8000", $eventLoop)
-);
-
-// Run the event loop
-$eventLoop->run();
-```
-
-### Run your service
-
-Now start the service by running it.
-
-```bash
-php main.php
 ```

@@ -7,10 +7,12 @@ use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
 use Limber\Application;
 use Limber\Exceptions\ApplicationException;
+use Limber\Exceptions\BadRequestHttpException;
+use Limber\Exceptions\DispatchException;
 use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
 use Limber\Middleware\CallableMiddleware;
-use Limber\Middleware\ExceptionHandlerMiddleware;
+use Limber\Middleware\MiddlewareManager;
 use Limber\Middleware\RequestHandler;
 use Limber\Router\Router;
 use PHPUnit\Framework\TestCase;
@@ -23,13 +25,11 @@ use Psr\Http\Server\RequestHandlerInterface;
  * @covers Limber\Router\Router
  * @covers Limber\Router\Engines\DefaultRouter
  * @covers Limber\Router\Route
- * @covers Limber\Kernel
  * @covers Limber\Middleware\CallableMiddleware
  * @covers Limber\Middleware\RequestHandler
- * @covers Limber\Middleware\PrepareHttpResponseMiddleware
+ * @covers Limber\Middleware\PrepareHttpResponse
  * @covers Limber\Exceptions\HttpException
  * @covers Limber\Exceptions\MethodNotAllowedHttpException
- * @covers Limber\Middleware\ExceptionHandlerMiddleware
  */
 class ApplicationTest extends TestCase
 {
@@ -135,57 +135,24 @@ class ApplicationTest extends TestCase
 		$method->invoke($application, [new \stdClass]);
 	}
 
-	public function test_set_exception_handler_creates_exception_handler_middleware()
+	public function test_set_exception_handler()
 	{
 		$application = new Application(
 			new Router
 		);
 
-		$handler = function(\Throwable $exception): ResponseInterface {
-			return new Response(
-				ResponseStatus::BAD_REQUEST,
-				$exception->getMessage()
-			);
-		};
+		$handler = function(\Throwable $exception) {};
 
 		$application->setExceptionHandler($handler);
 
 		$reflection = new \ReflectionClass($application);
-		$property = $reflection->getProperty('applicationMiddleware');
-		$property->setAccessible(true);
-
-		$this->assertInstanceOf(ExceptionHandlerMiddleware::class, $property->getValue($application)[0]);
-	}
-
-	public function test_set_exception_handler_passes_handler_into_constructor()
-	{
-		$application = new Application(
-			new Router
-		);
-
-		$handler = function(\Throwable $exception): ResponseInterface {
-			return new Response(
-				ResponseStatus::BAD_REQUEST,
-				$exception->getMessage()
-			);
-		};
-
-		$application->setExceptionHandler($handler);
-
-		$reflection = new \ReflectionClass($application);
-		$property = $reflection->getProperty('applicationMiddleware');
-		$property->setAccessible(true);
-
-		$exceptionHandlerMiddleware = $property->getValue($application)[0];
-
-		$reflection = new \ReflectionClass($exceptionHandlerMiddleware);
 		$property = $reflection->getProperty('exceptionHandler');
 		$property->setAccessible(true);
 
-		$this->assertSame($handler, $property->getValue($exceptionHandlerMiddleware));
+		$this->assertSame($handler, $property->getValue($application));
 	}
 
-	public function test_exception_handling_with_exception_handler_set()
+	public function test_handle_exception_with_exception_handler_set()
 	{
 		$application = new Application(new Router);
 		$application->setExceptionHandler(function(\Throwable $exception): ResponseInterface {
@@ -197,9 +164,13 @@ class ApplicationTest extends TestCase
 
 		});
 
-		$response = $application->dispatch(
-			ServerRequest::create("get", "http://example.org/authors", null, [], [], [], [])
-		);
+		$reflection = new \ReflectionClass($application);
+		$method = $reflection->getMethod('handleException');
+		$method->setAccessible(true);
+
+		$request = ServerRequest::create("get", "http://example.org/authors", null, [], [], [], []);
+
+		$response = $method->invokeArgs($application, [new NotFoundHttpException("Route not found")]);
 
 		$this->assertEquals(ResponseStatus::NOT_FOUND, $response->getStatusCode());
 		$this->assertEquals("Route not found", $response->getBody()->getContents());
@@ -209,11 +180,15 @@ class ApplicationTest extends TestCase
 	{
 		$application = new Application(new Router);
 
+		$reflection = new \ReflectionClass($application);
+		$method = $reflection->getMethod('handleException');
+		$method->setAccessible(true);
+
+		$request = ServerRequest::create("get", "http://example.org/authors", null, [], [], [], []);
+
 		$this->expectException(NotFoundHttpException::class);
 
-		$application->dispatch(
-			ServerRequest::create("get", "http://example.org/authors", null, [], [], [], [])
-		);
+		$response = $method->invokeArgs($application, [new NotFoundHttpException("Route not found")]);
 	}
 
 	public function test_dispatch_with_unresolvable_route()

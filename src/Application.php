@@ -3,9 +3,10 @@
 namespace Limber;
 
 use Limber\Exceptions\ApplicationException;
+use Limber\Exceptions\MethodNotAllowedHttpException;
+use Limber\Exceptions\NotFoundHttpException;
 use Limber\Middleware\CallableMiddleware;
-use Limber\Middleware\ExceptionHandlerMiddleware;
-use Limber\Middleware\PrepareHttpResponseMiddleware;
+use Limber\Middleware\PrepareHttpResponse;
 use Limber\Middleware\RequestHandler;
 use Limber\Router\Router;
 use Psr\Http\Message\ResponseInterface;
@@ -21,21 +22,21 @@ class Application
      *
      * @var Router
      */
-	protected $router;
+    protected $router;
 
     /**
      * Global middleware.
      *
-     * @var array<MiddlewareInterface>|array<callable>|array<string>
+     * @var array
      */
 	protected $middleware = [];
 
 	/**
-	 * Application-level middleware.
+	 * Registered exception handler.
 	 *
-	 * @var array<MiddlewareInterface>|array<callable>|array<string>
+	 * @var ?callable
 	 */
-	protected $applicationMiddleware = [];
+	protected $exceptionHandler;
 
     /**
      * Application constructor.
@@ -50,7 +51,7 @@ class Application
     /**
      * Set the global middleware to run.
      *
-     * @param array<MiddlewareInterface|callable|string> $middlewares
+     * @param array<MiddlewareInterface|callable> $middlewares
      * @return void
      */
     public function setMiddleware(array $middlewares): void
@@ -69,25 +70,14 @@ class Application
 	}
 
 	/**
-	 * Enables an internal middleware to automatically prepare and normalize your
-	 * responses to better adhere to official HTTP specifications.
-	 *
-	 * @return void
-	 */
-	public function enablePrepareResponse(): void
-	{
-		$this->applicationMiddleware[] = new PrepareHttpResponseMiddleware;
-	}
-
-	/**
-	 * Add a default middleware exception handler.
+	 * Add a default application-level exception handler.
 	 *
 	 * @param callable $exceptionHandler
 	 * @return void
 	 */
 	public function setExceptionHandler(callable $exceptionHandler): void
 	{
-		$this->applicationMiddleware[] = new ExceptionHandlerMiddleware($exceptionHandler);
+		$this->exceptionHandler = $exceptionHandler;
 	}
 
     /**
@@ -99,58 +89,55 @@ class Application
      */
     public function dispatch(ServerRequestInterface $request): ResponseInterface
     {
-		// Resolve the route now to check for Route middleware.
+		// Resolve the route now to check for Routed middleware.
 		$route = $this->router->resolve($request);
 
-		// Compile the middleware into a RequestHandler chain.
-		$requestHandler = $this->compileMiddleware(
+		// Normalize the middlewares to be array<MiddlewareInterface>
+		$middleware = $this->normalizeMiddleware(
 			\array_merge(
-				$route ? $route->getMiddleware() : [], // Apply Route level middleware last
-				$this->middleware, // Apply global middleware
-				$this->applicationMiddleware // Apply application level middleware first
-			),
-			new Kernel($this->router, $route)
+				$this->middleware, // Global user-space middleware
+				$route ? $route->getMiddleware() : [], // Route specific middleware
+				[PrepareHttpResponse::class] // Application specific middleware
+			)
 		);
 
-		// Handle the request
+		// Build the request handler chain
+		$requestHandler = $this->buildHandlerChain(
+			$middleware,
+			new RequestHandler(function(ServerRequestInterface $request) use ($route): ResponseInterface {
+
+				try {
+
+					if( empty($route) ){
+
+						// 405 Method Not Allowed
+						if( ($methods = $this->router->getMethods($request)) ){
+							throw new MethodNotAllowedHttpException($methods);
+						}
+
+						// 404 Not Found
+						throw new NotFoundHttpException("Route not found");
+					}
+
+					return \call_user_func_array(
+						$route->getCallableAction(),
+						\array_merge(
+							[$request],
+							\array_values(
+								$route->getPathParams($request->getUri()->getPath())
+							)
+						)
+					);
+
+				} catch( Throwable $exception ){
+
+					return $this->handleException($exception);
+				}
+
+			})
+		);
+
 		return $requestHandler->handle($request);
-	}
-
-	/**
-	 * Compile middleware into a RequestHandlerInterface chain.
-	 *
-	 * @param array<MiddlewareInterface|string|callable> $middleware
-	 * @param RequestHandlerInterface $kernel
-	 * @return RequestHandlerInterface
-	 */
-	private function compileMiddleware(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
-	{
-		return $this->buildHandlerChain(
-			$this->normalizeMiddleware($middleware),
-			$kernel
-		);
-	}
-
-	/**
-	 * Build a RequestHandler chain out of middleware using provided Kernel as the final RequestHandler.
-	 *
-	 * @param array<MiddlewareInterface> $middleware
-	 * @param RequestHandlerInterface $kernel
-	 * @return RequestHandlerInterface
-	 */
-	private function buildHandlerChain(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
-	{
-		$middleware = \array_reverse($middleware);
-
-		return \array_reduce($middleware, function(RequestHandlerInterface $handler, MiddlewareInterface $middleware): RequestHandler {
-
-			return new RequestHandler(function(ServerRequestInterface $request) use ($handler, $middleware): ResponseInterface {
-
-				return $middleware->process($request, $handler);
-
-			});
-
-		}, $kernel);
 	}
 
 	/**
@@ -182,6 +169,53 @@ class Application
 		}, $middlewares);
 	}
 
+	/**
+	 * Build a RequestHandler chain out of middleware using provided Kernel as the final RequestHandler.
+	 *
+	 * @param array<MiddlewareInterface> $middleware
+	 * @param RequestHandlerInterface $kernel
+	 * @return RequestHandlerInterface
+	 */
+	private function buildHandlerChain(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
+	{
+		$middleware = \array_reverse($middleware);
+
+		return \array_reduce($middleware, function(RequestHandlerInterface $handler, MiddlewareInterface $middleware): RequestHandler {
+
+			return new RequestHandler(function(ServerRequestInterface $request) use ($handler, $middleware): ResponseInterface {
+
+				try {
+
+					return $middleware->process($request, $handler);
+
+				}
+				catch( Throwable $exception ){
+
+					return $this->handleException($exception);
+				}
+
+			});
+
+		}, $kernel);
+	}
+
+	/**
+	 * Handle a thrown exception by either passing it to user provided exception handler
+	 * or throwing it if no handler registered with application.
+	 *
+	 * @param Throwable $exception
+	 * @throws Throwable
+	 * @return ResponseInterface
+	 */
+	private function handleException(Throwable $exception): ResponseInterface
+	{
+		if( $this->exceptionHandler ){
+			return \call_user_func($this->exceptionHandler, $exception);
+		};
+
+		throw $exception;
+	}
+
     /**
      * Send a response back to calling client.
      *
@@ -196,12 +230,14 @@ class Application
             );
 
             foreach( $response->getHeaders() as $header => $values ){
-				\header(
-					\sprintf("%s: %s", $header, \implode(',', $values)),
-					false
-				);
+                foreach( $values as $value ){
+                    \header(
+						\sprintf("%s: %s", $header, $value),
+						false
+                    );
+                }
 			}
-		}
+        }
 
 		if( $response->getStatusCode() !== 204 ){
 			echo $response->getBody()->getContents();

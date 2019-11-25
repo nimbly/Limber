@@ -7,7 +7,7 @@ use RuntimeException;
 
 /**
  *
- * An EmptyStream represents a StreamInterface instance that returns an empty string (no content).
+ * An EmptyStream represents a StreamInterface instance the returns an empty string (no content).
  *
  * This is useful for forcing the response body to be empty on certain responses that require an
  * empty body in order to maintain HTTP standards.
