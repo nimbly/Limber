@@ -6,12 +6,9 @@ use Capsule\Response;
 use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
 use Limber\Application;
-use Limber\Exceptions\ApplicationException;
 use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
-use Limber\Middleware\CallableMiddleware;
-use Limber\Middleware\ExceptionHandlerMiddleware;
-use Limber\Middleware\RequestHandler;
+use Limber\MiddlewareManager;
 use Limber\Router\Router;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
@@ -29,23 +26,38 @@ use Psr\Http\Server\RequestHandlerInterface;
  * @covers Limber\Middleware\PrepareHttpResponseMiddleware
  * @covers Limber\Exceptions\HttpException
  * @covers Limber\Exceptions\MethodNotAllowedHttpException
- * @covers Limber\Middleware\ExceptionHandlerMiddleware
+ * @covers Limber\MiddlewareManager
+ * @covers Limber\Middleware\RouteResolverMiddleware
  */
 class ApplicationTest extends TestCase
 {
-	public function test_constructor()
+	public function test_constructor_autocreates_middleware_manager()
 	{
-		$router = new Router;
-
-		$application = new Application($router);
+		$application = new Application(new Router);
 
 		$reflection = new \ReflectionClass($application);
 
-		$property = $reflection->getProperty('router');
+		$property = $reflection->getProperty('middlewareManager');
+		$property->setAccessible(true);
+
+		$this->assertInstanceOf(
+			MiddlewareManager::class,
+			$property->getValue($application)
+		);
+	}
+
+	public function test_constructor_uses_middleware_manager()
+	{
+		$middlewareManager = new MiddlewareManager;
+
+		$application = new Application(new Router, $middlewareManager);
+
+		$reflection = new \ReflectionClass($application);
+		$property = $reflection->getProperty('middlewareManager');
 		$property->setAccessible(true);
 
 		$this->assertSame(
-			$router,
+			$middlewareManager,
 			$property->getValue($application)
 		);
 	}
@@ -67,7 +79,6 @@ class ApplicationTest extends TestCase
 		]);
 
 		$reflection = new \ReflectionClass($application);
-
 		$property = $reflection->getProperty('middleware');
 		$property->setAccessible(true);
 
@@ -101,41 +112,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_normalize_middleware()
-	{
-		$application = new Application(
-			new Router
-		);
-
-		$middleware = function(ServerRequestInterface $request, RequestHandler $handler): ResponseInterface {
-			return $handler->handle($request);
-		};
-
-		$reflection = new \ReflectionClass($application);
-		$method = $reflection->getMethod('normalizeMiddleware');
-		$method->setAccessible(true);
-
-		$this->assertEquals(
-			[new CallableMiddleware($middleware)],
-			$method->invoke($application, [$middleware])
-		);
-	}
-
-	public function test_normalize_middleware_throws_exception_if_unknown_type()
-	{
-		$application = new Application(
-			new Router
-		);
-
-		$reflection = new \ReflectionClass($application);
-		$method = $reflection->getMethod('normalizeMiddleware');
-		$method->setAccessible(true);
-
-		$this->expectException(ApplicationException::class);
-		$method->invoke($application, [new \stdClass]);
-	}
-
-	public function test_set_exception_handler_creates_exception_handler_middleware()
+	public function test_set_exception_handler_passes_handler_to_middleware_manager()
 	{
 		$application = new Application(
 			new Router
@@ -151,38 +128,16 @@ class ApplicationTest extends TestCase
 		$application->setExceptionHandler($handler);
 
 		$reflection = new \ReflectionClass($application);
-		$property = $reflection->getProperty('applicationMiddleware');
+		$property = $reflection->getProperty('middlewareManager');
 		$property->setAccessible(true);
 
-		$this->assertInstanceOf(ExceptionHandlerMiddleware::class, $property->getValue($application)[0]);
-	}
+		$middlewareManager = $property->getValue($application);
 
-	public function test_set_exception_handler_passes_handler_into_constructor()
-	{
-		$application = new Application(
-			new Router
-		);
-
-		$handler = function(\Throwable $exception): ResponseInterface {
-			return new Response(
-				ResponseStatus::BAD_REQUEST,
-				$exception->getMessage()
-			);
-		};
-
-		$application->setExceptionHandler($handler);
-
-		$reflection = new \ReflectionClass($application);
-		$property = $reflection->getProperty('applicationMiddleware');
-		$property->setAccessible(true);
-
-		$exceptionHandlerMiddleware = $property->getValue($application)[0];
-
-		$reflection = new \ReflectionClass($exceptionHandlerMiddleware);
+		$reflection = new \ReflectionClass($middlewareManager);
 		$property = $reflection->getProperty('exceptionHandler');
 		$property->setAccessible(true);
 
-		$this->assertSame($handler, $property->getValue($exceptionHandlerMiddleware));
+		$this->assertSame($handler, $property->getValue($middlewareManager));
 	}
 
 	public function test_exception_handling_with_exception_handler_set()

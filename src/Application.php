@@ -2,28 +2,19 @@
 
 namespace Limber;
 
-use Limber\Exceptions\ApplicationException;
-use Limber\Middleware\CallableMiddleware;
-use Limber\Middleware\ExceptionHandlerMiddleware;
+use Limber\Exceptions\DispatchException;
 use Limber\Middleware\PrepareHttpResponseMiddleware;
-use Limber\Middleware\RequestHandler;
+use Limber\Middleware\RouteResolverMiddleware;
+use Limber\Router\Route;
 use Limber\Router\Router;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 use Throwable;
 
 class Application
 {
-    /**
-     * Router instance.
-     *
-     * @var Router
-     */
-	protected $router;
-
-    /**
+	/**
      * Global middleware.
      *
      * @var array<MiddlewareInterface>|array<callable>|array<string>
@@ -31,21 +22,39 @@ class Application
 	protected $middleware = [];
 
 	/**
-	 * Application-level middleware.
+	 * Application specific middleware.
 	 *
 	 * @var array<MiddlewareInterface>|array<callable>|array<string>
 	 */
 	protected $applicationMiddleware = [];
+
+	/**
+	 * MiddlewareManager instance.
+	 *
+	 * @var MiddlewareManager
+	 */
+	protected $middlewareManager;
 
     /**
      * Application constructor.
      *
      * @param Router $router
      */
-    public function __construct(Router $router)
+    public function __construct(Router $router, MiddlewareManager $middlewareManager = null)
     {
-		$this->router = $router;
-    }
+		// Create default MiddlewareManager if none provided.
+		if( empty($middlewareManager) ){
+			$middlewareManager = new MiddlewareManager;
+		}
+
+		$this->middlewareManager = $middlewareManager;
+
+		// Build default application level middleware to be applied.
+		$this->applicationMiddleware = [
+			new RouteResolverMiddleware($router, $this->middlewareManager),
+			new PrepareHttpResponseMiddleware
+		];
+	}
 
     /**
      * Set the global middleware to run.
@@ -65,18 +74,7 @@ class Application
      */
     public function addMiddleware($middleware): void
     {
-        $this->middleware[] = $middleware;
-	}
-
-	/**
-	 * Enables an internal middleware to automatically prepare and normalize your
-	 * responses to better adhere to official HTTP specifications.
-	 *
-	 * @return void
-	 */
-	public function enablePrepareResponse(): void
-	{
-		$this->applicationMiddleware[] = new PrepareHttpResponseMiddleware;
+		$this->middleware[] = $middleware;
 	}
 
 	/**
@@ -87,7 +85,27 @@ class Application
 	 */
 	public function setExceptionHandler(callable $exceptionHandler): void
 	{
-		$this->applicationMiddleware[] = new ExceptionHandlerMiddleware($exceptionHandler);
+		$this->middlewareManager->setExceptionHandler($exceptionHandler);
+	}
+
+	/**
+	 * Return the kernel callable.
+	 *
+	 * @return callable
+	 */
+	private function getKernel(): callable
+	{
+		return function(ServerRequestInterface $request): ResponseInterface {
+
+			/** @var Route|null $route */
+			$route = $request->getAttribute(Route::class);
+
+			if( empty($route) ){
+				throw new DispatchException("Route attribute not found on ServerRequest instance.");
+			}
+
+			return $route->dispatch($request);
+		};
 	}
 
     /**
@@ -99,87 +117,17 @@ class Application
      */
     public function dispatch(ServerRequestInterface $request): ResponseInterface
     {
-		// Resolve the route now to check for Route middleware.
-		$route = $this->router->resolve($request);
-
 		// Compile the middleware into a RequestHandler chain.
-		$requestHandler = $this->compileMiddleware(
+		$requestHandler = $this->middlewareManager->compile(
 			\array_merge(
-				$route ? $route->getMiddleware() : [], // Apply Route level middleware last
-				$this->middleware, // Apply global middleware
-				$this->applicationMiddleware // Apply application level middleware first
+				$this->applicationMiddleware,
+				$this->middleware
 			),
-			new Kernel($this->router, $route)
+			$this->getKernel()
 		);
 
 		// Handle the request
 		return $requestHandler->handle($request);
-	}
-
-	/**
-	 * Compile middleware into a RequestHandlerInterface chain.
-	 *
-	 * @param array<MiddlewareInterface|string|callable> $middleware
-	 * @param RequestHandlerInterface $kernel
-	 * @return RequestHandlerInterface
-	 */
-	private function compileMiddleware(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
-	{
-		return $this->buildHandlerChain(
-			$this->normalizeMiddleware($middleware),
-			$kernel
-		);
-	}
-
-	/**
-	 * Build a RequestHandler chain out of middleware using provided Kernel as the final RequestHandler.
-	 *
-	 * @param array<MiddlewareInterface> $middleware
-	 * @param RequestHandlerInterface $kernel
-	 * @return RequestHandlerInterface
-	 */
-	private function buildHandlerChain(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
-	{
-		$middleware = \array_reverse($middleware);
-
-		return \array_reduce($middleware, function(RequestHandlerInterface $handler, MiddlewareInterface $middleware): RequestHandler {
-
-			return new RequestHandler(function(ServerRequestInterface $request) use ($handler, $middleware): ResponseInterface {
-
-				return $middleware->process($request, $handler);
-
-			});
-
-		}, $kernel);
-	}
-
-	/**
-	 * Normalize the given middlewares into instances of MiddlewareInterface.
-	 *
-	 * @param array<MiddlewareInterface|callable|string> $middlewares
-	 * @throws ApplicationException
-	 * @return array<MiddlewareInterface>
-	 */
-	private function normalizeMiddleware(array $middlewares): array
-	{
-		return \array_map(function($middleware): MiddlewareInterface {
-
-			if( \is_callable($middleware) ){
-				$middleware = new CallableMiddleware($middleware);
-			}
-
-			if( \is_string($middleware) &&
-				\class_exists($middleware) ){
-				$middleware = new $middleware;
-			}
-
-			if( $middleware instanceof MiddlewareInterface === false ){
-				throw new ApplicationException("Provided middleware must be a string, a \callable, or an instance of Psr\Http\Server\MiddlewareInterface.");
-			}
-
-			return $middleware;
-
-		}, $middlewares);
 	}
 
     /**

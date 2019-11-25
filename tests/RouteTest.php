@@ -7,7 +7,7 @@ use Capsule\ResponseStatus;
 use Limber\Exceptions\RouteException;
 use Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
-use Throwable;
+use ReflectionClass;
 
 /**
  * @covers Limber\Router\Route
@@ -115,8 +115,13 @@ class RouteTest extends TestCase
 
     public function test_get_path_params()
     {
-        $route = new Route("get", "books/{bookId}/comments/{commentId}", "BooksController@get");
-        $params = $route->getPathParams("books/1234/comments/5678");
+		$route = new Route("get", "books/{bookId}/comments/{commentId}", "BooksController@get");
+
+		$reflection = new ReflectionClass($route);
+		$method = $reflection->getMethod('getPathParams');
+		$method->setAccessible(true);
+
+        $params = $method->invoke($route, "books/1234/comments/5678");
 
         $this->assertEquals([
             "bookId" => 1234,
@@ -214,8 +219,8 @@ class RouteTest extends TestCase
 	public function test_get_callable_action_string()
 	{
 		$route = new Route("get", "books/{bookId}/comments/{commentId}", static::class . "@test_get_callable_action_string");
-		$this->assertTrue(
-			\is_callable($route->getCallableAction())
+		$this->assertIsCallable(
+			$route->getCallableAction()
 		);
 	}
 
@@ -223,7 +228,7 @@ class RouteTest extends TestCase
 	{
 		$route = new Route("get", "/books", new \StdClass);
 
-		$this->expectException(Throwable::class);
+		$this->expectException(RouteException::class);
 		$route->getCallableAction();
 	}
 
@@ -237,7 +242,6 @@ class RouteTest extends TestCase
 		};
 
 		$route = new Route("get", "/books", $handler);
-
 		$this->assertSame(
 			$handler,
 			$route->getCallableAction()

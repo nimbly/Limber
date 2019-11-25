@@ -2,8 +2,10 @@
 
 namespace Limber\Router;
 
-use Limber\Exceptions\ApplicationException;
 use Limber\Exceptions\RouteException;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
 use Throwable;
 
 class Route
@@ -86,14 +88,13 @@ class Route
      * @param string $path
      * @param string|callable $action
      * @param array $config Additional config data (usually passed in from group settings)
-     *
      */
     public function __construct($methods, string $path, $action, array $config = [])
     {
         // Required bits
         $this->methods = \array_map('strtoupper', \is_string($methods) ? [$methods] : $methods);
         $this->action = $action;
-        $this->path = $this->stripLeadingAndTrailingSlash($path);
+        $this->path = \trim($path, "/");
 
         // Optional
         $this->setSchemes($config['scheme'] ?? []);
@@ -132,7 +133,26 @@ class Route
 
             $this->patternParts[] = $part;
         }
-    }
+	}
+
+	/**
+	 * Dispatch the ServerRequestInerface instance for this Route.
+	 *
+	 * @param ServerRequestInterface $request
+	 * @return ResponseInterface
+	 */
+	public function dispatch(ServerRequestInterface $request): ResponseInterface
+	{
+		return \call_user_func_array(
+			$this->getCallableAction(),
+			\array_merge(
+				[$request],
+				\array_values(
+					$this->getPathParams($request->getUri()->getPath())
+				)
+			)
+		);
+	}
 
     /**
      *
@@ -149,7 +169,8 @@ class Route
             $schemes = [$schemes];
         }
 
-        $this->schemes = $schemes;
+		$this->schemes = $schemes;
+
         return $this;
     }
 
@@ -174,13 +195,13 @@ class Route
      */
     public function setPrefix(string $prefix): Route
     {
-        $this->prefix = $this->stripLeadingAndTrailingSlash($prefix);
+        $this->prefix = \trim($prefix, "/");
 
         return $this;
     }
 
     /**
-     * Apply middleware to this route
+     * Apply middleware to this route.
      *
      * @param string|array $middleware
      * @return Route
@@ -197,7 +218,7 @@ class Route
     }
 
     /**
-     * Set the controller namespace.
+     * Set the namespace for string actions that reference a Class@Method.
      *
      * @param string $namespace
      * @return Route
@@ -216,7 +237,7 @@ class Route
      */
 
      /**
-      * Get the full path.
+      * Get the full path (including prefix.)
       *
       * @return string
       */
@@ -257,68 +278,6 @@ class Route
     public function getMethods(): array
     {
         return $this->methods;
-    }
-
-    /**
-     * Get route action.
-     *
-     * @return string|callable
-     */
-    public function getAction()
-    {
-        if( \is_string($this->action) &&
-            $this->namespace ){
-            return \trim($this->namespace, '\\') . '\\' . $this->action;
-        }
-
-        return $this->action;
-	}
-
-	/**
-	 * Get the callable action for this route.
-	 *
-	 * @throws Throwable
-	 * @return callable
-	 */
-	public function getCallableAction(): callable
-	{
-		if( \is_callable($this->action) ){
-			return $this->action;
-		}
-
-		/**
-		 * @psalm-suppress RedundantConditionGivenDocblockType
-		 */
-		if( \is_string($this->action) ){
-			$callable = $this->makeCallableFromString(
-				($this->namespace ? \trim($this->namespace, '\\') . '\\' : "") .
-				$this->action
-			);
-
-			if( $callable ){
-				return $callable;
-			}
-		}
-
-		throw new RouteException("Route action cannot be resolved to a callable.");
-	}
-
-	/**
-	 * Turn a Class@Method type string and covert to a callable.
-	 *
-	 * @param string $classMethod
-	 * @return callable|null
-	 */
-	private function makeCallableFromString(string $classMethod): ?callable
-	{
-		if( \preg_match("/^(.+)@(.+)$/", $classMethod, $match) ){
-
-			if( \class_exists($match[1]) ){
-				return [new $match[1], $match[2]];
-			}
-		}
-
-		return null;
 	}
 
     /**
@@ -334,7 +293,7 @@ class Route
     /**
      * Get all middleware this route should apply.
      *
-     * @return array<string>
+     * @return array<MiddlewareInterface>|array<callable>|array<string>
      */
     public function getMiddleware(): array
     {
@@ -360,6 +319,21 @@ class Route
     {
         return $this->patternParts;
     }
+
+    /**
+     * Get route action.
+     *
+     * @return string|callable
+     */
+    public function getAction()
+    {
+        if( \is_string($this->action) &&
+            $this->namespace ){
+            return \trim($this->namespace, '\\') . '\\' . $this->action;
+        }
+
+        return $this->action;
+	}
 
     /**
      * Extract the path parameters for the given path.
@@ -398,7 +372,53 @@ class Route
         }
 
         return $pathParams;
-    }
+	}
+
+	/**
+	 * Get the callable action for this route.
+	 *
+	 * @throws Throwable
+	 * @return callable
+	 */
+	public function getCallableAction(): callable
+	{
+		if( \is_callable($this->action) ){
+			return $this->action;
+		}
+
+		/**
+		 * @psalm-suppress RedundantConditionGivenDocblockType
+		 */
+		if( \is_string($this->action) ){
+			$callable = $this->makeCallableFromString(
+				($this->namespace ? \trim($this->namespace, '\\') . '\\' : "") . $this->action
+			);
+
+			if( $callable ){
+				return $callable;
+			}
+		}
+
+		throw new RouteException("Route action cannot be resolved to a callable.");
+	}
+
+	/**
+	 * Turn a Class@Method type string and covert to a callable.
+	 *
+	 * @param string $classMethod
+	 * @return callable|null
+	 */
+	protected function makeCallableFromString(string $classMethod): ?callable
+	{
+		if( \preg_match("/^(.+)@(.+)$/", $classMethod, $match) ){
+
+			if( \class_exists($match[1]) ){
+				return [new $match[1], $match[2]];
+			}
+		}
+
+		return null;
+	}
 
     /**
      *
@@ -412,7 +432,7 @@ class Route
      * @param string $scheme
      * @return bool
      */
-    public function matchScheme($scheme): bool
+    public function matchScheme(string $scheme): bool
     {
         if( empty($this->schemes) ){
             return true;
@@ -425,16 +445,19 @@ class Route
     /**
      * Does the given hostname match the route's hostname?
      *
-     * @param string $hostnames
+     * @param string $hostname
      * @return bool
      */
-    public function matchHostname(string $hostnames): bool
+    public function matchHostname(string $hostname): bool
     {
         if( empty($this->hostnames) ){
             return true;
         }
 
-        return \array_search(\strtolower($hostnames), \array_map('strtolower', $this->hostnames)) !== false;
+        return \array_search(
+			\strtolower($hostname),
+			\array_map('strtolower', $this->hostnames)
+		) !== false;
     }
 
     /**
@@ -457,17 +480,6 @@ class Route
     public function matchPath(string $path): bool
     {
         $pattern = \implode("\/", $this->patternParts);
-        return \preg_match("/^{$pattern}$/i", $this->stripLeadingAndTrailingSlash($path)) != false;
-    }
-
-    /**
-     * Normalize paths by stripping off leading and trailing slashes.
-     *
-     * @param string $path
-     * @return string
-     */
-    private function stripLeadingAndTrailingSlash(string $path): string
-    {
-        return \trim($path, '/');
+        return \preg_match("/^{$pattern}$/i", \trim($path, "/")) != false;
     }
 }
