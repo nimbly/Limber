@@ -168,7 +168,7 @@ class ApplicationTest extends TestCase
 		$method = $reflection->getMethod('handleException');
 		$method->setAccessible(true);
 
-		$request = ServerRequest::create("get", "http://example.org/authors", null, [], [], [], []);
+		$request = new ServerRequest("get", "http://example.org/authors");
 
 		$response = $method->invokeArgs($application, [new NotFoundHttpException("Route not found")]);
 
@@ -184,7 +184,7 @@ class ApplicationTest extends TestCase
 		$method = $reflection->getMethod('handleException');
 		$method->setAccessible(true);
 
-		$request = ServerRequest::create("get", "http://example.org/authors", null, [], [], [], []);
+		$request = new ServerRequest("get", "http://example.org/authors");
 
 		$this->expectException(NotFoundHttpException::class);
 
@@ -198,7 +198,7 @@ class ApplicationTest extends TestCase
 		$this->expectException(NotFoundHttpException::class);
 
 		$application->dispatch(
-			ServerRequest::create("get", "http://example.org/authors", null, [], [], [], [])
+			new ServerRequest("get", "http://example.org/authors")
 		);
 	}
 
@@ -212,7 +212,7 @@ class ApplicationTest extends TestCase
 
 		$this->expectException(MethodNotAllowedHttpException::class);
 		$application->dispatch(
-			ServerRequest::create("delete", "/books", null, [], [], [], [])
+			new ServerRequest("delete", "/books")
 		);
 	}
 
@@ -226,7 +226,7 @@ class ApplicationTest extends TestCase
 
 		try {
 			$application->dispatch(
-				ServerRequest::create("delete", "/books", null, [], [], [], [])
+				new ServerRequest("delete", "/books")
 			);
 		}
 		catch( MethodNotAllowedHttpException $exception ){
@@ -254,7 +254,7 @@ class ApplicationTest extends TestCase
 		$application = new Application($router);
 
 		$response = $application->dispatch(
-			ServerRequest::create("get", "http://example.org/books", null, [], [], [], [])
+			new ServerRequest("get", "http://example.org/books")
 		);
 
 		$this->assertEquals(ResponseStatus::OK, $response->getStatusCode());

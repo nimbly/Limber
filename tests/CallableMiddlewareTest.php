@@ -32,7 +32,7 @@ class CallableMiddlewareTest extends TestCase
 		);
 
 		$response = $callableMiddleware->process(
-			ServerRequest::create("get", "http://example.org", null, [], [], [], []),
+			new ServerRequest("get", "http://example.org"),
 			new RequestHandler(
 				function(ServerRequestInterface $request): ResponseInterface {
 					return new Response(

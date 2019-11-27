@@ -22,15 +22,15 @@ class FlatRouterTest extends TestCase
         ]);
 
         $this->assertNotEmpty(
-            $router->resolve(ServerRequest::create('get', 'books', null, [], [], [], []))
+            $router->resolve(new ServerRequest('get', 'books'))
         );
 
         $this->assertNotEmpty(
-            $router->resolve(ServerRequest::create('get', 'books/123', null, [], [], [], []))
+            $router->resolve(new ServerRequest('get', 'books/123'))
         );
 
         $this->assertNotEmpty(
-            $router->resolve(ServerRequest::create('post', 'books', null, [], [], [], []))
+            $router->resolve(new ServerRequest('post', 'books'))
         );
     }
 
@@ -55,7 +55,7 @@ class FlatRouterTest extends TestCase
         ]);
 
         $route = $router->resolve(
-            ServerRequest::create('get', 'https://example.com/authors/1234', null, [], [], [], [])
+            new ServerRequest('get', 'https://example.com/authors/1234')
         );
 
         $this->assertEquals(["GET"], $route->getMethods());
@@ -75,7 +75,7 @@ class FlatRouterTest extends TestCase
         ]);
 
         $methods = $router->getMethods(
-            ServerRequest::create('get', "https://example.com/books/1234", null, [], [], [], [])
+            new ServerRequest('get', "https://example.com/books/1234")
         );
 
         $this->assertEquals(["GET", "PATCH", "DELETE"], $methods);

@@ -23,7 +23,7 @@ class PrepareHttpResponseTest extends TestCase
 		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
 
 		$response = $prepareHttpResponseMiddleware->process(
-			ServerRequest::create('get', 'http://example.org/foo', null, [], [], [], []),
+			new ServerRequest('get', 'http://example.org/foo'),
 			new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
 
 				return new Response(
@@ -48,7 +48,7 @@ class PrepareHttpResponseTest extends TestCase
 		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
 
 		$response = $prepareHttpResponseMiddleware->process(
-			ServerRequest::create('get', 'http://example.org/foo', null, [], [], [], []),
+			new ServerRequest('get', 'http://example.org/foo'),
 			new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
 
 				return new Response(
@@ -74,7 +74,7 @@ class PrepareHttpResponseTest extends TestCase
 		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
 
 		$response = $prepareHttpResponseMiddleware->process(
-			ServerRequest::create('get', 'http://example.org/foo', null, [], [], [], []),
+			new ServerRequest('get', 'http://example.org/foo'),
 			new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
 
 				return new Response(
@@ -93,7 +93,7 @@ class PrepareHttpResponseTest extends TestCase
 		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
 
 		$response = $prepareHttpResponseMiddleware->process(
-			ServerRequest::create('get', 'http://example.org/foo', null, [], [], [], []),
+			new ServerRequest('get', 'http://example.org/foo'),
 			new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
 
 				return new Response(
@@ -115,7 +115,7 @@ class PrepareHttpResponseTest extends TestCase
 		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
 
 		$response = $prepareHttpResponseMiddleware->process(
-			ServerRequest::create('head', 'http://example.org/foo', null, [], [], [], []),
+			new ServerRequest('head', 'http://example.org/foo'),
 			new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
 
 				return new Response(
