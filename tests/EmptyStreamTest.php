@@ -17,6 +17,18 @@ class EmptyStreamTest extends TestCase
 		$this->assertEquals("", (string) $emptyStream);
 	}
 
+	public function test_close_returns_void()
+	{
+		$emptyStream = new EmptyStream;
+		$this->assertNull($emptyStream->close());
+	}
+
+	public function test_detach_returns_null()
+	{
+		$emptyStream = new EmptyStream;
+		$this->assertNull($emptyStream->detach());
+	}
+
 	public function test_get_size_returns_zero()
 	{
 		$emptyStream = new EmptyStream;

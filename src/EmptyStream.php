@@ -36,7 +36,7 @@ class EmptyStream implements StreamInterface
      */
     public function detach()
     {
-        return $this->close();
+        return null;
     }
 
     /**
