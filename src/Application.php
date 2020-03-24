@@ -2,6 +2,7 @@
 
 namespace Limber;
 
+use Closure;
 use Limber\Exceptions\ApplicationException;
 use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
@@ -9,10 +10,16 @@ use Limber\Middleware\CallableMiddleware;
 use Limber\Middleware\PrepareHttpResponse;
 use Limber\Middleware\RequestHandler;
 use Limber\Router\Router;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use ReflectionClass;
+use ReflectionFunction;
+use ReflectionMethod;
+use ReflectionParameter;
 use Throwable;
 
 class Application
@@ -22,7 +29,14 @@ class Application
      *
      * @var Router
      */
-    protected $router;
+	protected $router;
+
+	/**
+	 * ContainerInterface instance.
+	 *
+	 * @var ContainerInterface|null
+	 */
+	protected $container;
 
     /**
      * Global middleware.
@@ -34,7 +48,7 @@ class Application
 	/**
 	 * Registered exception handler.
 	 *
-	 * @var ?callable
+	 * @var callable|null
 	 */
 	protected $exceptionHandler;
 
@@ -42,11 +56,13 @@ class Application
      * Application constructor.
      *
      * @param Router $router
+	 * @param ContainerInterface|null $container
      */
-    public function __construct(Router $router)
+    public function __construct(Router $router, ?ContainerInterface $container = null)
     {
 		$this->router = $router;
-    }
+		$this->container = $container;
+	}
 
     /**
      * Set the global middleware to run.
@@ -110,22 +126,24 @@ class Application
 
 					if( empty($route) ){
 
-						// 405 Method Not Allowed
-						if( ($methods = $this->router->getMethods($request)) ){
-							throw new MethodNotAllowedHttpException($methods);
-						}
+						$methods = $this->router->getMethods($request);
 
 						// 404 Not Found
-						throw new NotFoundHttpException("Route not found");
+						if( empty($methods) ){
+							throw new NotFoundHttpException("Route not found");
+						}
+
+						// 405 Method Not Allowed
+						throw new MethodNotAllowedHttpException($methods);
 					}
 
+					$routeHandler = $this->getRouteHandler($route->getAction());
+
 					return \call_user_func_array(
-						$route->getCallableAction(),
-						\array_merge(
-							[$request],
-							\array_values(
-								$route->getPathParams($request->getUri()->getPath())
-							)
+						$routeHandler,
+						$this->resolveDependencies(
+							$this->getParametersForCallable($routeHandler),
+							\array_merge([ServerRequestInterface::class => $request], $route->getPathParams($request->getUri()->getPath()))
 						)
 					);
 
@@ -214,6 +232,140 @@ class Application
 		};
 
 		throw $exception;
+	}
+
+	/**
+	 * Resolve the route action into a callable handler.
+	 *
+	 * @param callable|string $action
+	 * @return callable
+	 */
+	private function getRouteHandler($action): callable
+	{
+		if( \is_callable($action) ){
+			return $action;
+		}
+		elseif( \is_string($action) ){
+
+			if( \preg_match("/^(.+)@(.+)$/", $action, $match) ){
+				if( \class_exists($match[1]) &&
+					\method_exists($match[1], $match[2]) ){
+					return [
+						$this->make($match[1]),
+						$match[2]
+					];
+				}
+			}
+		}
+
+		throw new ApplicationException("Route action cannot be resolved into a callable.");
+	}
+
+	/**
+	 * Get the reflection parameters for a callable.
+	 *
+	 * @param callable $handler
+	 * @throws ApplicationException
+	 * @return array<ReflectionParameter>
+	 */
+	private function getParametersForCallable(callable $handler): array
+	{
+		if( $handler instanceof Closure ){
+			$reflector = new ReflectionFunction($handler);
+		}
+		elseif( \is_array($handler) ) {
+			$reflector = new ReflectionMethod($handler[0], $handler[1]);
+		}
+		else {
+			throw new ApplicationException("Cannot resolve parameters for callable.");
+		}
+
+		return $reflector->getParameters();
+	}
+
+	/**
+	 * Resolve an array of reflection parameters into an array of concrete instances/values indexed by parameter name and value.
+	 *
+	 * @param array<ReflectionParameter> $reflectionParameters
+	 * @param array<string,mixed> $userArgs Array of user supplied arguments to be fed into dependecy resolution.
+	 * @return array<string,mixed>
+	 */
+	private function resolveDependencies(array $reflectionParameters, array $userArgs = []): array
+	{
+		return \array_map(
+			function(ReflectionParameter $reflectionParameter) use ($userArgs) {
+
+				$parameterName = $reflectionParameter->getName();
+				$parameterType = $reflectionParameter->getType();
+
+				// No type or the type is a primitive (built in)
+				if( empty($parameterType) || $parameterType->isBuiltin() ){
+
+					// Check in user supplied arugment list first.
+					if( \array_key_exists($parameterName, $userArgs) ){
+						return $userArgs[$parameterName];
+					}
+
+					// Does parameter offer a default value?
+					elseif( $reflectionParameter->isDefaultValueAvailable() ){
+						return $reflectionParameter->getDefaultValue();
+					}
+
+					elseif( $reflectionParameter->isOptional() ){
+						return null;
+					}
+				}
+
+				// Parameter type is a class
+				else {
+
+					if( $this->container && $this->container->has($parameterType) ){
+						return $this->container->get($parameterType);
+					}
+					elseif( isset($userArgs[ServerRequestInterface::class]) &&
+						\is_a($userArgs[ServerRequestInterface::class], (string) $parameterType) ){
+						return $userArgs[ServerRequestInterface::class];
+					}
+					else {
+
+						/**
+						 * @psalm-suppress ArgumentTypeCoercion
+						 */
+						return $this->make((string) $parameterType, $userArgs);
+					}
+				}
+
+				throw new ApplicationException("Autowiring failed: Cannot resolve for " . $parameterName . "<" . (string) ($parameterType ?? "none") . ">.");
+			},
+			$reflectionParameters
+		);
+	}
+
+	/**
+	 * Make an instance of a class using autowiring with values from the container.
+	 *
+	 * @param class-string $className
+	 * @param array<string,mixed> $userArgs
+	 * @return object
+	 */
+	public function make(string $className, array $userArgs = []): object
+	{
+		$reflectionClass = new ReflectionClass($className);
+
+		$constructor = $reflectionClass->getConstructor();
+
+		if( empty($constructor) ){
+			return $reflectionClass->newInstance();
+		}
+
+		$args = $this->resolveDependencies(
+			$constructor->getParameters(),
+			$userArgs
+		);
+
+		return $reflectionClass->newInstanceArgs(
+			\array_values($args)
+		);
 	}
 
     /**

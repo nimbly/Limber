@@ -2,7 +2,6 @@
 
 namespace Limber\Router;
 
-use Limber\Exceptions\ApplicationException;
 use Limber\Exceptions\RouteException;
 use Throwable;
 
