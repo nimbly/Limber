@@ -278,14 +278,14 @@ class Application
 	 */
 	private function getParametersForCallable(callable $handler): array
 	{
-		if( $handler instanceof Closure ){
-			$reflector = new ReflectionFunction($handler);
-		}
-		elseif( \is_array($handler) ) {
+		if( \is_array($handler) ) {
 			$reflector = new ReflectionMethod($handler[0], $handler[1]);
 		}
 		else {
-			throw new ApplicationException("Cannot resolve parameters for callable.");
+			/**
+			 * @psalm-suppress ArgumentTypeCoercion
+			 */
+			$reflector = new ReflectionFunction($handler);
 		}
 
 		return $reflector->getParameters();
@@ -309,7 +309,7 @@ class Application
 				// No type or the type is a primitive (built in)
 				if( empty($parameterType) || $parameterType->isBuiltin() ){
 
-					// Check in user supplied arugment list first.
+					// Check in user supplied argument list first.
 					if( \array_key_exists($parameterName, $userArgs) ){
 						return $userArgs[$parameterName];
 					}
@@ -319,7 +319,7 @@ class Application
 						return $reflectionParameter->getDefaultValue();
 					}
 
-					elseif( $reflectionParameter->isOptional() ){
+					elseif( $reflectionParameter->isOptional() || $reflectionParameter->allowsNull() ){
 						return null;
 					}
 				}
@@ -339,7 +339,7 @@ class Application
 						/**
 						 * @psalm-suppress ArgumentTypeCoercion
 						 */
-						return $this->make((string) $parameterType, $userArgs);
+						return $this->make($parameterType->getName(), $userArgs);
 					}
 				}
 
@@ -358,7 +358,16 @@ class Application
 	 */
 	public function make(string $className, array $userArgs = []): object
 	{
+		if( $this->container &&
+			$this->container->has($className) ){
+			return $this->container->get($className);
+		}
+
 		$reflectionClass = new ReflectionClass($className);
+
+		if( $reflectionClass->isInterface() || $reflectionClass->isAbstract() ){
+			throw new ApplicationException("Cannot make an instance of a Interface or Abstract class.");
+		}
 
 		$constructor = $reflectionClass->getConstructor();
 
@@ -371,9 +380,7 @@ class Application
 			$userArgs
 		);
 
-		return $reflectionClass->newInstanceArgs(
-			\array_values($args)
-		);
+		return $reflectionClass->newInstanceArgs($args);
 	}
 
     /**

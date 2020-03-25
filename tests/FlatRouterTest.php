@@ -58,6 +58,7 @@ class FlatRouterTest extends TestCase
             new ServerRequest('get', 'https://example.com/authors/1234')
         );
 
+		$this->assertNotNull($route);
         $this->assertEquals(["GET"], $route->getMethods());
         $this->assertEquals("AuthorsController@get", $route->getAction());
     }

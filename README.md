@@ -1,7 +1,7 @@
 # Limber
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/nimbly/limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
-[![Build Status](https://img.shields.io/travis/nimbly/Limber.svg?style=flat-square)](https://travis-ci.org/nimbly/Limber)
+[![Build Status](https://img.shields.io/travis/nimbly/Limber.svg?style=flat-square)](https://travis-ci.com/nimbly/Limber)
 [![Code Coverage](https://img.shields.io/coveralls/github/nimbly/Limber.svg?style=flat-square)](https://coveralls.io/github/nimbly/Limber)
 [![License](https://img.shields.io/github/license/nimbly/Limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
 
@@ -12,12 +12,14 @@ Limber is intended for advanced users who are comfortable setting up their own f
 ## Limber includes
 * A router
 * PSR-15 middleware support
+* PSR-11 container support
 * A thin `Application` layer to:
 	* Attach router
 	* Add global PSR-15 middleware
 	* Add middleware chain exception handler
 	* Dispatch PSR-7 ServerRequestInterface instances
 	* Send PSR-7 ResponseInterface instances
+	* Add a PSR-11 container instance
 
 ## Installation
 
@@ -54,12 +56,12 @@ $application->send($response);
 
 ## PSR-7
 
-Limber *does not ship* with a PSR-7 HTTP Message implementation so you will need to bring your own.
+Limber *does not ship* with a PSR-7 HTTP Message implementation so you will need to bring your own. Here are some options:
 
-* [symfony/http-foundation](https://symfony.com/components/HttpFoundation)
 * [slim/psr7](https://github.com/slimphp/Slim-Psr7)
 * [nimbly/Capsule](https://github.com/nimbly/Capsule)
-* [zendframework/zend-diactoros](https://github.com/zendframework/zend-diactoros)
+* [laminas/laminas-diactoros](https://github.com/laminas/laminas-diactoros)
+* [guzzlehttp/psr7](https://github.com/guzzle/psr7)
 
 ## Router
 
@@ -340,6 +342,21 @@ $response = $application->dispatch(
 );
 ```
 
+### Autowiring support
+
+Limber will invoke your route handlers using reflection based autowiring. The `ServerRequestInterface` instance and any URI path parameters will be automatically resolved for you.
+
+### PSR-11 Container support
+
+Optionally, you can provide the `Application` instance a PSR-11 compatible `ContainerInterface` instance to be used when invoking route handlers or instantiating class based
+handlers to inject your application specific dependencies where needed.
+
+```php
+$container = new Psr11\Library\Container;
+
+$application->setContainer($container);
+```
+
 ### Sending the Response
 
 To send a PSR-7 `ResponseInterface` instance, call the `send` method.
@@ -352,7 +369,24 @@ $application->send($response);
 
 Because Limber is PSR-7 compliant, it works very well with [react/http](https://github.com/reactphp/http) to create a standalone HTTP service without the need for an additional HTTP server (nginx, Apache, etc) - great for containerizing your service with minimal dependencies.
 
+### Create service command
+
+Create a file called `main.php` (or whatever you want) to be the container's command/entry point.
+
 ```php
+<?php
+
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
+// Create the router and some routes.
+$router = new Limber\Router;
+$router->get('/', function(ServerRequestInterface $request): ResponseInterface {
+	return new Response(
+		"Hello world!"
+	);
+});
+
 // Create the Limber Application instance.
 $application = new Limber\Application($router);
 
@@ -373,4 +407,29 @@ $httpServer->listen(
 
 // Run the server!
 $eventLoop->run();
+```
+
+### Create Dockerfile
+
+```bash
+FROM php:7.2-cli
+
+WORKDIR /opt/service
+
+COPY . .
+
+EXPOSE 8000:8000
+
+CMD ["php", "/opt/service/main.php"]
+```
+
+### Build image
+
+```bash
+docker image build -t my-service:latest .
+```
+
+### Run it
+```bash
+docker image run my-service:latest
 ```

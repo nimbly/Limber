@@ -31,7 +31,7 @@ class PrepareHttpResponseTest extends TestCase
 					null,
 					[
 						'Content-Type' => 'application/json',
-						'Content-Length' => 100,
+						'Content-Length' => '100',
 						'Transfer-Encoding' => 'foo'
 					]
 				);
@@ -56,7 +56,7 @@ class PrepareHttpResponseTest extends TestCase
 					null,
 					[
 						'Content-Type' => 'application/json',
-						'Content-Length' => 100,
+						'Content-Length' => '100',
 						'Transfer-Encoding' => 'foo'
 					]
 				);
@@ -101,7 +101,7 @@ class PrepareHttpResponseTest extends TestCase
 					"Ok",
 					[
 						'Transfer-Encoding' => 'Foo',
-						'Content-Length' => 100
+						'Content-Length' => '100'
 					]
 				);
 			})
@@ -123,7 +123,7 @@ class PrepareHttpResponseTest extends TestCase
 					"Ok",
 					[
 						'Transfer-Encoding' => 'Foo',
-						'Content-Length' => 100
+						'Content-Length' => '100'
 					]
 				);
 			})

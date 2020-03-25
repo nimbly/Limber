@@ -7,6 +7,7 @@ use Capsule\ResponseStatus;
 use Limber\Exceptions\RouteException;
 use Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
 
 /**
@@ -221,7 +222,7 @@ class RouteTest extends TestCase
 
 	public function test_get_callable_action_unresolvable()
 	{
-		$route = new Route("get", "/books", new \StdClass);
+		$route = new Route("get", "/books", "");
 
 		$this->expectException(Throwable::class);
 		$route->getCallableAction();
