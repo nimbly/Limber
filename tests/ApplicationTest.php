@@ -164,7 +164,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$handler = function(\Throwable $exception) {};
+		$handler = function(\Throwable $exception): void {};
 
 		$application->setExceptionHandler($handler);
 
@@ -287,7 +287,7 @@ class ApplicationTest extends TestCase
 		$application = new Application(new Router);
 
 		$output = "";
-		\ob_start(function($buffer) use (&$output){
+		\ob_start(function(string $buffer) use (&$output){
 			$output .= $buffer;
 		});
 
@@ -316,7 +316,7 @@ class ApplicationTest extends TestCase
 
 		$reflectionMethod = $reflectionClass->getMethod('getRouteHandler');
 
-		$callable = function() {};
+		$callable = function(): void {};
 
 		$reflectionMethod->setAccessible(true);
 
@@ -371,7 +371,7 @@ class ApplicationTest extends TestCase
 		$reflectionMethod->invokeArgs($application, ["Limber\\EmptyStream@foo"]);
 	}
 
-	public function test_get_parameters_for_callable_on_function()
+	public function test_get_parameters_for_callable_on_function(): void
 	{
 		$application = new Application(
 			new Router
@@ -393,7 +393,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_get_parameters_for_callable_on_array()
+	public function test_get_parameters_for_callable_on_array(): void
 	{
 		$application = new Application(
 			new Router
@@ -413,7 +413,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_primitive_in_user_args()
+	public function test_resolve_dependencies_with_primitive_in_user_args(): void
 	{
 		$application = new Application(
 			new Router
@@ -437,7 +437,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_primitive_using_default_value()
+	public function test_resolve_dependencies_with_primitive_using_default_value(): void
 	{
 		$application = new Application(
 			new Router
@@ -461,7 +461,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_primitive_using_optional_or_allows_null()
+	public function test_resolve_dependencies_with_primitive_using_optional_or_allows_null(): void
 	{
 		$application = new Application(
 			new Router
@@ -485,7 +485,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_class_using_container()
+	public function test_resolve_dependencies_with_class_using_container(): void
 	{
 		$application = new Application(
 			new Router
@@ -514,7 +514,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_server_request_instance()
+	public function test_resolve_dependencies_with_server_request_instance(): void
 	{
 		$application = new Application(
 			new Router
@@ -542,7 +542,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_making_class()
+	public function test_resolve_dependencies_with_making_class(): void
 	{
 		$application = new Application(
 			new Router
@@ -566,7 +566,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_make_with_class_already_in_container()
+	public function test_make_with_class_already_in_container(): void
 	{
 		$application = new Application(
 			new Router
@@ -586,7 +586,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_make_with_interface_throws_application_exception()
+	public function test_make_with_interface_throws_application_exception(): void
 	{
 		$application = new Application(
 			new Router
@@ -596,7 +596,7 @@ class ApplicationTest extends TestCase
 		$application->make(RouterInterface::class);
 	}
 
-	public function test_make_with_abstract_throws_application_exception()
+	public function test_make_with_abstract_throws_application_exception(): void
 	{
 		$application = new Application(
 			new Router
@@ -606,7 +606,7 @@ class ApplicationTest extends TestCase
 		$application->make(HttpException::class);
 	}
 
-	public function test_make_on_class_with_no_constructor()
+	public function test_make_on_class_with_no_constructor(): void
 	{
 		$application = new Application(
 			new Router
@@ -620,7 +620,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_make_on_class_with_constructor()
+	public function test_make_on_class_with_constructor(): void
 	{
 		$application = new Application(
 			new Router
@@ -634,7 +634,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_make_on_class_with_constructor_and_user_args()
+	public function test_make_on_class_with_constructor_and_user_args(): void
 	{
 		$application = new Application(
 			new Router

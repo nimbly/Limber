@@ -19,7 +19,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 class CallableMiddlewareTest extends TestCase
 {
-	public function test_process()
+	public function test_process(): void
 	{
 		$callableMiddleware = new CallableMiddleware(
 			function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {

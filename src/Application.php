@@ -296,11 +296,14 @@ class Application
 	 *
 	 * @param array<ReflectionParameter> $reflectionParameters
 	 * @param array<string,mixed> $userArgs Array of user supplied arguments to be fed into dependecy resolution.
-	 * @return array<string,mixed>
+	 * @return array<mixed>
 	 */
 	private function resolveDependencies(array $reflectionParameters, array $userArgs = []): array
 	{
 		return \array_map(
+			/**
+			 * @return mixed
+			 */
 			function(ReflectionParameter $reflectionParameter) use ($userArgs) {
 
 				$parameterName = $reflectionParameter->getName();

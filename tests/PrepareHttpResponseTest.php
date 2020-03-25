@@ -18,7 +18,7 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 class PrepareHttpResponseTest extends TestCase
 {
-	public function test_204_no_content_responses_removes_content_based_headers()
+	public function test_204_no_content_responses_removes_content_based_headers(): void
 	{
 		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
 
@@ -43,7 +43,7 @@ class PrepareHttpResponseTest extends TestCase
 		$this->assertFalse($response->hasHeader('Transfer-Encoding'));
 	}
 
-	public function test_204_no_content_responses_replaces_body_with_empty_stream()
+	public function test_204_no_content_responses_replaces_body_with_empty_stream(): void
 	{
 		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
 
@@ -69,7 +69,7 @@ class PrepareHttpResponseTest extends TestCase
 		);
 	}
 
-	public function test_setting_content_length_header_if_none_provided()
+	public function test_setting_content_length_header_if_none_provided(): void
 	{
 		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
 
@@ -88,7 +88,7 @@ class PrepareHttpResponseTest extends TestCase
 		$this->assertEquals(2, $response->getHeader('Content-Length')[0]);
 	}
 
-	public function test_removing_content_length_header_if_transfer_encoding_header_present()
+	public function test_removing_content_length_header_if_transfer_encoding_header_present(): void
 	{
 		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
 
@@ -110,7 +110,7 @@ class PrepareHttpResponseTest extends TestCase
 		$this->assertFalse($response->hasHeader('Content-Length'));
 	}
 
-	public function test_head_methods_return_an_empty_stream()
+	public function test_head_methods_return_an_empty_stream(): void
 	{
 		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
 

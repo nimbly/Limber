@@ -12,25 +12,25 @@ use PHPUnit\Framework\TestCase;
  */
 class RouterTest extends TestCase
 {
-    public function test_set_pattern()
+    public function test_set_pattern(): void
     {
         Router::setPattern("isbn", "\d{3}\-\d\-\d{3}\-\d{5}\-\d");
         $this->assertEquals(Router::getPattern("isbn"), "\d{3}\-\d\-\d{3}\-\d{5}\-\d");
 	}
 
-	public function test_get_pattern_not_found()
+	public function test_get_pattern_not_found(): void
 	{
 		$this->assertNull(Router::getPattern("ean13"));
 	}
 
-    public function test_adding_get_route()
+    public function test_adding_get_route(): void
     {
         $router = new Router;
         $route = $router->get("books/{id}", "BooksController@get");
         $this->assertEquals(["GET", "HEAD"], $route->getMethods());
     }
 
-    public function test_adding_post_route()
+    public function test_adding_post_route(): void
     {
         $router = new Router;
         $route = $router->post("books", "BooksController@post");
@@ -38,7 +38,7 @@ class RouterTest extends TestCase
         $this->assertEquals(["POST"], $route->getMethods());
     }
 
-    public function test_adding_put_route()
+    public function test_adding_put_route(): void
     {
         $router = new Router;
         $route = $router->put("books", "BooksController@put");
@@ -46,7 +46,7 @@ class RouterTest extends TestCase
         $this->assertEquals(["PUT"], $route->getMethods());
     }
 
-    public function test_adding_patch_route()
+    public function test_adding_patch_route(): void
     {
         $router = new Router;
         $route = $router->patch("books", "BooksController@patch");
@@ -54,7 +54,7 @@ class RouterTest extends TestCase
         $this->assertEquals(["PATCH"], $route->getMethods());
     }
 
-    public function test_adding_delete_route()
+    public function test_adding_delete_route(): void
     {
         $router = new Router;
         $route = $router->delete("books", "BooksController@delete");
@@ -62,7 +62,7 @@ class RouterTest extends TestCase
         $this->assertEquals(["DELETE"], $route->getMethods());
     }
 
-    public function test_adding_head_route()
+    public function test_adding_head_route(): void
     {
         $router = new Router;
         $route = $router->head("books", "BooksController@head");
@@ -70,7 +70,7 @@ class RouterTest extends TestCase
         $this->assertEquals(["HEAD"], $route->getMethods());
     }
 
-    public function test_adding_options_route()
+    public function test_adding_options_route(): void
     {
         $router = new Router;
         $route = $router->options("books", "BooksController@options");
@@ -78,7 +78,7 @@ class RouterTest extends TestCase
         $this->assertEquals(["OPTIONS"], $route->getMethods());
 	}
 
-	public function test_group()
+	public function test_group(): void
 	{
 		$router = new Router;
 		$router->group([
@@ -89,7 +89,7 @@ class RouterTest extends TestCase
 			"middleware" => [
 				"App\\Middleware\\MiddlewareLayer1"
 			]
-		], function($router){
+		], function(Router $router): void {
 			$router->get("/books", "BooksController@all");
 		});
 
@@ -104,7 +104,7 @@ class RouterTest extends TestCase
 		], $routes[0]->getMiddleware());
 	}
 
-	public function test_group_nested()
+	public function test_group_nested(): void
 	{
 		$router = new Router;
 		$router->group([
@@ -115,7 +115,7 @@ class RouterTest extends TestCase
 			"middleware" => [
 				"App\\Middleware\\MiddlewareLayer1"
 			]
-		], function($router){
+		], function(Router $router): void {
 
 			$router->group([
 				"scheme" => "http",
@@ -125,7 +125,7 @@ class RouterTest extends TestCase
 				"middleware" => [
 					"App\\Middleware\\MiddlewareLayer2"
 				]
-			], function($router){
+			], function(Router $router): void {
 				$router->get("/books", "BooksController@all");
 			});
 
@@ -143,7 +143,7 @@ class RouterTest extends TestCase
 		], $routes[0]->getMiddleware());
 	}
 
-	public function test_merge_group_config()
+	public function test_merge_group_config(): void
 	{
 		$router = new Router;
 
@@ -182,7 +182,7 @@ class RouterTest extends TestCase
 		], $config);
 	}
 
-	public function test_nested_groups_inherit_from_parent()
+	public function test_nested_groups_inherit_from_parent(): void
 	{
 		$router = new Router;
 		$router->group([
@@ -193,9 +193,9 @@ class RouterTest extends TestCase
 			"middleware" => [
 				"App\\Middleware\\MiddlewareLayer1"
 			]
-		], function($router){
+		], function(Router $router): void {
 
-			$router->group([], function($router){
+			$router->group([], function(Router $router): void {
 				$router->get("/books", "BooksController@all");
 			});
 
