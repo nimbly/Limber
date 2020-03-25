@@ -2,7 +2,6 @@
 
 namespace Limber;
 
-use Closure;
 use Limber\Exceptions\ApplicationException;
 use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
@@ -145,7 +144,7 @@ class Application
 						throw new MethodNotAllowedHttpException($methods);
 					}
 
-					$routeHandler = $this->getRouteHandler($route->getAction());
+					$routeHandler = $route->getCallableAction();
 
 					return \call_user_func_array(
 						$routeHandler,
@@ -240,33 +239,6 @@ class Application
 		};
 
 		throw $exception;
-	}
-
-	/**
-	 * Resolve the route action into a callable handler.
-	 *
-	 * @param callable|string $action
-	 * @return callable
-	 */
-	private function getRouteHandler($action): callable
-	{
-		if( \is_callable($action) ){
-			return $action;
-		}
-		elseif( \is_string($action) ){
-
-			if( \preg_match("/^(.+)@(.+)$/", $action, $match) ){
-				if( \class_exists($match[1]) &&
-					\method_exists($match[1], $match[2]) ){
-					return [
-						$this->make($match[1]),
-						$match[2]
-					];
-				}
-			}
-		}
-
-		throw new ApplicationException("Route action cannot be resolved into a callable.");
 	}
 
 	/**
