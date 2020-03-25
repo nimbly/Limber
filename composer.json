@@ -2,17 +2,19 @@
     "name": "nimbly/limber",
     "description": "A super minimal HTTP framework that doesn't get in your way.",
     "keywords": [
-        "http",
-        "api",
-        "framework",
-        "router",
-        "middleware"
+		"php",
+		"http",
+		"api",
+		"framework",
+		"middleware",
+		"container"
     ],
     "type": "library",
     "require": {
         "php": ">=7.2",
         "psr/http-message": "^1.0",
-        "psr/http-server-middleware": "^1.0"
+		"psr/http-server-middleware": "^1.0",
+        "psr/container": "^1.0"
     },
     "license": "MIT",
     "authors": [
