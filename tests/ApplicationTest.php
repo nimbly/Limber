@@ -501,6 +501,26 @@ class ApplicationTest extends TestCase
 		);
 	}
 
+	public function test_resolve_dependencies_with_unresolvable_throws_application_exception(): void
+	{
+		$application = new Application(
+			new Router
+		);
+
+		$reflectionClass = new \ReflectionClass($application);
+		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
+		$reflectionMethod->setAccessible(true);
+
+		$callable = function(string $dateTime): void {
+			echo "The date is now: " . $dateTime;
+		};
+
+		$reflectionFunction = new ReflectionFunction($callable);
+
+		$this->expectException(ApplicationException::class);
+		$reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
+	}
+
 	public function test_make_with_class_already_in_container(): void
 	{
 		$application = new Application(
