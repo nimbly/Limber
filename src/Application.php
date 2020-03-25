@@ -327,11 +327,11 @@ class Application
 				// Parameter type is a class
 				else {
 
-					if( $this->container && $this->container->has((string) $parameterType) ){
-						return $this->container->get((string) $parameterType);
+					if( $this->container && $this->container->has($parameterType->getName()) ){
+						return $this->container->get($parameterType->getName());
 					}
 					elseif( isset($userArgs[ServerRequestInterface::class]) &&
-						\is_a($userArgs[ServerRequestInterface::class], (string) $parameterType) ){
+						\is_a($userArgs[ServerRequestInterface::class], $parameterType->getName()) ){
 						return $userArgs[ServerRequestInterface::class];
 					}
 					else {
@@ -343,7 +343,7 @@ class Application
 					}
 				}
 
-				throw new ApplicationException("Autowiring failed: Cannot resolve for " . $parameterName . "<" . (string) ($parameterType ?? "none") . ">.");
+				throw new ApplicationException("Autowiring failed: Cannot resolve for " . $parameterName . "<" . ($parameterType ? $parameterType->getName() : "none") . ">.");
 			},
 			$reflectionParameters
 		);
