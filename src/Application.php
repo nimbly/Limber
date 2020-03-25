@@ -11,7 +11,6 @@ use Limber\Middleware\PrepareHttpResponse;
 use Limber\Middleware\RequestHandler;
 use Limber\Router\Router;
 use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -56,11 +55,20 @@ class Application
      * Application constructor.
      *
      * @param Router $router
-	 * @param ContainerInterface|null $container
      */
-    public function __construct(Router $router, ?ContainerInterface $container = null)
+    public function __construct(Router $router)
     {
 		$this->router = $router;
+	}
+
+	/**
+	 * Set a ContainerInterface instance to be used when autowiring route handlers.
+	 *
+	 * @param ContainerInterface $container
+	 * @return void
+	 */
+	public function setContainer(ContainerInterface $container): void
+	{
 		$this->container = $container;
 	}
 
@@ -319,8 +327,8 @@ class Application
 				// Parameter type is a class
 				else {
 
-					if( $this->container && $this->container->has($parameterType) ){
-						return $this->container->get($parameterType);
+					if( $this->container && $this->container->has((string) $parameterType) ){
+						return $this->container->get((string) $parameterType);
 					}
 					elseif( isset($userArgs[ServerRequestInterface::class]) &&
 						\is_a($userArgs[ServerRequestInterface::class], (string) $parameterType) ){
