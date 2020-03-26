@@ -341,7 +341,7 @@ class Application
 		$reflectionClass = new ReflectionClass($className);
 
 		if( $reflectionClass->isInterface() || $reflectionClass->isAbstract() ){
-			throw new ApplicationException("Cannot make an instance of a Interface or Abstract class.");
+			throw new ApplicationException("Cannot make an instance of an Interface or Abstract.");
 		}
 
 		$constructor = $reflectionClass->getConstructor();
