@@ -17,7 +17,7 @@ class TooManyRequestsHttpException extends HttpException
 	/**
 	 * TooManyRequestsHttpException constructor
 	 *
-	 * This HTTP status requires a Retry-After header to be sent.
+	 * This HTTP status *may* include a Retry-After header to be sent.
 	 *
 	 * @param string $retryAfter An integer representing the number of seconds the client should delay before sending their request again.
 	 * @param string|null $message
