@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  */
 class TreeRouterTest extends TestCase
 {
-    public function test_constructor()
+    public function test_constructor(): void
     {
         $router = new Router([
             new Route("get", "books", "BooksController@all"),
@@ -36,7 +36,7 @@ class TreeRouterTest extends TestCase
         );
     }
 
-    public function test_add_route()
+    public function test_add_route(): void
     {
         $router = new Router;
         $route = $router->add(["get", "post"], "books/edit", "BooksController@edit");
@@ -46,7 +46,7 @@ class TreeRouterTest extends TestCase
         $this->assertEquals("BooksController@edit", $route->getAction());
     }
 
-    public function test_resolve()
+    public function test_resolve(): void
     {
         $router = new Router([
             new Route("get", "books/{id}", "BooksController@get"),
@@ -60,11 +60,12 @@ class TreeRouterTest extends TestCase
             new ServerRequest("get", "https://example.com/authors/1234")
         );
 
+		$this->assertNotNull($route);
         $this->assertEquals(["GET"], $route->getMethods());
         $this->assertEquals("AuthorsController@get", $route->getAction());
     }
 
-    public function test_get_methods()
+    public function test_get_methods(): void
     {
         $router = new Router([
             new Route("get", "books/{id}", "BooksController@get"),

@@ -11,7 +11,7 @@ class DefaultRouter implements RouterInterface
     /**
      * Set of indexed methods to routes.
      *
-     * @var array<string, array<Route>>
+     * @var array<string,array<Route>>
      */
     protected $indexes = [];
 

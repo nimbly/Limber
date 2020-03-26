@@ -1,7 +1,7 @@
 # Limber
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/nimbly/limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
-[![Build Status](https://img.shields.io/travis/nimbly/Limber.svg?style=flat-square)](https://travis-ci.org/nimbly/Limber)
+[![Build Status](https://img.shields.io/travis/nimbly/Limber.svg?style=flat-square)](https://travis-ci.com/nimbly/Limber)
 [![Code Coverage](https://img.shields.io/coveralls/github/nimbly/Limber.svg?style=flat-square)](https://coveralls.io/github/nimbly/Limber)
 [![License](https://img.shields.io/github/license/nimbly/Limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
 
@@ -11,18 +11,15 @@ Limber is intended for advanced users who are comfortable setting up their own f
 
 ## Limber includes
 * A router
-* PSR-15 middleware support
-* A thin `Application` layer to:
-	* Attach router
-	* Add global PSR-15 middleware
-	* Add middleware chain exception handler
-	* Dispatch PSR-7 ServerRequestInterface instances
-	* Send PSR-7 ResponseInterface instances
+* PSR-7 HTTP message compliant
+* PSR-11 container compliant
+* PSR-15 middleware compliant
+* A thin `Application` layer to tie everything together
 
 ## Installation
 
 ```bash
-composer require nimbly/Limber
+composer require nimbly/limber
 ```
 
 ## Quick start
@@ -54,12 +51,19 @@ $application->send($response);
 
 ## PSR-7
 
-Limber *does not ship* with a PSR-7 HTTP Message implementation so you will need to bring your own.
+Limber *does not ship* with a PSR-7 HTTP Message implementation so you will need to bring your own. Here are some options:
 
-* [symfony/http-foundation](https://symfony.com/components/HttpFoundation)
 * [slim/psr7](https://github.com/slimphp/Slim-Psr7)
+* [laminas/laminas-diactoros](https://github.com/laminas/laminas-diactoros)
+* [guzzlehttp/psr7](https://github.com/guzzle/psr7)
 * [nimbly/Capsule](https://github.com/nimbly/Capsule)
-* [zendframework/zend-diactoros](https://github.com/zendframework/zend-diactoros)
+
+## PSR-11
+
+Limber *does not ship* with a PSR-11 Container implementation, so you will need to bring your own if you need one. Here are some options:
+
+* [PHP-DI](http://php-di.org/)
+* [nimbly/Carton](https://github.com/nimbly/Carton)
 
 ## Router
 
@@ -89,21 +93,20 @@ By default, Limber will add a `HEAD` method to each `GET` route.
 
 ### Route paths
 
-Paths can be static or contain place holders.
+Paths can be static or contain named parameters. Named parameters will be injected into your
+route handler if the handler also contains a parameter of the same name.
 
 ```php
 // This route is static
 $router->get('/books/new', 'BooksController@getNewBooks');
 
-// This route needs an ISBN in the path.
+// This route defines a named parameter "isbn"
 $router->get('/books/{isbn}', 'BooksController@getByIsbn');
 ```
 
 ### Route path patterns
 
-Your path place holders can also enforce a specific regular expression pattern when being matched.
-
-Just add the pattern after the placeholder name with a colon.
+Your named parameters can also enforce a specific regular expression pattern when being matched - just add the pattern after the placeholder name with a colon.
 
 Limber has several predefined path patterns you can use:
 
@@ -127,34 +130,57 @@ $router->get('/books/{id:isbn}', 'BooksController@getByIsbn');
 
 ### Route actions
 
-Route actions may either be a `\callable` or a string in the format **Fully\Qualified\Namespace\ClassName@Method**.
-
-When a `ServerRequestInterface` instance is dispatched to the `Route` action, Limber will always pass the `ServerRequestInterface` instance in as the *first* parameter. Any path parameters defined in the route will be passed into the action as well, in the order they appear in the Route URI pattern.
+Route actions (or handlers) may either be a `\callable` or a string in the format **Fully\Qualified\Namespace\ClassName@Method** (for example `App\Handlers\v1\BookHandler@create`).
 
 Route actions *must* return a `ResponseInterface` instance.
 
+Limber uses reflection based autowiring to automatically resolve your route action's parameters - including the `ServerRequestInterface` instance
+and any path parameters. This applies for both closure based handlers as well as **Class@Method** based handlers.
+
+You may also optionally supply a PSR-11 compliant `ContainerInterface` instance to aid in route handler resolution. By doing this, you can
+easily have your application specific dependencies resolved and injected into your handlers by Limber. See **PSR-11 Container support** section
+for more information.
+
 ```php
 // Closure based actions
-$router->get("/books", function(ServerRequestInterface $request): ResponseInterface {
+$router->get("/books/{id:isbn}", function(ServerRequestInterface $request, string $id): ResponseInterface {
+
+	$book = Books::find($id);
+
+	if( empty($book) ){
+		throw new NotFoundHttpException("Book not found.");
+	}
 
 	return new Response(
-		\json_encode(Books::all())
+		\json_encode($book)
 	);
 
 });
 
 // String references to ClassName@Method
 $router->patch("/books/{id:isbn}", "App\Controllers\BooksController@update");
+
+// If a ContainerInterface instance was assigned to the application and contains an InventoryService instance, it will be injected into this handler.
+$router->post("/books", function(ServerRequestInterface $request, InventoryService $inventoryService): ResponseInterface {
+
+	$book = Book::make($request->getAll());
+
+	$inventoryService->add($book);
+
+	return new Response(
+		\json_encode($book)
+	);
+});
 ```
 
 ### Route groups
 
-You can group routes together using the `group` method and passing in parameters that you want applied to all routes within that group.
+You can group routes together using the `group` method and passing in array of configurations that you want applied to all routes within that group.
 
 * `scheme` *string* The HTTP scheme (http or https) to match against.
 * `middleware` *array&lt;string&gt;* or *array&lt;MiddlewareInterface&gt;* or *array&lt;callable&gt;* An array of all middleware classes (fullname space) or actual instances of middleware.
 * `prefix` &lt;string&gt; A string prepended to all URIs when matching the request.
-* `namespace` &lt;string&gt; A string prepended to all string based actions before instantiating a new controller.
+* `namespace` &lt;string&gt; A string prepended to all string based actions before instantiating a new class.
 * `hostname` &lt;string&gt; A host name to be matched against.
 
 ```php
@@ -340,9 +366,29 @@ $response = $application->dispatch(
 );
 ```
 
+### Autowiring support
+
+Limber will invoke your route handlers using reflection based autowiring. The `ServerRequestInterface` instance and any URI path parameters will be automatically resolved for you.
+
+### PSR-11 Container support
+
+Optionally, you can provide the `Application` instance a PSR-11 compatible `ContainerInterface` instance to be used when invoking route handlers or instantiating class based
+handlers to inject your application specific dependencies where needed.
+
+```php
+$container = new Psr11\Library\Container;
+$container->register(
+	[
+		// register your service providers
+	]
+);
+
+$application->setContainer($container);
+```
+
 ### Sending the Response
 
-To send a PSR-7 `ResponseInterface` instance, call the `send` method.
+To send a PSR-7 `ResponseInterface` instance, call the `send` method with the `ResponseInteface` instance.
 
 ```php
 $application->send($response);
@@ -352,7 +398,24 @@ $application->send($response);
 
 Because Limber is PSR-7 compliant, it works very well with [react/http](https://github.com/reactphp/http) to create a standalone HTTP service without the need for an additional HTTP server (nginx, Apache, etc) - great for containerizing your service with minimal dependencies.
 
+### Create service command
+
+Create a file called `main.php` (or whatever you want) to be the container's command/entry point.
+
 ```php
+<?php
+
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
+// Create the router and some routes.
+$router = new Limber\Router;
+$router->get('/', function(ServerRequestInterface $request): ResponseInterface {
+	return new Response(
+		"Hello world!"
+	);
+});
+
 // Create the Limber Application instance.
 $application = new Limber\Application($router);
 
@@ -373,4 +436,29 @@ $httpServer->listen(
 
 // Run the server!
 $eventLoop->run();
+```
+
+### Create Dockerfile
+
+```bash
+FROM php:7.2-cli
+
+WORKDIR /opt/service
+
+COPY . .
+
+EXPOSE 8000:8000
+
+CMD ["php", "/opt/service/main.php"]
+```
+
+### Build image
+
+```bash
+docker image build -t my-service:latest .
+```
+
+### Run it
+```bash
+docker image run my-service:latest
 ```

@@ -2,9 +2,8 @@
 
 namespace Limber\Router;
 
-use Limber\Exceptions\ApplicationException;
 use Limber\Exceptions\RouteException;
-use Throwable;
+use Psr\Http\Server\MiddlewareInterface;
 
 class Route
 {
@@ -46,21 +45,21 @@ class Route
     /**
      * Controller namespace prefix
      *
-     * @var string
+     * @var string|null
      */
     protected $namespace;
 
     /**
      * Request prefix
      *
-     * @var string
+     * @var string|null
      */
     protected $prefix;
 
     /**
      * Route middlware to apply.
      *
-     * @var array
+     * @var array<string>|array<MiddlewareInterface>
      */
     protected $middleware = [];
 
@@ -113,7 +112,9 @@ class Route
                 // Predefined pattern
                 if( isset($match[2]) ){
 
-                    if( ($part = Router::getPattern($match[2])) === null ){
+					$part = Router::getPattern($match[2]);
+
+                    if( empty($part) ){
                         throw new RouteException("Router pattern not found: {$match[2]}");
 					}
                 }
@@ -256,7 +257,7 @@ class Route
      */
     public function getMethods(): array
     {
-        return $this->methods;
+		return $this->methods;
     }
 
     /**
@@ -266,8 +267,7 @@ class Route
      */
     public function getAction()
     {
-        if( \is_string($this->action) &&
-            $this->namespace ){
+        if( \is_string($this->action) && $this->namespace ){
             return \trim($this->namespace, '\\') . '\\' . $this->action;
         }
 
@@ -277,7 +277,7 @@ class Route
 	/**
 	 * Get the callable action for this route.
 	 *
-	 * @throws Throwable
+	 * @throws RouteException
 	 * @return callable
 	 */
 	public function getCallableAction(): callable
@@ -288,11 +288,12 @@ class Route
 
 		/**
 		 * @psalm-suppress RedundantConditionGivenDocblockType
+		 * @psalm-suppress PossiblyInvalidArgument
 		 */
 		if( \is_string($this->action) ){
+
 			$callable = $this->makeCallableFromString(
-				($this->namespace ? \trim($this->namespace, '\\') . '\\' : "") .
-				$this->action
+				$this->getAction()
 			);
 
 			if( $callable ){
@@ -313,7 +314,8 @@ class Route
 	{
 		if( \preg_match("/^(.+)@(.+)$/", $classMethod, $match) ){
 
-			if( \class_exists($match[1]) ){
+			if( \class_exists($match[1]) &&
+				\method_exists($match[1], $match[2]) ){
 				return [new $match[1], $match[2]];
 			}
 		}
@@ -334,7 +336,7 @@ class Route
     /**
      * Get all middleware this route should apply.
      *
-     * @return array<string>
+     * @return array<string|MiddlewareInterface>
      */
     public function getMiddleware(): array
     {
@@ -344,7 +346,7 @@ class Route
     /**
      * Get namespace of route
      *
-     * @return string
+     * @return string|null
      */
     public function getNamespace(): ?string
     {

@@ -2,33 +2,34 @@
 
 namespace Limber\Router;
 
+use Closure;
 use Limber\Router\Engines\DefaultRouter;
 use Psr\Http\Message\ServerRequestInterface;
 
 class Router
 {
     /**
-     * @var array
+     * @var array<string,mixed>
      */
     protected $config = [
         'scheme' => null,
         'host' => null,
         'prefix' => null,
         'namespace' => null,
-        'middleware' => [],
+        'middleware' => []
     ];
 
     /**
      * Route path parameter patterns
      *
-     * @var array
+     * @var array<string,string>
      */
     protected static $patterns = [
         'alpha' => '[a-z]+',
         'int' => '\d+',
         'alphanumeric' => '[a-z0-9]+',
         'uuid' => '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',
-        'hex' => '[a-f0-9]+',
+        'hex' => '[a-f0-9]+'
 	];
 
 	/**
@@ -224,10 +225,10 @@ class Router
 	 * Group routes together with a set of shared configuration options.
 	 *
      * @param array $groupConfig
-     * @param \closure $callback
+     * @param Closure $callback
      * @return void
      */
-    public function group(array $groupConfig, \closure $callback): void
+    public function group(array $groupConfig, Closure $callback): void
     {
         // Save current config
         $previousConfig = $this->config;
@@ -243,21 +244,21 @@ class Router
     }
 
     /**
-     * Merge parent route Group configs in with child group.
+     * Merge parent config in with group config.
      *
-	 * @param array<string, mixed> $config
-     * @param array<string, mixed> $groupConfig
-     * @return array<string, mixed>
+	 * @param array<string,mixed> $parentConfig
+     * @param array<string,mixed> $groupConfig
+     * @return array<string,mixed>
      */
-    protected function mergeGroupConfig(array $config, array $groupConfig): array
+    protected function mergeGroupConfig(array $parentConfig, array $groupConfig): array
     {
 		return [
-			'scheme'=> $groupConfig['scheme'] ?? $config['scheme'] ?? null,
-			'hostname' => $groupConfig['hostname'] ?? $config['hostname'] ?? null,
-			'prefix' => $groupConfig['prefix'] ?? $config['prefix'] ?? null,
-			'namespace' => $groupConfig['namespace'] ?? $config['namespace'] ?? null,
+			'scheme'=> $groupConfig['scheme'] ?? $parentConfig['scheme'] ?? null,
+			'hostname' => $groupConfig['hostname'] ?? $parentConfig['hostname'] ?? null,
+			'prefix' => $groupConfig['prefix'] ?? $parentConfig['prefix'] ?? null,
+			'namespace' => $groupConfig['namespace'] ?? $parentConfig['namespace'] ?? null,
 			'middleware' => \array_merge(
-				$config['middleware'] ?? [],
+				$parentConfig['middleware'] ?? [],
 				$groupConfig['middleware'] ?? []
 			)
 		];

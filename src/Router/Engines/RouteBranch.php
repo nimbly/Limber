@@ -16,14 +16,14 @@ class RouteBranch
     /**
      * Routes indexed by HTTP method.
      *
-     * @var array<string, Route>
+     * @var array<string,Route>
      */
     protected $routes = [];
 
     /**
      * Further branches dangling from this branch.
      *
-     * @var array<string, RouteBranch>
+     * @var array<string,RouteBranch>
      */
     protected $branches = [];
 
