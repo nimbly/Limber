@@ -10,6 +10,7 @@ use DateTime;
 use Limber\Application;
 use Limber\EmptyStream;
 use Limber\Exceptions\ApplicationException;
+use Limber\Exceptions\DependencyResolutionException;
 use Limber\Exceptions\HttpException;
 use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
@@ -517,7 +518,7 @@ class ApplicationTest extends TestCase
 
 		$reflectionFunction = new ReflectionFunction($callable);
 
-		$this->expectException(ApplicationException::class);
+		$this->expectException(DependencyResolutionException::class);
 		$reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
 	}
 
@@ -547,7 +548,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$this->expectException(ApplicationException::class);
+		$this->expectException(DependencyResolutionException::class);
 		$application->make(RouterInterface::class);
 	}
 
@@ -557,7 +558,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$this->expectException(ApplicationException::class);
+		$this->expectException(DependencyResolutionException::class);
 		$application->make(HttpException::class);
 	}
 

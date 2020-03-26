@@ -3,6 +3,7 @@
 namespace Limber;
 
 use Limber\Exceptions\ApplicationException;
+use Limber\Exceptions\DependencyResolutionException;
 use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
 use Limber\Middleware\CallableMiddleware;
@@ -264,13 +265,13 @@ class Application
 	}
 
 	/**
-	 * Resolve an array of reflection parameters into an array of concrete instances/values indexed by parameter name and value.
+	 * Resolve an array of reflection parameters into an array of concrete instances/values.
 	 *
 	 * @param array<ReflectionParameter> $reflectionParameters
 	 * @param array<string,mixed> $userArgs Array of user supplied arguments to be fed into dependecy resolution.
 	 * @return array<mixed>
 	 */
-	private function resolveDependencies(array $reflectionParameters, array $userArgs = []): array
+	private function resolveDependencies(array $reflectionParameters, array $dependencies = []): array
 	{
 		return \array_map(
 			/**
@@ -318,7 +319,7 @@ class Application
 					}
 				}
 
-				throw new ApplicationException("Autowiring failed: Cannot resolve for " . $parameterName . "<" . ($parameterType ? $parameterType->getName() : "none") . ">.");
+				throw new DependencyResolutionException("Cannot resolve dependency for " . "<" . ($parameterType ? $parameterType->getName() : "mixed") . "> " . "\${$parameterName}.");
 			},
 			$reflectionParameters
 		);
@@ -341,7 +342,7 @@ class Application
 		$reflectionClass = new ReflectionClass($className);
 
 		if( $reflectionClass->isInterface() || $reflectionClass->isAbstract() ){
-			throw new ApplicationException("Cannot make an instance of an Interface or Abstract.");
+			throw new DependencyResolutionException("Cannot make an instance of an Interface or Abstract.");
 		}
 
 		$constructor = $reflectionClass->getConstructor();
