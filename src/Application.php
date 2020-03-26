@@ -271,7 +271,7 @@ class Application
 	 * @param array<string,mixed> $userArgs Array of user supplied arguments to be fed into dependecy resolution.
 	 * @return array<mixed>
 	 */
-	private function resolveDependencies(array $reflectionParameters, array $dependencies = []): array
+	private function resolveDependencies(array $reflectionParameters, array $userArgs = []): array
 	{
 		return \array_map(
 			/**
