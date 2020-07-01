@@ -68,15 +68,21 @@ class Route
      *
      * @var array<string>
      */
-    protected $patternParts = [];
+	protected $patternParts = [];
+
+	/**
+	 * Route attributes.
+	 *
+	 * @var array<string,mixed>
+	 */
+	protected $attributes = [];
 
     /**
      * Named path params in route eg: "id" in books/{id}/authors
      *
      * @var array<string>
      */
-    private $namedPathParameters = [];
-
+	private $namedPathParameters = [];
 
     /**
      * Route constructor.
@@ -99,7 +105,8 @@ class Route
         $this->setHostnames($config['hostname'] ?? []);
         $this->setMiddleware($config['middleware'] ?? []);
         $this->setPrefix($config['prefix'] ?? '');
-        $this->setNamespace($config['namespace'] ?? '');
+		$this->setNamespace($config['namespace'] ?? '');
+		$this->setAttributes($config['attributes'] ?? []);
 
         foreach( \explode("/", $this->getPath()) as $part ){
 
@@ -207,7 +214,32 @@ class Route
     {
         $this->namespace = $namespace;
         return $this;
-    }
+	}
+
+	/**
+	 * Assign attributes.
+	 *
+	 * @param array<string,mixed> $attributes
+	 * @return Route
+	 */
+	public function setAttributes(array $attributes): Route
+	{
+		$this->attributes = $attributes;
+		return $this;
+	}
+
+	/**
+	 * Set an attribute.
+	 *
+	 * @param string $name
+	 * @param mixed $value
+	 * @return Route
+	 */
+	public function setAttribute(string $name, $value): Route
+	{
+		$this->attributes[$name] = $value;
+		return $this;
+	}
 
 
     /**

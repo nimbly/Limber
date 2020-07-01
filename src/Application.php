@@ -2,33 +2,31 @@
 
 namespace Limber;
 
-use Limber\Exceptions\ApplicationException;
-use Limber\Exceptions\DependencyResolutionException;
-use Limber\Exceptions\MethodNotAllowedHttpException;
-use Limber\Exceptions\NotFoundHttpException;
-use Limber\Middleware\CallableMiddleware;
 use Limber\Middleware\PrepareHttpResponse;
-use Limber\Middleware\RequestHandler;
+use Limber\Middleware\RouteResolver;
 use Limber\Router\Router;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use ReflectionClass;
-use ReflectionFunction;
-use ReflectionMethod;
-use ReflectionParameter;
 use Throwable;
 
 class Application
 {
-    /**
-     * Router instance.
-     *
-     * @var Router
-     */
+	/**
+	 * Router instance.
+	 *
+	 * @var Router
+	 */
 	protected $router;
+
+	/**
+	 * MiddlewareManager instance.
+	 *
+	 * @var MiddlewareManager
+	 */
+	protected $middlewareManager;
 
 	/**
 	 * ContainerInterface instance.
@@ -37,28 +35,31 @@ class Application
 	 */
 	protected $container;
 
-    /**
-     * Global middleware.
-     *
-     * @var array
-     */
+	/**
+	 * Global middleware.
+	 *
+	 * @var array
+	 */
 	protected $middleware = [];
 
 	/**
-	 * Registered exception handler.
+	 * Request handler chain.
 	 *
-	 * @var callable|null
+	 * @var RequestHandlerInterface|null
 	 */
-	protected $exceptionHandler;
+	protected $requestHandler;
 
-    /**
-     * Application constructor.
-     *
-     * @param Router $router
-     */
-    public function __construct(Router $router)
-    {
+	/**
+	 * Application constructor.
+	 *
+	 * @param MiddlewareManager
+	 */
+	public function __construct(
+		Router $router,
+		MiddlewareManager $middlewareManager)
+	{
 		$this->router = $router;
+		$this->middlewareManager = $middlewareManager;
 	}
 
 	/**
@@ -72,318 +73,81 @@ class Application
 		$this->container = $container;
 	}
 
-    /**
-     * Set the global middleware to run.
-     *
-     * @param array<MiddlewareInterface|callable> $middlewares
-     * @return void
-     */
-    public function setMiddleware(array $middlewares): void
-    {
+	/**
+	 * Set the global middleware to run.
+	 *
+	 * @param array<MiddlewareInterface|callable> $middlewares
+	 * @return void
+	 */
+	public function setMiddleware(array $middlewares): void
+	{
 		$this->middleware = $middlewares;
 	}
 
-    /**
-     * Add a middleware to the stack.
-     *
-     * @param MiddlewareInterface|callable|string $middleware
-     */
-    public function addMiddleware($middleware): void
-    {
-        $this->middleware[] = $middleware;
-	}
-
 	/**
-	 * Add a default application-level exception handler.
+	 * Add a middleware to the stack.
 	 *
-	 * @param callable $exceptionHandler
-	 * @return void
+	 * @param MiddlewareInterface|callable|string $middleware
 	 */
-	public function setExceptionHandler(callable $exceptionHandler): void
+	public function addMiddleware($middleware): void
 	{
-		$this->exceptionHandler = $exceptionHandler;
-	}
-
-    /**
-     * Dispatch a request.
-     *
-     * @param ServerRequestInterface $request
-	 * @throws Throwable
-     * @return ResponseInterface
-     */
-    public function dispatch(ServerRequestInterface $request): ResponseInterface
-    {
-		// Resolve the route now to check for Routed middleware.
-		$route = $this->router->resolve($request);
-
-		// Normalize the middlewares to be array<MiddlewareInterface>
-		$middleware = $this->normalizeMiddleware(
-			\array_merge(
-				$this->middleware, // Global user-space middleware
-				$route ? $route->getMiddleware() : [], // Route specific middleware
-				[PrepareHttpResponse::class] // Application specific middleware
-			)
-		);
-
-		// Build the request handler chain
-		$requestHandler = $this->buildHandlerChain(
-			$middleware,
-			new RequestHandler(function(ServerRequestInterface $request) use ($route): ResponseInterface {
-
-				try {
-
-					if( empty($route) ){
-
-						$methods = $this->router->getMethods($request);
-
-						// 404 Not Found
-						if( empty($methods) ){
-							throw new NotFoundHttpException("Route not found");
-						}
-
-						// 405 Method Not Allowed
-						throw new MethodNotAllowedHttpException($methods);
-					}
-
-					$routeHandler = $route->getCallableAction();
-
-					return \call_user_func_array(
-						$routeHandler,
-						$this->resolveDependencies(
-							$this->getParametersForCallable($routeHandler),
-							\array_merge([ServerRequestInterface::class => $request], $route->getPathParams($request->getUri()->getPath()))
-						)
-					);
-
-				} catch( Throwable $exception ){
-
-					return $this->handleException($exception);
-				}
-
-			})
-		);
-
-		return $requestHandler->handle($request);
+		$this->middleware[] = $middleware;
 	}
 
 	/**
-	 * Normalize the given middlewares into instances of MiddlewareInterface.
+	 * Dispatch a request.
 	 *
-	 * @param array<MiddlewareInterface|callable|string> $middlewares
-	 * @throws ApplicationException
-	 * @return array<MiddlewareInterface>
-	 */
-	private function normalizeMiddleware(array $middlewares): array
-	{
-		return \array_map(function($middleware): MiddlewareInterface {
-
-			if( \is_callable($middleware) ){
-				$middleware = new CallableMiddleware($middleware);
-			}
-
-			if( \is_string($middleware) &&
-				\class_exists($middleware) ){
-				$middleware = new $middleware;
-			}
-
-			if( $middleware instanceof MiddlewareInterface === false ){
-				throw new ApplicationException("Provided middleware must be a string, a \callable, or an instance of Psr\Http\Server\MiddlewareInterface.");
-			}
-
-			return $middleware;
-
-		}, $middlewares);
-	}
-
-	/**
-	 * Build a RequestHandler chain out of middleware using provided Kernel as the final RequestHandler.
-	 *
-	 * @param array<MiddlewareInterface> $middleware
-	 * @param RequestHandlerInterface $kernel
-	 * @return RequestHandlerInterface
-	 */
-	private function buildHandlerChain(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
-	{
-		$middleware = \array_reverse($middleware);
-
-		return \array_reduce($middleware, function(RequestHandlerInterface $handler, MiddlewareInterface $middleware): RequestHandler {
-
-			return new RequestHandler(function(ServerRequestInterface $request) use ($handler, $middleware): ResponseInterface {
-
-				try {
-
-					return $middleware->process($request, $handler);
-
-				}
-				catch( Throwable $exception ){
-
-					return $this->handleException($exception);
-				}
-
-			});
-
-		}, $kernel);
-	}
-
-	/**
-	 * Handle a thrown exception by either passing it to user provided exception handler
-	 * or throwing it if no handler registered with application.
-	 *
-	 * @param Throwable $exception
+	 * @param ServerRequestInterface $request
 	 * @throws Throwable
 	 * @return ResponseInterface
 	 */
-	private function handleException(Throwable $exception): ResponseInterface
+	public function dispatch(ServerRequestInterface $request): ResponseInterface
 	{
-		if( $this->exceptionHandler ){
-			return \call_user_func($this->exceptionHandler, $exception);
-		};
+		if( empty($this->requestHandler) ){
+			$this->requestHandler = $this->middlewareManager->compile(
+				\array_merge(
+					$this->middleware, // Global user-space middleware
+					// Application specific middleware
+					[
+						new RouteResolver($this->router, $this->middlewareManager),
+						new PrepareHttpResponse
+					]
+				),
+				new Kernel($this->container)
+			);
+		}
 
-		throw $exception;
+		return $this->requestHandler->handle($request);
 	}
 
 	/**
-	 * Get the reflection parameters for a callable.
+	 * Send a response back to calling client.
 	 *
-	 * @param callable $handler
-	 * @throws ApplicationException
-	 * @return array<ReflectionParameter>
+	 * @param ResponseInterface $response
+	 * @return void
 	 */
-	private function getParametersForCallable(callable $handler): array
+	public function send(ResponseInterface $response): void
 	{
-		if( \is_array($handler) ) {
-			$reflector = new ReflectionMethod($handler[0], $handler[1]);
-		}
-		else {
-			/**
-			 * @psalm-suppress ArgumentTypeCoercion
-			 */
-			$reflector = new ReflectionFunction($handler);
-		}
+		if( !\headers_sent() ){
+			\header(
+				\sprintf(
+					"HTTP/%s %s %s",
+					$response->getProtocolVersion(),
+					$response->getStatusCode(),
+					$response->getReasonPhrase()
+				)
+			);
 
-		return $reflector->getParameters();
-	}
-
-	/**
-	 * Resolve an array of reflection parameters into an array of concrete instances/values.
-	 *
-	 * @param array<ReflectionParameter> $reflectionParameters
-	 * @param array<string,mixed> $userArgs Array of user supplied arguments to be fed into dependecy resolution.
-	 * @return array<mixed>
-	 */
-	private function resolveDependencies(array $reflectionParameters, array $userArgs = []): array
-	{
-		return \array_map(
-			/**
-			 * @return mixed
-			 */
-			function(ReflectionParameter $reflectionParameter) use ($userArgs) {
-
-				$parameterName = $reflectionParameter->getName();
-				$parameterType = $reflectionParameter->getType();
-
-				// No type or the type is a primitive (built in)
-				if( empty($parameterType) || $parameterType->isBuiltin() ){
-
-					// Check in user supplied argument list first.
-					if( \array_key_exists($parameterName, $userArgs) ){
-						return $userArgs[$parameterName];
-					}
-
-					// Does parameter offer a default value?
-					elseif( $reflectionParameter->isDefaultValueAvailable() ){
-						return $reflectionParameter->getDefaultValue();
-					}
-
-					elseif( $reflectionParameter->isOptional() || $reflectionParameter->allowsNull() ){
-						return null;
-					}
-				}
-
-				// Parameter type is a class
-				else {
-
-					if( $this->container && $this->container->has($parameterType->getName()) ){
-						return $this->container->get($parameterType->getName());
-					}
-					elseif( isset($userArgs[ServerRequestInterface::class]) &&
-						\is_a($userArgs[ServerRequestInterface::class], $parameterType->getName()) ){
-						return $userArgs[ServerRequestInterface::class];
-					}
-					else {
-
-						/**
-						 * @psalm-suppress ArgumentTypeCoercion
-						 */
-						return $this->make($parameterType->getName(), $userArgs);
-					}
-				}
-
-				throw new DependencyResolutionException("Cannot resolve dependency for " . "<" . ($parameterType ? $parameterType->getName() : "mixed") . "> " . "\${$parameterName}.");
-			},
-			$reflectionParameters
-		);
-	}
-
-	/**
-	 * Make an instance of a class using autowiring with values from the container.
-	 *
-	 * @param class-string $className
-	 * @param array<string,mixed> $userArgs
-	 * @return object
-	 */
-	public function make(string $className, array $userArgs = []): object
-	{
-		if( $this->container &&
-			$this->container->has($className) ){
-			return $this->container->get($className);
-		}
-
-		$reflectionClass = new ReflectionClass($className);
-
-		if( $reflectionClass->isInterface() || $reflectionClass->isAbstract() ){
-			throw new DependencyResolutionException("Cannot make an instance of an Interface or Abstract.");
-		}
-
-		$constructor = $reflectionClass->getConstructor();
-
-		if( empty($constructor) ){
-			return $reflectionClass->newInstance();
-		}
-
-		$args = $this->resolveDependencies(
-			$constructor->getParameters(),
-			$userArgs
-		);
-
-		return $reflectionClass->newInstanceArgs($args);
-	}
-
-    /**
-     * Send a response back to calling client.
-     *
-     * @param ResponseInterface $response
-     * @return void
-     */
-    public function send(ResponseInterface $response): void
-    {
-        if( !\headers_sent() ){
-            \header(
-                \sprintf("HTTP/%s %s %s", $response->getProtocolVersion(), $response->getStatusCode(), $response->getReasonPhrase())
-            );
-
-            foreach( $response->getHeaders() as $header => $values ){
-                foreach( $values as $value ){
-                    \header(
-						\sprintf("%s: %s", $header, $value),
-						false
-                    );
-                }
+			foreach( $response->getHeaders() as $header => $values ){
+				\header(
+					\sprintf("%s: %s", $header, \implode(",", $values)),
+					false
+				);
 			}
-        }
+		}
 
 		if( $response->getStatusCode() !== 204 ){
 			echo $response->getBody()->getContents();
 		}
-    }
+	}
 }
