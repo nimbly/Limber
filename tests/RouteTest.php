@@ -9,6 +9,7 @@ use Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use ReflectionClass;
 use Throwable;
 
 /**
@@ -244,5 +245,109 @@ class RouteTest extends TestCase
 			$handler,
 			$route->getCallableAction()
 		);
+	}
+
+	public function test_set_attribute(): void
+	{
+		$handler = function(ServerRequestInterface $request): ResponseInterface {
+			return new Response(
+				ResponseStatus::OK,
+				"OK"
+			);
+		};
+
+		$route = new Route("get", "/", $handler);
+		$route->setAttribute("attr", "value");
+
+		$reflectionClass = new ReflectionClass($route);
+		$reflectionProperty = $reflectionClass->getProperty("attributes");
+		$reflectionProperty->setAccessible(true);
+		$attributes = $reflectionProperty->getValue($route);
+
+		$this->assertArrayHasKey(
+			"attr",
+			$attributes
+		);
+	}
+
+	public function test_set_attributes(): void
+	{
+		$handler = function(ServerRequestInterface $request): ResponseInterface {
+			return new Response(
+				ResponseStatus::OK,
+				"OK"
+			);
+		};
+
+		$route = new Route("get", "/", $handler);
+		$route->setAttributes([
+			"attr" => "value",
+			"attr2" => "value"
+		]);
+
+		$reflectionClass = new ReflectionClass($route);
+		$reflectionProperty = $reflectionClass->getProperty("attributes");
+		$reflectionProperty->setAccessible(true);
+		$attributes = $reflectionProperty->getValue($route);
+
+		$this->assertEquals(
+			[
+				"attr" => "value",
+				"attr2" => "value"
+			],
+			$attributes
+		);
+	}
+
+	public function test_get_attribute(): void
+	{
+		$handler = function(ServerRequestInterface $request): ResponseInterface {
+			return new Response(
+				ResponseStatus::OK,
+				"OK"
+			);
+		};
+
+		$route = new Route("get", "/", $handler);
+		$route->setAttribute("attr", "value");
+
+		$this->assertEquals("value", $route->getAttribute("attr"));
+	}
+
+	public function test_get_attributes(): void
+	{
+		$handler = function(ServerRequestInterface $request): ResponseInterface {
+			return new Response(
+				ResponseStatus::OK,
+				"OK"
+			);
+		};
+
+		$route = new Route("get", "/", $handler);
+		$route->setAttributes([
+			"attr" => "value",
+			"attr2" => "value"
+		]);
+
+		$this->assertEquals([
+			"attr" => "value",
+			"attr2" => "value"
+		], $route->getAttributes());
+	}
+
+	public function test_has_attribute(): void
+	{
+		$handler = function(ServerRequestInterface $request): ResponseInterface {
+			return new Response(
+				ResponseStatus::OK,
+				"OK"
+			);
+		};
+
+		$route = new Route("get", "/", $handler);
+		$route->setAttribute("attr", "value");
+
+		$this->assertTrue($route->hasAttribute("attr"));
+		$this->assertFalse($route->hasAttribute("attr2"));
 	}
 }

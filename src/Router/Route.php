@@ -61,7 +61,14 @@ class Route
      *
      * @var array<string>|array<MiddlewareInterface>
      */
-    protected $middleware = [];
+	protected $middleware = [];
+
+	/**
+	 * Route attributes.
+	 *
+	 * @var array<string,mixed>
+	 */
+	protected $attributes = [];
 
     /**
      * Pattern parts
@@ -99,7 +106,8 @@ class Route
         $this->setHostnames($config['hostname'] ?? []);
         $this->setMiddleware($config['middleware'] ?? []);
         $this->setPrefix($config['prefix'] ?? '');
-        $this->setNamespace($config['namespace'] ?? '');
+		$this->setNamespace($config['namespace'] ?? '');
+		$this->setAttributes($config['attributes'] ?? []);
 
         foreach( \explode("/", $this->getPath()) as $part ){
 
@@ -207,7 +215,32 @@ class Route
     {
         $this->namespace = $namespace;
         return $this;
-    }
+	}
+
+	/**
+	 * Set an attribute on the route.
+	 *
+	 * @param string $attribute
+	 * @param mixed $value
+	 * @return Route
+	 */
+	public function setAttribute(string $attribute, $value): Route
+	{
+		$this->attributes[$attribute] = $value;
+		return $this;
+	}
+
+	/**
+	 * Set the attributes for the route.
+	 *
+	 * @param array<string,mixed> $attributes
+	 * @return Route
+	 */
+	public function setAttributes(array $attributes): Route
+	{
+		$this->attributes = $attributes;
+		return $this;
+	}
 
 
     /**
@@ -351,7 +384,39 @@ class Route
     public function getNamespace(): ?string
     {
         return $this->namespace;
-    }
+	}
+
+	/**
+	 * Get an attribute from the route.
+	 *
+	 * @param string $attribute
+	 * @return mixed
+	 */
+	public function getAttribute(string $attribute)
+	{
+		return $this->attributes[$attribute] ?? null;
+	}
+
+	/**
+	 * Does the route have the given attribute.
+	 *
+	 * @param string $attribute
+	 * @return boolean
+	 */
+	public function hasAttribute(string $attribute): bool
+	{
+		return \array_key_exists($attribute, $this->attributes);
+	}
+
+	/**
+	 * Get all the attributes of the route.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function getAttributes(): array
+	{
+		return $this->attributes;
+	}
 
     /**
      * Get the regex pattern used to match this route.

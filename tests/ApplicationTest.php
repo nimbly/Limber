@@ -16,6 +16,7 @@ use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
 use Limber\Middleware\CallableMiddleware;
 use Limber\Middleware\RequestHandler;
+use Limber\Router\Route;
 use Limber\Router\Router;
 use Limber\Router\RouterInterface;
 use PHPUnit\Framework\TestCase;
@@ -281,7 +282,57 @@ class ApplicationTest extends TestCase
 		$this->assertEquals("OK", $response->getBody()->getContents());
 	}
 
+	public function test_dispatch_attaches_route_attributes_to_request(): void
+	{
+		$route = (new Route(["get"], "/books", function(ServerRequestInterface $request){
+			return new Response(
+				ResponseStatus::OK,
+				\json_encode(
+					[
+						"attributes" => $request->getAttributes()
+					]
+				)
+			);
+		}))->setAttribute("Attribute", "Value");
 
+		$application = new Application(
+			new Router([$route])
+		);
+
+		$response = $application->dispatch(
+			new ServerRequest("get", "http://example.org/books")
+		);
+
+		$payload = \json_decode($response->getBody()->getContents());
+
+		$this->assertEquals(
+			[
+				"Attribute" => "Value"
+			],
+			(array) $payload->attributes
+		);
+	}
+
+	public function test_attach_request_attributes(): void
+	{
+		$application = new Application(
+			new Router
+		);
+
+		$reflectionClass = new \ReflectionClass($application);
+		$reflectionMethod = $reflectionClass->getMethod('attachRequestAttributes');
+		$reflectionMethod->setAccessible(true);
+
+		$request = $reflectionMethod->invokeArgs(
+			$application,
+			[new ServerRequest("post", "/test"), ["Attribute" => "Value"]]
+		);
+
+		$this->assertEquals(
+			$request->getAttribute("Attribute"),
+			"Value"
+		);
+	}
 
 	public function test_send(): void
 	{

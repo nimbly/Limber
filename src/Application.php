@@ -9,6 +9,7 @@ use Limber\Exceptions\NotFoundHttpException;
 use Limber\Middleware\CallableMiddleware;
 use Limber\Middleware\PrepareHttpResponse;
 use Limber\Middleware\RequestHandler;
+use Limber\Router\Route;
 use Limber\Router\Router;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -116,6 +117,12 @@ class Application
 		// Resolve the route now to check for Routed middleware.
 		$route = $this->router->resolve($request);
 
+		// Attach Request attributes
+		$request = $this->attachRequestAttributes(
+			$request,
+			$route ? $route->getAttributes() : []
+		);
+
 		// Normalize the middlewares to be array<MiddlewareInterface>
 		$middleware = $this->normalizeMiddleware(
 			\array_merge(
@@ -164,6 +171,22 @@ class Application
 		);
 
 		return $requestHandler->handle($request);
+	}
+
+	/**
+	 * Attach attributes to the request.
+	 *
+	 * @param ServerRequestInterface $request
+	 * @param array<string,mixed> $attributes
+	 * @return ServerRequestInterface
+	 */
+	private function attachRequestAttributes(ServerRequestInterface $request, array $attributes = []): ServerRequestInterface
+	{
+		foreach( $attributes as $attribute => $value ){
+			$request = $request->withAttribute($attribute, $value);
+		}
+
+		return $request;
 	}
 
 	/**
@@ -369,16 +392,19 @@ class Application
     {
         if( !\headers_sent() ){
             \header(
-                \sprintf("HTTP/%s %s %s", $response->getProtocolVersion(), $response->getStatusCode(), $response->getReasonPhrase())
+                \sprintf(
+					"HTTP/%s %s %s",
+					$response->getProtocolVersion(),
+					$response->getStatusCode(),
+					$response->getReasonPhrase()
+				)
             );
 
             foreach( $response->getHeaders() as $header => $values ){
-                foreach( $values as $value ){
-                    \header(
-						\sprintf("%s: %s", $header, $value),
-						false
-                    );
-                }
+				\header(
+					\sprintf("%s: %s", $header, \implode(",", $values)),
+					false
+				);
 			}
         }
 

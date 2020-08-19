@@ -5,7 +5,7 @@
 [![Code Coverage](https://img.shields.io/coveralls/github/nimbly/Limber.svg?style=flat-square)](https://coveralls.io/github/nimbly/Limber)
 [![License](https://img.shields.io/github/license/nimbly/Limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
 
-A super minimal PSR-7 and PSR-15 compliant HTTP framework that doesn't get in your way.
+A super minimal PSR-7 and PSR-15 compliant HTTP framework that doesn"t get in your way.
 
 Limber is intended for advanced users who are comfortable setting up their own framework and pulling in packages best suited for their particular use case.
 
@@ -75,16 +75,16 @@ Create a `Router` instance and begin defining your routes. There are convenience
 
 ```php
 $router = new Limber\Router\Router;
-$router->get('/fruits', 'FruitsController@all');
-$router->post('/fruits', 'FruitsController@create');
-$router->patch('/fruits/{id}', 'FruitsController@update');
-$router->delete('/fruits/{id}', 'FruitsContoller@delete');
+$router->get("/fruits", "FruitsController@all");
+$router->post("/fruits", "FruitsController@create");
+$router->patch("/fruits/{id}", "FruitsController@update");
+$router->delete("/fruits/{id}", "FruitsContoller@delete");
 ```
 
 A route can respond to any number of HTTP verbs.
 
 ```php
-$router->add(['get', 'post'], '/fruits', 'FruitsController@create');
+$router->add(["get", "post"], "/fruits", "FruitsController@create");
 ```
 
 ### HEAD requests
@@ -97,11 +97,28 @@ Paths can be static or contain named parameters. Named parameters will be inject
 route handler if the handler also contains a parameter of the same name.
 
 ```php
-// This route is static
-$router->get('/books/new', 'BooksController@getNewBooks');
+$router->get("/books/{isbn}", "BooksController@findByIsbn");
+```
 
-// This route defines a named parameter "isbn"
-$router->get('/books/{isbn}', 'BooksController@getByIsbn');
+In the following handler, both the `$request` and `$isbn` parameters will be injected automatically.
+
+```php
+class BooksController
+{
+    public function getByIsbn(ServerRequestInterface $request, string $isbn): ResponseInterface
+    {
+        $book = BookModel::findByIsbn($isbn);
+
+        if( empty($book) ){
+            throw new NotFoundHttpException("ISBN not found.");
+        }
+
+        return new JsonResponse(
+            200,
+            $book->toArray()
+        );
+    }
+}
 ```
 
 ### Route path patterns
@@ -118,14 +135,14 @@ Limber has several predefined path patterns you can use:
 
 ```php
 // Get a book by its ID and match the ID to a UUID.
-$router->get('/books/{id:uuid}', 'BooksController@get');
+$router->get("/books/{id:uuid}", "BooksController@get");
 ```
 
 You can define your own patterns to match using the `Router::setPattern()` static method.
 
 ```php
-Router::setPattern('isbn', '\d{9}[\d|X]');
-$router->get('/books/{id:isbn}', 'BooksController@getByIsbn');
+Router::setPattern("isbn", "\d{9}[\d|X]");
+$router->get("/books/{id:isbn}", "BooksController@getByIsbn");
 ```
 
 ### Route actions
@@ -134,7 +151,7 @@ Route actions (or handlers) may either be a `\callable` or a string in the forma
 
 Route actions *must* return a `ResponseInterface` instance.
 
-Limber uses reflection based autowiring to automatically resolve your route action's parameters - including the `ServerRequestInterface` instance
+Limber uses reflection based autowiring to automatically resolve your route action"s parameters - including the `ServerRequestInterface` instance
 and any path parameters. This applies for both closure based handlers as well as **Class@Method** based handlers.
 
 You may also optionally supply a PSR-11 compliant `ContainerInterface` instance to aid in route handler resolution. By doing this, you can
@@ -173,53 +190,82 @@ $router->post("/books", function(ServerRequestInterface $request, InventoryServi
 });
 ```
 
+### Route configuration
+
+You can configure individual routes to respond to a specific scheme, a specific hostname, process additional middleware, or pass along attributes to the `ServerRequestInterface` instance.
+
+#### Scheme
+
+```php
+$router->post("books", "BooksHandler@create")->setScheme("https");
+```
+
+#### Middleware
+
+```php
+$router->post("books", "BooksHandler@create")->setMiddleware([new FooMiddleware]);
+```
+
+#### Hostname
+
+```php
+$router->post("books", "BooksHandler@create")->setHostname("example.org");
+```
+
+#### Attributes
+
+```php
+$router->post("books", "BooksHandler@create")->setAttributes(["Attribute" => "Value"]);
+```
+
 ### Route groups
 
 You can group routes together using the `group` method and passing in array of configurations that you want applied to all routes within that group.
 
 * `scheme` *string* The HTTP scheme (http or https) to match against.
 * `middleware` *array&lt;string&gt;* or *array&lt;MiddlewareInterface&gt;* or *array&lt;callable&gt;* An array of all middleware classes (fullname space) or actual instances of middleware.
-* `prefix` &lt;string&gt; A string prepended to all URIs when matching the request.
-* `namespace` &lt;string&gt; A string prepended to all string based actions before instantiating a new class.
-* `hostname` &lt;string&gt; A host name to be matched against.
+* `prefix` *string* A string prepended to all URIs when matching the request.
+* `namespace` *string* A string prepended to all string based actions before instantiating a new class.
+* `hostname` *string* A host name to be matched against.
+* `attributes` *array&lt;string,mixed&gt;* An array of key=>value pairs representing attributes that will be attached to the `ServerRequestInterface` instance if the route matches.
 
 ```php
 $router->group([
-	'hostname' => 'sub.domain.com',
-	'middleware' => [
+	"hostname" => "sub.domain.com",
+	"middleware" => [
 		FooMiddleware::class,
 		BarMiddleware::class
 	],
-	'namespace' => 'App\Sub.Domain\Controllers',
-	'prefix' => 'v1'
+	"namespace" => "App\Sub.Domain\Controllers",
+	"prefix" => "v1"
 ], function($router){
 
-	$router->get('books/{isbn}', 'BooksController@getByIsbn');
-	$router->post('books', 'BooksController@create');
+	$router->get("books/{isbn}", "BooksController@getByIsbn");
+	$router->post("books", "BooksController@create");
 
 });
 ```
 
-Groups can be nested and will inherit their parent group's settings unless the setting is overridden. Middleware settings however are *merged* with their parent's settings.
+Groups can be nested and will inherit their parent group"s settings unless the setting is overridden. Middleware settings however are *merged* with their parent"s settings.
 
 ```php
 $router->group([
-	'hostname' => 'sub.domain.com',
-	'middleware' => [
+	"hostname" => "sub.domain.com",
+	"middleware" => [
 		FooMiddleware::class,
 		BarMiddleware::class
 	],
-	'namespace' => 'App\Sub.Domain\Controllers',
-	'prefix' => 'v1'
+	"namespace" => "App\Sub.Domain\Controllers",
+	"prefix" => "v1"
 ], function($router){
 
-	$router->get('books/{isbn}', 'BooksController@getByIsbn');
-	$router->post('books', 'BooksController@create');
+	$router->get("books/{isbn}", "BooksController@getByIsbn");
+	$router->post("books", "BooksController@create");
 
 	// This group will inherit all group settings from the parent group
 	// and will merge in an additional middleware (AdminMiddleware).
 	$router->group([
-		'middleware' => [
+		"middleware" => [
 			AdminMiddleware::class
 		]
 	], function($router) {
@@ -254,13 +300,13 @@ Route middleware can be applied per route or per route group.
 ```php
 
 // Middleware applied to single route
-$route->get('/books/{id:isbn}', 'BooksController@getByIsbn')->setMiddleware([
+$route->get("/books/{id:isbn}", "BooksController@getByIsbn")->setMiddleware([
 	FooMiddleware::class
 ]);
 
 // Middleware applied to entire group
 $route->group([
-	'middleware' => [
+	"middleware" => [
 		FooMiddleware::class,
 		BarMiddleware::class
 	]
@@ -281,12 +327,12 @@ class FooMiddleware implements MiddlewareInterface
 	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
 	{
 		// Add a custom header to the request before sending to route handler
-		$request = $request->withAddedHeader('X-Foo', 'Bar');
+		$request = $request->withAddedHeader("X-Foo", "Bar");
 
 		$response = $handler->handle($request);
 
 		// Add a custom header to the response before sending back to client
-		return $response->withAddedHeader('X-Custom-Header', 'Foo');
+		return $response->withAddedHeader("X-Custom-Header", "Foo");
 	}
 }
 ```
@@ -347,7 +393,7 @@ $application->setExceptionHandler(function(Throwable $exception): ResponseInterf
 		\render("errors/" . $exception->getHttpStatus()),
 		$exception->getHttpStatus(),
 		[
-			'Content-Type' => 'text/html'
+			"Content-Type" => "text/html"
 		]
 	);
 
@@ -398,9 +444,14 @@ $application->send($response);
 
 Because Limber is PSR-7 compliant, it works very well with [react/http](https://github.com/reactphp/http) to create a standalone HTTP service without the need for an additional HTTP server (nginx, Apache, etc) - great for containerizing your service with minimal dependencies.
 
-### Create service command
+### Install React/Http
+```bash
+composer install react/http
+```
 
-Create a file called `main.php` (or whatever you want) to be the container's command/entry point.
+### Create entry point
+
+Create a file called `main.php` (or whatever you want) to be the container"s command/entry point.
 
 ```php
 <?php
@@ -410,7 +461,7 @@ use Psr\Http\Message\ResponseInterface;
 
 // Create the router and some routes.
 $router = new Limber\Router;
-$router->get('/', function(ServerRequestInterface $request): ResponseInterface {
+$router->get("/", function(ServerRequestInterface $request): ResponseInterface {
 	return new Response(
 		"Hello world!"
 	);
@@ -423,11 +474,14 @@ $application = new Limber\Application($router);
 $eventLoop = React\EventLoop\Factory::create();
 
 // Create the HTTP server to handle incoming HTTP requests with your Limber Application instance.
-$httpServer = new React\Http\Server(function(ServerRequestInterface $request) use ($application): ResponseInterface {
+$httpServer = new React\Http\Server(
+    $eventLoop,
+    function(ServerRequestInterface $request) use ($application): ResponseInterface {
 
-	return $application->dispatch($request);
+	    return $application->dispatch($request);
 
-});
+    }
+);
 
 // Listen on port 8000.
 $httpServer->listen(
@@ -441,24 +495,22 @@ $eventLoop->run();
 ### Create Dockerfile
 
 ```bash
-FROM php:7.2-cli
+FROM php:7.4-cli
 
 WORKDIR /opt/service
 
 COPY . .
 
-EXPOSE 8000:8000
-
 CMD ["php", "/opt/service/main.php"]
 ```
 
-### Build image
+### Build docker image
 
 ```bash
 docker image build -t my-service:latest .
 ```
 
-### Run it
+### Run as container
 ```bash
-docker image run my-service:latest
+docker container run -p 8000:8000 --env-file=.env my-service:latest
 ```
