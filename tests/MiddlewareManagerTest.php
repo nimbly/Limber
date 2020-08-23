@@ -14,6 +14,11 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Throwable;
 
+/**
+ * @covers Limber\MiddlewareManager
+ * @covers Limber\Middleware\CallableMiddleware
+ * @covers Limber\Exceptions\HttpException
+ */
 class MiddlewareManagerTest extends TestCase
 {
 	public function test_set_middleware(): void

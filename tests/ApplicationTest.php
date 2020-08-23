@@ -16,14 +16,10 @@ use Throwable;
 
 /**
  * @covers Limber\Application
- * @covers Limber\Router\Router
+ * @covers Limber\DependencyManager
+ * @covers Limber\MiddlewareManager
+ * @covers Limber\RouteManager
  * @covers Limber\Router\Engines\DefaultRouter
- * @covers Limber\Router\Route
- * @covers Limber\Middleware\CallableMiddleware
- * @covers Limber\Middleware\RequestHandler
- * @covers Limber\Middleware\PrepareHttpResponse
- * @covers Limber\Exceptions\HttpException
- * @covers Limber\Exceptions\MethodNotAllowedHttpException
  */
 class ApplicationTest extends TestCase
 {

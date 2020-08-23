@@ -11,6 +11,10 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionClass;
 
+/**
+ * @covers Limber\Kernel
+ * @covers Limber\DependencyManager
+ */
 class KernelTest extends TestCase
 {
 	public function test_get_callable_handler_string(): void
