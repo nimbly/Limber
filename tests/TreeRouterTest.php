@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers Limber\Router\Engines\TreeRouter
- * @covers Limber\Router\Router
+ * @covers Limber\RouteManager
  * @covers Limber\Router\Route
  * @covers Limber\Router\Engines\RouteBranch
  */

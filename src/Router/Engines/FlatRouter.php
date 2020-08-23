@@ -40,10 +40,10 @@ class FlatRouter implements RouterInterface
     /**
      * @inheritDoc
      */
-    public function add(array $methods, string $path, $action, array $config = []): Route
+    public function add(array $methods, string $path, $handler, array $config = []): Route
     {
         // Create new Route instance
-        $route = new Route($methods, $path, $action, $config);
+        $route = new Route($methods, $path, $handler, $config);
         $this->routes[] = $route;
         return $route;
     }

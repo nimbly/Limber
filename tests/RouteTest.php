@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers Limber\Router\Route
- * @covers Limber\Router\Router
+ * @covers Limber\RouteManager
  */
 class RouteTest extends TestCase
 {

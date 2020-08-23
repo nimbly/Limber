@@ -7,6 +7,9 @@ use Limber\DependencyManager;
 use Limber\EmptyStream;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @covers Limber\DependencyManager
+ */
 class DependencyManagerTest extends TestCase
 {
 	public function test_make_on_class_with_no_constructor(): void

@@ -81,6 +81,7 @@ class DependencyManager
 			$parameters
 		);
 
+		/** @psalm-suppress PossiblyInvalidFunctionCall */
 		return \call_user_func_array($callable, $args);
 	}
 

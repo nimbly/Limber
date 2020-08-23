@@ -36,6 +36,13 @@ class Application
 	protected $dependencyManager;
 
 	/**
+	 * Global middleware.
+	 *
+	 * @var array<string|callable|MiddlewareInterface>
+	 */
+	protected $middleware;
+
+	/**
 	 * Compiled request handler chain.
 	 *
 	 * @var RequestHandlerInterface|null
@@ -93,12 +100,12 @@ class Application
 	/**
 	 * Set the global middleware to run.
 	 *
-	 * @param array<MiddlewareInterface|callable> $middlewares
+	 * @param array<MiddlewareInterface|callable|string> $middlewares
 	 * @return void
 	 */
 	public function setMiddleware(array $middlewares): void
 	{
-		$this->middlewareManager->setMiddleware($middlewares);
+		$this->middleware = $middlewares;
 	}
 
 	/**
@@ -108,7 +115,7 @@ class Application
 	 */
 	public function addMiddleware($middleware): void
 	{
-		$this->middlewareManager->addMiddleware($middleware);
+		$this->middleware[] = $middleware;
 	}
 
 	/**
@@ -230,10 +237,13 @@ class Application
 	{
 		if( empty($this->requestHandler) ){
 			$this->requestHandler = $this->middlewareManager->compile(
-				[
-					new RouteResolver($this->routeManager, $this->middlewareManager),
-					new PrepareHttpResponse
-				],
+				\array_merge(
+					[
+						new RouteResolver($this->routeManager, $this->middlewareManager),
+						new PrepareHttpResponse
+					],
+					$this->middleware
+				),
 				new Kernel($this->dependencyManager)
 			);
 		}

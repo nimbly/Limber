@@ -82,10 +82,10 @@ class TreeRouter implements RouterInterface
     /**
      * @inheritDoc
      */
-    public function add(array $methods, string $uri, $target, array $config = []): Route
+    public function add(array $methods, string $path, $handler, array $config = []): Route
     {
         // Create new Route instance
-        $route = new Route($methods, $uri, $target, $config);
+        $route = new Route($methods, $path, $handler, $config);
 
         // Index the route
         $this->indexRoute($route);

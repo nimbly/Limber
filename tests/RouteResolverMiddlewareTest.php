@@ -15,6 +15,15 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
+/**
+ * @covers Limber\Middleware\RouteResolver
+ * @covers Limber\RouteManager
+ * @covers Limber\Router\Engines\DefaultRouter
+ * @covers Limber\Router\Route
+ * @covers Limber\MiddlewareManager
+ * @covers Limber\Exceptions\HttpException
+ * @covers Limber\Exceptions\MethodNotAllowedHttpException
+ */
 class RouteResolverMiddlewareTest extends TestCase
 {
 	public function test_dispatch_with_unresolvable_route(): void

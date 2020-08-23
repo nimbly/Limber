@@ -3,7 +3,6 @@
 namespace Limber;
 
 use Limber\Exceptions\ApplicationException;
-use Limber\Exceptions\DependencyResolutionException;
 use Limber\Exceptions\HandlerException;
 use Limber\Router\Route;
 use Psr\Http\Message\ResponseInterface;
@@ -22,7 +21,7 @@ class Kernel implements RequestHandlerInterface
 	/**
 	 * Kernel constructor.
 	 *
-	 * @param DependencyManager|null $dependencyManager
+	 * @param DependencyManager $dependencyManager
 	 */
 	public function __construct(DependencyManager $dependencyManager)
 	{
@@ -76,7 +75,7 @@ class Kernel implements RequestHandlerInterface
 		}
 
 		if( \is_callable($handler) === false ){
-			throw new HandlerException("Cannot get callable handler.");
+			throw new HandlerException("Route handler is not callable.");
 		}
 
 		return $handler;

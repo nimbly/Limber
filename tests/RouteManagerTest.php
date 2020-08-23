@@ -6,7 +6,7 @@ use Limber\RouteManager;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers Limber\Router\Router
+ * @covers Limber\RouteManager
  * @covers Limber\Router\Engines\DefaultRouter
  * @covers Limber\Router\Route
  */

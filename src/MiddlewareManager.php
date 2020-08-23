@@ -30,7 +30,7 @@ class MiddlewareManager
 	/**
 	 * MiddlewareManager constructor.
 	 *
-	 * @param array<MiddlewareInterface|callable|string>
+	 * @param array<MiddlewareInterface|callable|string> $middleware
 	 * @param ExceptionHandlerInterface|null $exceptionHandler
 	 */
 	public function __construct(array $middleware = [], ?ExceptionHandlerInterface $exceptionHandler = null)
@@ -75,19 +75,14 @@ class MiddlewareManager
 	/**
 	 * Build a RequestHandler chain out of middleware using provided Kernel as the final RequestHandler.
 	 *
-	 * @param array<MiddlewareInterface> $middleware
+	 * @param array<MiddlewareInterface|string|callable> $middleware
 	 * @param RequestHandlerInterface $kernel
 	 * @return RequestHandlerInterface
 	 */
 	public function compile(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
 	{
 		$middleware = \array_reverse(
-			$this->normalizeMiddleware(
-				\array_merge(
-					$this->middleware,
-					$middleware
-				)
-			)
+			$this->normalizeMiddleware($middleware)
 		);
 
 		return \array_reduce(
