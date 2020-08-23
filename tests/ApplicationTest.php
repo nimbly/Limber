@@ -117,7 +117,7 @@ class ApplicationTest extends TestCase
 		$application = new Application(
 			new RouteManager,
 			$middlewareManager,
-			new DependencyManager,
+			new DependencyManager
 		);
 
 		$handler = new class implements ExceptionHandlerInterface {

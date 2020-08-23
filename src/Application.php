@@ -40,7 +40,7 @@ class Application
 	 *
 	 * @var array<string|callable|MiddlewareInterface>
 	 */
-	protected $middleware;
+	protected $middleware = [];
 
 	/**
 	 * Compiled request handler chain.
