@@ -3,6 +3,7 @@
 namespace Limber\Router;
 
 use Limber\Exceptions\RouteException;
+use Limber\RouteManager;
 use Psr\Http\Server\MiddlewareInterface;
 
 class Route
@@ -22,11 +23,11 @@ class Route
     protected $methods = [];
 
     /**
-     * Route action
+     * Route handler
      *
      * @var string|callable
      */
-    protected $action;
+    protected $handler;
 
     /**
      * Request scheme (http or https)
@@ -89,28 +90,28 @@ class Route
      *
      * @param string|array $methods
      * @param string $path
-     * @param string|callable $action
+     * @param string|callable $handler
      * @param array $config Additional config data (usually passed in from group settings)
      *
      */
-    public function __construct($methods, string $path, $action, array $config = [])
+    public function __construct($methods, string $path, $handler, array $config = [])
     {
         // Required bits
-        $this->methods = \array_map('strtoupper', \is_string($methods) ? [$methods] : $methods);
-        $this->action = $action;
+        $this->methods = \array_map("strtoupper", \is_string($methods) ? [$methods] : $methods);
+        $this->handler = $handler;
         $this->path = $this->stripLeadingAndTrailingSlash($path);
 
         // Optional
-        $this->setSchemes($config['scheme'] ?? []);
-        $this->setHostnames($config['hostname'] ?? []);
-        $this->setMiddleware($config['middleware'] ?? []);
-        $this->setPrefix($config['prefix'] ?? '');
-		$this->setNamespace($config['namespace'] ?? '');
-		$this->setAttributes($config['attributes'] ?? []);
+        $this->setSchemes($config["scheme"] ?? []);
+        $this->setHostnames($config["hostname"] ?? []);
+        $this->setMiddleware($config["middleware"] ?? []);
+        $this->setPrefix($config["prefix"] ?? "");
+		$this->setNamespace($config["namespace"] ?? "");
+		$this->setAttributes($config["attributes"] ?? []);
 
         foreach( \explode("/", $this->getPath()) as $part ){
 
-            if( \preg_match('/{([a-z0-9_]+)(?:\:([a-z0-9_]+))?}/i', $part, $match) ){
+            if( \preg_match("/{([a-z0-9_]+)(?:\:([a-z0-9_]+))?}/i", $part, $match) ){
 
                 if( \in_array($match[1], $this->namedPathParameters) ){
                     throw new RouteException("Path parameter \"{$match[1]}\" already defined for route {$match[0]}");
@@ -119,7 +120,7 @@ class Route
                 // Predefined pattern
                 if( isset($match[2]) ){
 
-					$part = Router::getPattern($match[2]);
+					$part = RouteManager::getPattern($match[2]);
 
                     if( empty($part) ){
                         throw new RouteException("Router pattern not found: {$match[2]}");
@@ -129,7 +130,7 @@ class Route
                 // Match anything
                 else {
 
-                    $part = '[^\/]+';
+                    $part = "[^\/]+";
                 }
 
                 $part = "({$part})";
@@ -293,66 +294,17 @@ class Route
     }
 
     /**
-     * Get route action.
+     * Get route handler.
      *
      * @return string|callable
      */
-    public function getAction()
+    public function getHandler()
     {
-        if( \is_string($this->action) && $this->namespace ){
-            return \trim($this->namespace, '\\') . '\\' . $this->action;
+        if( \is_string($this->handler) && $this->namespace ){
+            return \trim($this->namespace, "\\") . "\\" . $this->handler;
         }
 
-        return $this->action;
-	}
-
-	/**
-	 * Get the callable action for this route.
-	 *
-	 * @throws RouteException
-	 * @return callable
-	 */
-	public function getCallableAction(): callable
-	{
-		if( \is_callable($this->action) ){
-			return $this->action;
-		}
-
-		/**
-		 * @psalm-suppress RedundantConditionGivenDocblockType
-		 * @psalm-suppress PossiblyInvalidArgument
-		 */
-		if( \is_string($this->action) ){
-
-			$callable = $this->makeCallableFromString(
-				$this->getAction()
-			);
-
-			if( $callable ){
-				return $callable;
-			}
-		}
-
-		throw new RouteException("Route action cannot be resolved to a callable.");
-	}
-
-	/**
-	 * Turn a Class@Method type string and covert to a callable.
-	 *
-	 * @param string $classMethod
-	 * @return callable|null
-	 */
-	private function makeCallableFromString(string $classMethod): ?callable
-	{
-		if( \preg_match("/^(.+)@(.+)$/", $classMethod, $match) ){
-
-			if( \class_exists($match[1]) &&
-				\method_exists($match[1], $match[2]) ){
-				return [new $match[1], $match[2]];
-			}
-		}
-
-		return null;
+        return $this->handler;
 	}
 
     /**
@@ -432,7 +384,17 @@ class Route
         }
 
         return $pathParams;
-    }
+	}
+
+	/**
+	 * Get the Route attributes.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function getAttributes(): array
+	{
+		return $this->attributes;
+	}
 
     /**
      *
@@ -441,7 +403,7 @@ class Route
      */
 
     /**
-     * Does the given scheme match this route's scheme?
+     * Does the given scheme match this route"s scheme?
      *
      * @param string $scheme
      * @return bool
@@ -452,12 +414,12 @@ class Route
             return true;
         }
 
-        return \array_search(\strtolower($scheme), \array_map('strtolower', $this->schemes)) !== false;
+        return \array_search(\strtolower($scheme), \array_map("strtolower", $this->schemes)) !== false;
     }
 
 
     /**
-     * Does the given hostname match the route's hostname?
+     * Does the given hostname match the route"s hostname?
      *
      * @param string $hostnames
      * @return bool
@@ -468,11 +430,11 @@ class Route
             return true;
         }
 
-        return \array_search(\strtolower($hostnames), \array_map('strtolower', $this->hostnames)) !== false;
+        return \array_search(\strtolower($hostnames), \array_map("strtolower", $this->hostnames)) !== false;
     }
 
     /**
-     * Does the given method match the route's set of methods?
+     * Does the given method match the route"s set of methods?
      *
      * @param string $method
      * @return bool
@@ -483,7 +445,7 @@ class Route
     }
 
     /**
-     * Does the given path match the route's path?
+     * Does the given path match the route"s path?
      *
      * @param string $path
      * @return bool
@@ -502,6 +464,6 @@ class Route
      */
     private function stripLeadingAndTrailingSlash(string $path): string
     {
-        return \trim($path, '/');
+        return \trim($path, "/");
     }
 }

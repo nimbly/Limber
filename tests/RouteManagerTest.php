@@ -2,7 +2,7 @@
 
 namespace Limber\Tests;
 
-use Limber\Router\Router;
+use Limber\RouteManager;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -10,78 +10,78 @@ use PHPUnit\Framework\TestCase;
  * @covers Limber\Router\Engines\DefaultRouter
  * @covers Limber\Router\Route
  */
-class RouterTest extends TestCase
+class RouteManagerTest extends TestCase
 {
     public function test_set_pattern(): void
     {
-        Router::setPattern("isbn", "\d{3}\-\d\-\d{3}\-\d{5}\-\d");
-        $this->assertEquals(Router::getPattern("isbn"), "\d{3}\-\d\-\d{3}\-\d{5}\-\d");
+        RouteManager::setPattern("isbn", "\d{3}\-\d\-\d{3}\-\d{5}\-\d");
+        $this->assertEquals(RouteManager::getPattern("isbn"), "\d{3}\-\d\-\d{3}\-\d{5}\-\d");
 	}
 
 	public function test_get_pattern_not_found(): void
 	{
-		$this->assertNull(Router::getPattern("ean13"));
+		$this->assertNull(RouteManager::getPattern("ean13"));
 	}
 
     public function test_adding_get_route(): void
     {
-        $router = new Router;
-        $route = $router->get("books/{id}", "BooksController@get");
+        $routeManager = new RouteManager;
+        $route = $routeManager->get("books/{id}", "BooksController@get");
         $this->assertEquals(["GET", "HEAD"], $route->getMethods());
     }
 
     public function test_adding_post_route(): void
     {
-        $router = new Router;
-        $route = $router->post("books", "BooksController@post");
+        $routeManager = new RouteManager;
+        $route = $routeManager->post("books", "BooksController@post");
 
         $this->assertEquals(["POST"], $route->getMethods());
     }
 
     public function test_adding_put_route(): void
     {
-        $router = new Router;
-        $route = $router->put("books", "BooksController@put");
+        $routeManager = new RouteManager;
+        $route = $routeManager->put("books", "BooksController@put");
 
         $this->assertEquals(["PUT"], $route->getMethods());
     }
 
     public function test_adding_patch_route(): void
     {
-        $router = new Router;
-        $route = $router->patch("books", "BooksController@patch");
+        $routeManager = new RouteManager;
+        $route = $routeManager->patch("books", "BooksController@patch");
 
         $this->assertEquals(["PATCH"], $route->getMethods());
     }
 
     public function test_adding_delete_route(): void
     {
-        $router = new Router;
-        $route = $router->delete("books", "BooksController@delete");
+        $routeManager = new RouteManager;
+        $route = $routeManager->delete("books", "BooksController@delete");
 
         $this->assertEquals(["DELETE"], $route->getMethods());
     }
 
     public function test_adding_head_route(): void
     {
-        $router = new Router;
-        $route = $router->head("books", "BooksController@head");
+        $routeManager = new RouteManager;
+        $route = $routeManager->head("books", "BooksController@head");
 
         $this->assertEquals(["HEAD"], $route->getMethods());
     }
 
     public function test_adding_options_route(): void
     {
-        $router = new Router;
-        $route = $router->options("books", "BooksController@options");
+        $routeManager = new RouteManager;
+        $route = $routeManager->options("books", "BooksController@options");
 
         $this->assertEquals(["OPTIONS"], $route->getMethods());
 	}
 
 	public function test_group(): void
 	{
-		$router = new Router;
-		$router->group([
+		$routeManager = new RouteManager;
+		$routeManager->group([
 			"scheme" => "https",
 			"hostname" => "example.org",
 			"prefix" => "v1",
@@ -89,11 +89,11 @@ class RouterTest extends TestCase
 			"middleware" => [
 				"App\\Middleware\\MiddlewareLayer1"
 			]
-		], function(Router $router): void {
-			$router->get("/books", "BooksController@all");
+		], function(RouteManager $routeManager): void {
+			$routeManager->get("/books", "BooksController@all");
 		});
 
-		$routes = $router->getRoutes();
+		$routes = $routeManager->getRoutes();
 
 		$this->assertEquals(["https"], $routes[0]->getSchemes());
 		$this->assertEquals(["example.org"], $routes[0]->getHostnames());
@@ -106,8 +106,8 @@ class RouterTest extends TestCase
 
 	public function test_group_nested(): void
 	{
-		$router = new Router;
-		$router->group([
+		$routeManager = new RouteManager;
+		$routeManager->group([
 			"scheme" => "https",
 			"hostname" => "example.org",
 			"prefix" => "v1",
@@ -115,9 +115,9 @@ class RouterTest extends TestCase
 			"middleware" => [
 				"App\\Middleware\\MiddlewareLayer1"
 			]
-		], function(Router $router): void {
+		], function(RouteManager $routeManager): void {
 
-			$router->group([
+			$routeManager->group([
 				"scheme" => "http",
 				"hostname" => "sub.example.org",
 				"prefix" => "v2",
@@ -125,13 +125,13 @@ class RouterTest extends TestCase
 				"middleware" => [
 					"App\\Middleware\\MiddlewareLayer2"
 				]
-			], function(Router $router): void {
-				$router->get("/books", "BooksController@all");
+			], function(RouteManager $routeManager): void {
+				$routeManager->get("/books", "BooksController@all");
 			});
 
 		});
 
-		$routes = $router->getRoutes();
+		$routes = $routeManager->getRoutes();
 
 		$this->assertEquals(["http"], $routes[0]->getSchemes());
 		$this->assertEquals(["sub.example.org"], $routes[0]->getHostnames());
@@ -145,13 +145,13 @@ class RouterTest extends TestCase
 
 	public function test_merge_group_config(): void
 	{
-		$router = new Router;
+		$routeManager = new RouteManager;
 
-		$reflection = new \ReflectionClass($router);
+		$reflection = new \ReflectionClass($routeManager);
 		$method = $reflection->getMethod('mergeGroupConfig');
 		$method->setAccessible(true);
 
-		$config = $method->invokeArgs($router, [
+		$config = $method->invokeArgs($routeManager, [
 			[
 				"hostname" => "example.org",
 				"prefix" => "v1",
@@ -159,6 +159,9 @@ class RouterTest extends TestCase
 				"middleware" => [
 					"App\Middleware\MiddlewareLayer1"
 				],
+				"attributes" => [
+					"Attribute1" => "Value1"
+				]
 			],
 			[
 				"hostname" => "sub.example.org",
@@ -166,6 +169,9 @@ class RouterTest extends TestCase
 				"namespace" => "App\\v2\\Controller",
 				"middleware" => [
 					"App\Middleware\MiddlewareLayer2"
+				],
+				"attributes" => [
+					"Attribute2" => "Value2"
 				]
 			]
 		]);
@@ -178,30 +184,37 @@ class RouterTest extends TestCase
 			"middleware" => [
 				"App\Middleware\MiddlewareLayer1",
 				"App\Middleware\MiddlewareLayer2"
+			],
+			"attributes" => [
+				"Attribute1" => "Value1",
+				"Attribute2" => "Value2"
 			]
 		], $config);
 	}
 
 	public function test_nested_groups_inherit_from_parent(): void
 	{
-		$router = new Router;
-		$router->group([
+		$routeManager = new RouteManager;
+		$routeManager->group([
 			"scheme" => "https",
 			"hostname" => "example.org",
 			"prefix" => "v1",
 			"namespace" => "App\\Controllers\\v1",
 			"middleware" => [
 				"App\\Middleware\\MiddlewareLayer1"
-			]
-		], function(Router $router): void {
+			],
+			"attributes" => [
 
-			$router->group([], function(Router $router): void {
-				$router->get("/books", "BooksController@all");
+			]
+		], function(RouteManager $routeManager): void {
+
+			$routeManager->group([], function(RouteManager $routeManager): void {
+				$routeManager->get("/books", "BooksController@all");
 			});
 
 		});
 
-		$routes = $router->getRoutes();
+		$routes = $routeManager->getRoutes();
 
 		$this->assertEquals(["https"], $routes[0]->getSchemes());
 		$this->assertEquals(["example.org"], $routes[0]->getHostnames());
@@ -210,5 +223,9 @@ class RouterTest extends TestCase
 		$this->assertEquals([
 			"App\\Middleware\\MiddlewareLayer1"
 		], $routes[0]->getMiddleware());
+		$this->assertEquals(
+			[],
+			$routes[0]->getAttributes()
+		);
 	}
 }

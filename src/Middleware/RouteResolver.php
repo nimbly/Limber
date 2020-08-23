@@ -2,12 +2,11 @@
 
 namespace Limber\Middleware;
 
-use Limber\Exceptions\ApplicationException;
 use Limber\Exceptions\MethodNotAllowedHttpException;
 use Limber\Exceptions\NotFoundHttpException;
 use Limber\MiddlewareManager;
+use Limber\RouteManager;
 use Limber\Router\Route;
-use Limber\Router\Router;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -16,11 +15,11 @@ use Psr\Http\Server\RequestHandlerInterface;
 class RouteResolver implements MiddlewareInterface
 {
 	/**
-	 * Router instance.
+	 * RouteManager instance.
 	 *
-	 * @var Router
+	 * @var RouteManager
 	 */
-	protected $router;
+	protected $routeManager;
 
 	/**
 	 * MiddlewareManager instance.
@@ -29,20 +28,29 @@ class RouteResolver implements MiddlewareInterface
 	 */
 	protected $middlewareManager;
 
+	/**
+	 * RouteResolver constructor.
+	 *
+	 * @param RouteManager $routeManager
+	 * @param MiddlewareManager $middlewareManager
+	 */
 	public function __construct(
-		Router $router,
+		RouteManager $routeManager,
 		MiddlewareManager $middlewareManager)
 	{
-		$this->router = $router;
+		$this->routeManager = $routeManager;
 		$this->middlewareManager = $middlewareManager;
 	}
 
+	/**
+	 * @inheritDoc
+	 */
 	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
 	{
-		$route = $this->router->resolve($request);
+		$route = $this->routeManager->resolve($request);
 
 		if( empty($route) ){
-			$methods = $this->router->getMethods($request);
+			$methods = $this->routeManager->getMethods($request);
 
 			if( $methods ){
 				throw new MethodNotAllowedHttpException($methods, "Method not allowed");
@@ -51,7 +59,14 @@ class RouteResolver implements MiddlewareInterface
 			throw new NotFoundHttpException("Route not found");
 		}
 
-		// We need to compile this middleware and splice it into this chain.
+		// Capture the route attributes (if any) and attach to request instance.
+		if( $route->getAttributes() ){
+			foreach( $route->getAttributes() as $attribute => $value ){
+				$request = $request->withAttribute($attribute, $value);
+			}
+		}
+
+		// We need to compile the route middleware and splice it into the current chain.
 		if( $route->getMiddleware() ){
 			$handler = $this->middlewareManager->compile($route->getMiddleware(), $handler);
 		}

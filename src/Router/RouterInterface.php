@@ -28,11 +28,11 @@ interface RouterInterface
      *
      * @param array $methods
      * @param string $path
-     * @param string|callable $action
+     * @param string|callable $handler
 	 * @param array $config
      * @return Route
      */
-	public function add(array $methods, string $path, $action, array $config = []): Route;
+	public function add(array $methods, string $path, $handler, array $config = []): Route;
 
 	/**
      * Return all HTTP methods supported by the endpoint.

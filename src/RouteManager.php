@@ -1,22 +1,24 @@
 <?php
 
-namespace Limber\Router;
+namespace Limber;
 
 use Closure;
 use Limber\Router\Engines\DefaultRouter;
+use Limber\Router\Route;
+use Limber\Router\RouterInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class Router
+class RouteManager
 {
     /**
      * @var array<string,mixed>
      */
     protected $config = [
-        'scheme' => null,
-        'host' => null,
-        'prefix' => null,
-        'namespace' => null,
-        'middleware' => []
+        "scheme" => null,
+        "host" => null,
+        "prefix" => null,
+        "namespace" => null,
+        "middleware" => []
     ];
 
     /**
@@ -25,11 +27,11 @@ class Router
      * @var array<string,string>
      */
     protected static $patterns = [
-        'alpha' => '[a-z]+',
-        'int' => '\d+',
-        'alphanumeric' => '[a-z0-9]+',
-        'uuid' => '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',
-        'hex' => '[a-f0-9]+'
+        "alpha" => "[a-z]+",
+        "int" => "\d+",
+        "alphanumeric" => "[a-z0-9]+",
+        "uuid" => "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}",
+        "hex" => "[a-f0-9]+"
 	];
 
 	/**
@@ -84,7 +86,7 @@ class Router
 	/**
 	 * Load routes into router.
 	 *
-	 * @param array $routes
+	 * @param array<Route> $routes
 	 * @return void
 	 */
 	public function load(array $routes): void
@@ -106,7 +108,7 @@ class Router
 	/**
 	 * Get all registered routes.
 	 *
-	 * @return array
+	 * @return array<Route>
 	 */
 	public function getRoutes(): array
 	{
@@ -129,106 +131,106 @@ class Router
 	 *
 	 * @param array<string> $methods
 	 * @param string $path
-	 * @param string|callable $action
+	 * @param callable|string $handler
 	 * @return Route
 	 */
-	public function add(array $methods, string $path, $action): Route
+	public function add(array $methods, string $path, $handler): Route
 	{
-		return $this->engine->add($methods, $path, $action, $this->config);
+		return $this->engine->add($methods, $path, $handler, $this->config);
 	}
 
     /**
 	 * Add a GET route.
 	 *
      * @param string $path
-     * @param string|callable $action
+     * @param string|callable $handler
      * @return Route
      */
-    public function get($path, $action): Route
+    public function get($path, $handler): Route
     {
-        return $this->add(["GET", "HEAD"], $path, $action);
+        return $this->add(["GET", "HEAD"], $path, $handler);
     }
 
     /**
 	 * Add a POST route.
 	 *
      * @param string $path
-     * @param string|callable $action
+     * @param string|callable $handler
      * @return Route
      */
-    public function post($path, $action): Route
+    public function post($path, $handler): Route
     {
-        return $this->add(["POST"], $path, $action);
+        return $this->add(["POST"], $path, $handler);
     }
 
     /**
 	 * Add a PUT route.
 	 *
      * @param string $path
-     * @param string|callable $action
+     * @param string|callable $handler
      * @return Route
      */
-    public function put($path, $action): Route
+    public function put($path, $handler): Route
     {
-        return $this->add(["PUT"], $path, $action);
+        return $this->add(["PUT"], $path, $handler);
     }
 
     /**
 	 * Add a PATCH route.
 	 *
      * @param string $path
-     * @param string|callable $action
+     * @param string|callable $handler
      * @return Route
      */
-    public function patch($path, $action): Route
+    public function patch($path, $handler): Route
     {
-        return $this->add(["PATCH"], $path, $action);
+        return $this->add(["PATCH"], $path, $handler);
     }
 
     /**
 	 * Add a DELETE route.
 	 *
      * @param string $path
-     * @param string|callable $action
+     * @param string|callable $handler
      * @return Route
      */
-    public function delete(string $path, $action): Route
+    public function delete(string $path, $handler): Route
     {
-        return $this->add(["DELETE"], $path, $action);
+        return $this->add(["DELETE"], $path, $handler);
     }
 
     /**
 	 * Add a HEAD route.
 	 *
      * @param string $path
-     * @param string|callable $action
+     * @param string|callable $handler
      * @return Route
      */
-    public function head(string $path, $action): Route
+    public function head(string $path, $handler): Route
     {
-        return $this->add(["HEAD"], $path, $action);
+        return $this->add(["HEAD"], $path, $handler);
     }
 
     /**
 	 * Add an OPTIONS route.
 	 *
      * @param string $path
-     * @param string|callable $action
+     * @param string|callable $handler
      * @return Route
      */
-    public function options(string $path, $action): Route
+    public function options(string $path, $handler): Route
     {
-        return $this->add(["OPTIONS"], $path, $action);
+        return $this->add(["OPTIONS"], $path, $handler);
     }
 
     /**
 	 * Group routes together with a set of shared configuration options.
 	 *
      * @param array $groupConfig
-     * @param Closure $callback
+     * @param callable $callback
      * @return void
      */
-    public function group(array $groupConfig, Closure $callback): void
+    public function group(array $groupConfig, callable $callback): void
     {
         // Save current config
         $previousConfig = $this->config;
@@ -253,13 +255,17 @@ class Router
     protected function mergeGroupConfig(array $parentConfig, array $groupConfig): array
     {
 		return [
-			'scheme'=> $groupConfig['scheme'] ?? $parentConfig['scheme'] ?? null,
-			'hostname' => $groupConfig['hostname'] ?? $parentConfig['hostname'] ?? null,
-			'prefix' => $groupConfig['prefix'] ?? $parentConfig['prefix'] ?? null,
-			'namespace' => $groupConfig['namespace'] ?? $parentConfig['namespace'] ?? null,
-			'middleware' => \array_merge(
-				$parentConfig['middleware'] ?? [],
-				$groupConfig['middleware'] ?? []
+			"scheme"=> $groupConfig["scheme"] ?? $parentConfig["scheme"] ?? null,
+			"hostname" => $groupConfig["hostname"] ?? $parentConfig["hostname"] ?? null,
+			"prefix" => $groupConfig["prefix"] ?? $parentConfig["prefix"] ?? null,
+			"namespace" => $groupConfig["namespace"] ?? $parentConfig["namespace"] ?? null,
+			"attributes" => \array_merge(
+				$groupConfig["attributes"] ?? [],
+				$parentConfig["attributes"] ?? []
+			),
+			"middleware" => \array_merge(
+				$parentConfig["middleware"] ?? [],
+				$groupConfig["middleware"] ?? []
 			)
 		];
     }

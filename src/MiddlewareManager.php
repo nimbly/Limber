@@ -14,18 +14,60 @@ use Throwable;
 class MiddlewareManager
 {
 	/**
+	 * Global middleware.
+	 *
+	 * @var array<MiddlewareInterface|callable|string>
+	 */
+	protected $middleware;
+
+	/**
 	 * Exception handler instance.
 	 *
-	 * @var callable|null
+	 * @var ExceptionHandlerInterface|null
 	 */
 	protected $exceptionHandler;
 
 	/**
 	 * MiddlewareManager constructor.
 	 *
-	 * @param callable|null $exceptionHandler
+	 * @param array<MiddlewareInterface|callable|string>
+	 * @param ExceptionHandlerInterface|null $exceptionHandler
 	 */
-	public function __construct(?callable $exceptionHandler = null)
+	public function __construct(array $middleware = [], ?ExceptionHandlerInterface $exceptionHandler = null)
+	{
+		$this->middleware = $middleware;
+		$this->exceptionHandler = $exceptionHandler;
+	}
+
+	/**
+	 * Set the global middleware.
+	 *
+	 * @param array<MiddlewareInterface|callable|string> $middleware
+	 * @return void
+	 */
+	public function setMiddleware(array $middleware): void
+	{
+		$this->middleware = $middleware;
+	}
+
+	/**
+	 * Add a middleware to the stack.
+	 *
+	 * @param MiddlewareInterface|callable|string $middleware
+	 * @return void
+	 */
+	public function addMiddleware($middleware): void
+	{
+		$this->middleware[] = $middleware;
+	}
+
+	/**
+	 * Set the ExceptionHandler instance.
+	 *
+	 * @param ExceptionHandlerInterface $exceptionHandler
+	 * @return void
+	 */
+	public function setExceptionHandler(ExceptionHandlerInterface $exceptionHandler): void
 	{
 		$this->exceptionHandler = $exceptionHandler;
 	}
@@ -40,26 +82,34 @@ class MiddlewareManager
 	public function compile(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
 	{
 		$middleware = \array_reverse(
-			$this->normalizeMiddleware($middleware)
+			$this->normalizeMiddleware(
+				\array_merge(
+					$this->middleware,
+					$middleware
+				)
+			)
 		);
 
-		return \array_reduce($middleware, function(RequestHandlerInterface $handler, MiddlewareInterface $middleware): RequestHandler {
+		return \array_reduce(
+			$middleware,
+			function(RequestHandlerInterface $handler, MiddlewareInterface $middleware): RequestHandler {
 
-			return new RequestHandler(function(ServerRequestInterface $request) use ($handler, $middleware): ResponseInterface {
+				return new RequestHandler(function(ServerRequestInterface $request) use ($handler, $middleware): ResponseInterface {
 
-				try {
+					try {
 
-					return $middleware->process($request, $handler);
+						return $middleware->process($request, $handler);
 
-				}
-				catch( Throwable $exception ){
+					}
+					catch( Throwable $exception ){
 
-					return $this->handleException($exception);
-				}
+						return $this->handleException($exception);
+					}
 
-			});
-
-		}, $kernel);
+				});
+			},
+			$kernel
+		);
 	}
 
 	/**
@@ -93,7 +143,7 @@ class MiddlewareManager
 
 	/**
 	 * Handle a thrown exception by either passing it to user provided exception handler
-	 * or throwing it if no handler registered with application.
+	 * or throwing it if no exception handler is registered.
 	 *
 	 * @param Throwable $exception
 	 * @throws Throwable
@@ -102,7 +152,7 @@ class MiddlewareManager
 	private function handleException(Throwable $exception): ResponseInterface
 	{
 		if( $this->exceptionHandler ){
-			return \call_user_func($this->exceptionHandler, $exception);
+			return $this->exceptionHandler->handle($exception);
 		};
 
 		throw $exception;

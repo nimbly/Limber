@@ -2,14 +2,9 @@
 
 namespace Limber\Tests;
 
-use Capsule\Response;
-use Capsule\ResponseStatus;
 use Limber\Exceptions\RouteException;
 use Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Throwable;
 
 /**
  * @covers Limber\Router\Route
@@ -36,7 +31,7 @@ class RouteTest extends TestCase
 
         $this->assertTrue(\in_array("POST", $route->getMethods()));
         $this->assertEquals("v1/books/{id}", $route->getPath());
-        $this->assertEquals("Controllers\BooksController@edit", $route->getAction());
+        $this->assertEquals("Controllers\BooksController@edit", $route->getHandler());
 
         $this->assertTrue(\in_array("https", $route->getSchemes()));
         $this->assertTrue(\in_array("localhost", $route->getHostnames()));
@@ -112,7 +107,7 @@ class RouteTest extends TestCase
         $route = new Route("get", "books", "BooksController@get");
         $route->setNamespace("Controllers");
         $this->assertEquals("Controllers", $route->getNamespace());
-        $this->assertEquals("Controllers\BooksController@get", $route->getAction());
+        $this->assertEquals("Controllers\BooksController@get", $route->getHandler());
     }
 
     public function test_get_path_params(): void
@@ -211,38 +206,5 @@ class RouteTest extends TestCase
     {
         $route = new Route("get", "books/{bookId}/comments/{commentId}", "BooksController@get");
         $this->assertFalse($route->matchPath("books/1234"));
-	}
-
-	public function test_get_callable_action_string(): void
-	{
-		$route = new Route("get", "books/{bookId}/comments/{commentId}", static::class . "@test_get_callable_action_string");
-		$this->assertTrue(
-			\is_callable($route->getCallableAction())
-		);
-	}
-
-	public function test_get_callable_action_unresolvable(): void
-	{
-		$route = new Route("get", "/books", "");
-
-		$this->expectException(Throwable::class);
-		$route->getCallableAction();
-	}
-
-	public function test_get_callable_action_closure(): void
-	{
-		$handler = function(ServerRequestInterface $request): ResponseInterface {
-			return new Response(
-				ResponseStatus::OK,
-				"OK"
-			);
-		};
-
-		$route = new Route("get", "/books", $handler);
-
-		$this->assertSame(
-			$handler,
-			$route->getCallableAction()
-		);
 	}
 }

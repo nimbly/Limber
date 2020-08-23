@@ -4,7 +4,7 @@ namespace Limber;
 
 use Limber\Middleware\PrepareHttpResponse;
 use Limber\Middleware\RouteResolver;
-use Limber\Router\Router;
+use Limber\Router\Route;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -15,11 +15,11 @@ use Throwable;
 class Application
 {
 	/**
-	 * Router instance.
+	 * RouteManager instance.
 	 *
-	 * @var Router
+	 * @var RouteManager
 	 */
-	protected $router;
+	protected $routeManager;
 
 	/**
 	 * MiddlewareManager instance.
@@ -29,21 +29,14 @@ class Application
 	protected $middlewareManager;
 
 	/**
-	 * ContainerInterface instance.
+	 * DepedencyManager instance.
 	 *
-	 * @var ContainerInterface|null
+	 * @var DependencyManager
 	 */
-	protected $container;
+	protected $dependencyManager;
 
 	/**
-	 * Global middleware.
-	 *
-	 * @var array
-	 */
-	protected $middleware = [];
-
-	/**
-	 * Request handler chain.
+	 * Compiled request handler chain.
 	 *
 	 * @var RequestHandlerInterface|null
 	 */
@@ -52,25 +45,49 @@ class Application
 	/**
 	 * Application constructor.
 	 *
-	 * @param MiddlewareManager
+	 * @param RouteManager $routeManager
+	 * @param MiddlewareManager $middlewareManager
+	 * @param DependencyManager $dependencyManager
 	 */
 	public function __construct(
-		Router $router,
-		MiddlewareManager $middlewareManager)
+		RouteManager $routeManager,
+		MiddlewareManager $middlewareManager,
+		DependencyManager $dependencyManager)
 	{
-		$this->router = $router;
+		$this->routeManager = $routeManager;
 		$this->middlewareManager = $middlewareManager;
+		$this->dependencyManager = $dependencyManager;
 	}
 
 	/**
-	 * Set a ContainerInterface instance to be used when autowiring route handlers.
+	 * Make an Application instance.
+	 *
+	 * @param array<MiddlewareInterface|callable|string> $middleware
+	 * @param ExceptionHandlerInterface|null $exceptionHandler
+	 * @param ContainerInterface|null $container
+	 * @return self
+	 */
+	public static function make(
+		array $middleware = [],
+		?ExceptionHandlerInterface $exceptionHandler = null,
+		?ContainerInterface $container = null): self
+	{
+		return new self(
+			new RouteManager,
+			new MiddlewareManager($middleware, $exceptionHandler),
+			new DependencyManager($container)
+		);
+	}
+
+	/**
+	 * Set the ContainerInterface to use for dependency resolution.
 	 *
 	 * @param ContainerInterface $container
 	 * @return void
 	 */
 	public function setContainer(ContainerInterface $container): void
 	{
-		$this->container = $container;
+		$this->dependencyManager->setContainer($container);
 	}
 
 	/**
@@ -81,17 +98,125 @@ class Application
 	 */
 	public function setMiddleware(array $middlewares): void
 	{
-		$this->middleware = $middlewares;
+		$this->middlewareManager->setMiddleware($middlewares);
 	}
 
 	/**
-	 * Add a middleware to the stack.
+	 * Add a global middleware to the stack.
 	 *
 	 * @param MiddlewareInterface|callable|string $middleware
 	 */
 	public function addMiddleware($middleware): void
 	{
-		$this->middleware[] = $middleware;
+		$this->middlewareManager->addMiddleware($middleware);
+	}
+
+	/**
+	 * Set the default middleware exception handler.
+	 *
+	 * @param ExceptionHandlerInterface $exceptionHandler
+	 * @return void
+	 */
+	public function setExceptionHandler(ExceptionHandlerInterface $exceptionHandler): void
+	{
+		$this->middlewareManager->setExceptionHandler($exceptionHandler);
+	}
+
+	/**
+	 * Add a route.
+	 *
+	 * @param array<string> $methods
+	 * @param string $path
+	 * @param callable|string $handler
+	 * @return Route
+	 */
+	public function add(array $methods, string $path, $handler): Route
+	{
+		return $this->routeManager->add($methods, $path, $handler);
+	}
+
+	/**
+	 * Add a GET route.
+	 *
+	 * @param string $path
+	 * @param callable|string $handler
+	 * @return Route
+	 */
+	public function get(string $path, $handler): Route
+	{
+		return $this->routeManager->get($path, $handler);
+	}
+
+	/**
+	 * Add a POST route.
+	 *
+	 * @param string $path
+	 * @param callable|string $handler
+	 * @return Route
+	 */
+	public function post(string $path, $handler): Route
+	{
+		return $this->routeManager->post($path, $handler);
+	}
+
+	/**
+	 * Add a PUT route.
+	 *
+	 * @param string $path
+	 * @param callable|string $handler
+	 * @return Route
+	 */
+	public function put(string $path, $handler): Route
+	{
+		return $this->routeManager->put($path, $handler);
+	}
+
+	/**
+	 * Add a PATCH route.
+	 *
+	 * @param string $path
+	 * @param callable|string $handler
+	 * @return Route
+	 */
+	public function patch(string $path, $handler): Route
+	{
+		return $this->routeManager->patch($path, $handler);
+	}
+
+	/**
+	 * Add a DELETE route.
+	 *
+	 * @param string $path
+	 * @param callable|string $handler
+	 * @return Route
+	 */
+	public function delete(string $path, $handler): Route
+	{
+		return $this->routeManager->delete($path, $handler);
+	}
+
+	/**
+	 * Add an OPTIONS route.
+	 *
+	 * @param string $path
+	 * @param callable|string $handler
+	 * @return Route
+	 */
+	public function options(string $path, $handler): Route
+	{
+		return $this->routeManager->options($path, $handler);
+	}
+
+	/**
+	 * Create a route grouping.
+	 *
+	 * @param array<string,mixed> $config
+	 * @param callable $callback
+	 * @return void
+	 */
+	public function group(array $config, callable $callback): void
+	{
+		$this->routeManager->group($config, $callback);
 	}
 
 	/**
@@ -105,15 +230,11 @@ class Application
 	{
 		if( empty($this->requestHandler) ){
 			$this->requestHandler = $this->middlewareManager->compile(
-				\array_merge(
-					$this->middleware, // Global user-space middleware
-					// Application specific middleware
-					[
-						new RouteResolver($this->router, $this->middlewareManager),
-						new PrepareHttpResponse
-					]
-				),
-				new Kernel($this->container)
+				[
+					new RouteResolver($this->routeManager, $this->middlewareManager),
+					new PrepareHttpResponse
+				],
+				new Kernel($this->dependencyManager)
 			);
 		}
 
