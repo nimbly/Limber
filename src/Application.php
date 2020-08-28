@@ -19,6 +19,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
+use ReflectionObject;
 use ReflectionParameter;
 use Throwable;
 
@@ -274,14 +275,26 @@ class Application
 	 */
 	private function getParametersForCallable(callable $handler): array
 	{
-		if( \is_array($handler) ) {
-			$reflector = new ReflectionMethod($handler[0], $handler[1]);
+		if( \is_array($handler) ){
+			[$class, $method] = $handler;
+
+			/** @psalm-suppress ArgumentTypeCoercion */
+			$reflectionClass = new ReflectionClass($class);
+			$reflector = $reflectionClass->getMethod($method);
 		}
-		else {
-			/**
-			 * @psalm-suppress ArgumentTypeCoercion
-			 */
+
+		elseif( \is_object($handler) && \method_exists($handler, "__invoke")) {
+
+			$reflectionObject = new ReflectionObject($handler);
+			$reflector = $reflectionObject->getMethod("__invoke");
+		}
+
+		elseif( \is_string($handler)) {
 			$reflector = new ReflectionFunction($handler);
+		}
+
+		else {
+			throw new DependencyResolutionException("Limber does not have support for this type of callable.");
 		}
 
 		return $reflector->getParameters();
@@ -346,6 +359,23 @@ class Application
 			},
 			$reflectionParameters
 		);
+	}
+
+	/**
+	 * Call a callable with optional given parameters.
+	 *
+	 * @param callable $callable
+	 * @param array<string,mixed> $parameters
+	 * @return mixed
+	 */
+	public function call(callable $callable, array $parameters = [])
+	{
+		$args = $this->resolveDependencies(
+			$this->getParametersForCallable($callable),
+			$parameters
+		);
+
+		return \call_user_func_array($callable, $args);
 	}
 
 	/**
