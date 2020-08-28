@@ -19,6 +19,7 @@ use Limber\Middleware\RequestHandler;
 use Limber\Router\Route;
 use Limber\Router\Router;
 use Limber\Router\RouterInterface;
+use Limber\Tests\Fixtures\InvokableClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -358,7 +359,7 @@ class ApplicationTest extends TestCase
 		$this->assertEquals("Limber send() test", $responseData);
 	}
 
-	public function test_get_parameters_for_callable_on_function(): void
+	public function test_get_parameters_for_callable_on_closure(): void
 	{
 		$application = new Application(
 			new Router
@@ -391,6 +392,46 @@ class ApplicationTest extends TestCase
 		$reflectionMethod->setAccessible(true);
 
 		$callable = [new DateTime, "format"];
+
+		$parameters = $reflectionMethod->invokeArgs($application, [$callable]);
+
+		$this->assertCount(
+			1,
+			$parameters
+		);
+	}
+
+	public function test_get_parameters_for_callable_on_invokable_instance(): void
+	{
+		$application = new Application(
+			new Router
+		);
+
+		$reflectionClass = new \ReflectionClass($application);
+		$reflectionMethod = $reflectionClass->getMethod('getParametersForCallable');
+		$reflectionMethod->setAccessible(true);
+
+		$callable = new InvokableClass;
+
+		$parameters = $reflectionMethod->invokeArgs($application, [$callable]);
+
+		$this->assertCount(
+			2,
+			$parameters
+		);
+	}
+
+	public function test_get_parameters_for_callable_on_string(): void
+	{
+		$application = new Application(
+			new Router
+		);
+
+		$reflectionClass = new \ReflectionClass($application);
+		$reflectionMethod = $reflectionClass->getMethod('getParametersForCallable');
+		$reflectionMethod->setAccessible(true);
+
+		$callable = "\strtolower";
 
 		$parameters = $reflectionMethod->invokeArgs($application, [$callable]);
 
@@ -571,6 +612,27 @@ class ApplicationTest extends TestCase
 
 		$this->expectException(DependencyResolutionException::class);
 		$reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
+	}
+
+	public function test_call(): void
+	{
+		$application = new Application(
+			new Router
+		);
+
+		$name = $application->call(
+			function(string $name): string {
+				return $name;
+			},
+			[
+				"name" => "Limber"
+			]
+		);
+
+		$this->assertEquals(
+			"Limber",
+			$name
+		);
 	}
 
 	public function test_make_with_class_already_in_container(): void
