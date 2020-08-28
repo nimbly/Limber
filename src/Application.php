@@ -38,12 +38,12 @@ class Application
 	/**
 	 * Global middleware.
 	 *
-	 * @var array<string|callable|MiddlewareInterface>
+	 * @var array<MiddlewareInterface|callable|string>
 	 */
 	protected $middleware = [];
 
 	/**
-	 * Compiled request handler chain.
+	 * Compiled request handler.
 	 *
 	 * @var RequestHandlerInterface|null
 	 */
@@ -69,19 +69,17 @@ class Application
 	/**
 	 * Make an Application instance.
 	 *
-	 * @param array<MiddlewareInterface|callable|string> $middleware
 	 * @param ExceptionHandlerInterface|null $exceptionHandler
 	 * @param ContainerInterface|null $container
 	 * @return self
 	 */
 	public static function make(
-		array $middleware = [],
 		?ExceptionHandlerInterface $exceptionHandler = null,
 		?ContainerInterface $container = null): self
 	{
 		return new self(
 			new RouteManager,
-			new MiddlewareManager($middleware, $exceptionHandler),
+			new MiddlewareManager($exceptionHandler),
 			new DependencyManager($container)
 		);
 	}
@@ -227,7 +225,7 @@ class Application
 	}
 
 	/**
-	 * Dispatch a request.
+	 * Dispatch a ServerRequestInterface instance to the RequestHandlerInterface instance.
 	 *
 	 * @param ServerRequestInterface $request
 	 * @throws Throwable

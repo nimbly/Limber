@@ -7,14 +7,14 @@ use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
 use Limber\EmptyStream;
 use Limber\Middleware\PrepareHttpResponse;
-use Limber\Middleware\RequestHandler;
+use Limber\RequestHandler;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * @covers Limber\Middleware\PrepareHttpResponse
- * @covers Limber\Middleware\RequestHandler
+ * @covers Limber\RequestHandler
  */
 class PrepareHttpResponseTest extends TestCase
 {

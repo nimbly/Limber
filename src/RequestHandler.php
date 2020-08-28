@@ -1,6 +1,6 @@
 <?php
 
-namespace Limber\Middleware;
+namespace Limber;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

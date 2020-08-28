@@ -21,51 +21,6 @@ use Throwable;
  */
 class MiddlewareManagerTest extends TestCase
 {
-	public function test_set_middleware(): void
-	{
-		$middlewareManager = new MiddlewareManager;
-
-		$middleware = function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
-
-			return $handler->handle($request);
-
-		};
-
-		$middlewareManager->setMiddleware([$middleware]);
-
-		$reflection = new \ReflectionClass($middlewareManager);
-
-		$property = $reflection->getProperty('middleware');
-		$property->setAccessible(true);
-
-		$this->assertEquals(
-			[$middleware],
-			$property->getValue($middlewareManager)
-		);
-	}
-
-	public function test_add_middleware(): void
-	{
-		$middlewareManager = new MiddlewareManager;
-
-		$middleware = function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
-
-			return $handler->handle($request);
-
-		};
-
-		$middlewareManager->addMiddleware($middleware);
-
-		$reflection = new \ReflectionClass($middlewareManager);
-		$property = $reflection->getProperty('middleware');
-		$property->setAccessible(true);
-
-		$this->assertEquals(
-			[$middleware],
-			$property->getValue($middlewareManager)
-		);
-	}
-
 	public function test_normalize_middleware(): void
 	{
 		$middlewareManager = new MiddlewareManager;

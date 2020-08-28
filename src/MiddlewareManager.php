@@ -4,7 +4,6 @@ namespace Limber;
 
 use Limber\Exceptions\ApplicationException;
 use Limber\Middleware\CallableMiddleware;
-use Limber\Middleware\RequestHandler;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -13,13 +12,6 @@ use Throwable;
 
 class MiddlewareManager
 {
-	/**
-	 * Global middleware.
-	 *
-	 * @var array<MiddlewareInterface|callable|string>
-	 */
-	protected $middleware;
-
 	/**
 	 * Exception handler instance.
 	 *
@@ -33,32 +25,10 @@ class MiddlewareManager
 	 * @param array<MiddlewareInterface|callable|string> $middleware
 	 * @param ExceptionHandlerInterface|null $exceptionHandler
 	 */
-	public function __construct(array $middleware = [], ?ExceptionHandlerInterface $exceptionHandler = null)
+	public function __construct(
+		?ExceptionHandlerInterface $exceptionHandler = null)
 	{
-		$this->middleware = $middleware;
 		$this->exceptionHandler = $exceptionHandler;
-	}
-
-	/**
-	 * Set the global middleware.
-	 *
-	 * @param array<MiddlewareInterface|callable|string> $middleware
-	 * @return void
-	 */
-	public function setMiddleware(array $middleware): void
-	{
-		$this->middleware = $middleware;
-	}
-
-	/**
-	 * Add a middleware to the stack.
-	 *
-	 * @param MiddlewareInterface|callable|string $middleware
-	 * @return void
-	 */
-	public function addMiddleware($middleware): void
-	{
-		$this->middleware[] = $middleware;
 	}
 
 	/**
@@ -75,7 +45,7 @@ class MiddlewareManager
 	/**
 	 * Build a RequestHandler chain out of middleware using provided Kernel as the final RequestHandler.
 	 *
-	 * @param array<MiddlewareInterface|string|callable> $middleware
+	 * @param array<MiddlewareInterface|callable|string> $middleware
 	 * @param RequestHandlerInterface $kernel
 	 * @return RequestHandlerInterface
 	 */

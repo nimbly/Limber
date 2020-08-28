@@ -6,7 +6,7 @@ use Capsule\Response;
 use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
 use Limber\Middleware\CallableMiddleware;
-use Limber\Middleware\RequestHandler;
+use Limber\RequestHandler;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -15,7 +15,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 /**
  * @covers Limber\Middleware\CallableMiddleware
- * @covers Limber\Middleware\RequestHandler
+ * @covers Limber\RequestHandler
  */
 class CallableMiddlewareTest extends TestCase
 {
