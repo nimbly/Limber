@@ -402,16 +402,6 @@ $application->setExceptionHandler(function(Throwable $exception): ResponseInterf
 
 **NOTE** Exceptions thrown *outside* of the middleware chain will continue to bubble up unless caught elsewhere.
 
-### Handling a Request
-
-To handle an incoming request, simply `dispatch` a PSR-7 `ServerRequestInterface` instance and capture the response.
-
-```php
-$response = $application->dispatch(
-	ServerRequest::createFromGlobals()
-);
-```
-
 ### Autowiring support
 
 Limber will invoke your route handlers using reflection based autowiring. The `ServerRequestInterface` instance and any URI path parameters will be automatically resolved for you.
@@ -430,6 +420,40 @@ $container->register(
 );
 
 $application->setContainer($container);
+```
+
+### Dependency injection
+
+Limber can call any `callable` for you with the added benefit of having dependencies resolved and injected for you.
+
+```php
+$callable = function(DependencyInContainer $dep1): Foo {
+    return $dep1->getFoo();
+};
+
+$foo = $application->call($callable);
+```
+
+You can pass in user arguments as a second parameter to `call`.
+
+```php
+$callable = function(DependencyInContainer $dep1, string $name): Foo {
+    return $dep1->getFoo($name);
+};
+
+$foo = $application->call($callable, ["name" => $name]);
+```
+
+If the dependency cannot be resolved, Limber will attempt to `make` one for you. If it cannot `make`, a `DependencyResolutionException` will be thrown.
+
+### Handling a Request
+
+To handle an incoming request, simply `dispatch` a PSR-7 `ServerRequestInterface` instance and capture the response.
+
+```php
+$response = $application->dispatch(
+	ServerRequest::createFromGlobals()
+);
 ```
 
 ### Sending the Response
