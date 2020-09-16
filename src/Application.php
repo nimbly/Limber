@@ -205,11 +205,11 @@ class Application
 
 			if( \is_string($middleware) &&
 				\class_exists($middleware) ){
-				$middleware = new $middleware;
+				$middleware = $this->make($middleware);
 			}
 
 			if( $middleware instanceof MiddlewareInterface === false ){
-				throw new ApplicationException("Provided middleware must be a string, a \callable, or an instance of Psr\Http\Server\MiddlewareInterface.");
+				throw new ApplicationException("Provided middleware must be a class-string, a \callable, or an instance of Psr\Http\Server\MiddlewareInterface.");
 			}
 
 			return $middleware;
