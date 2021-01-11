@@ -316,44 +316,53 @@ class Application
 				$parameterName = $reflectionParameter->getName();
 				$parameterType = $reflectionParameter->getType();
 
-				// No type or the type is a primitive (built in)
-				if( empty($parameterType) || $parameterType->isBuiltin() ){
-
-					// Check in user supplied argument list first.
-					if( \array_key_exists($parameterName, $userArgs) ){
-						return $userArgs[$parameterName];
-					}
-
-					// Does parameter offer a default value?
-					elseif( $reflectionParameter->isDefaultValueAvailable() ){
-						return $reflectionParameter->getDefaultValue();
-					}
-
-					elseif( $reflectionParameter->isOptional() || $reflectionParameter->allowsNull() ){
-						return null;
-					}
+				// Check parameters for a match by name.
+				if( \array_key_exists($parameterName, $userArgs) ){
+					return $userArgs[$parameterName];
 				}
 
-				// Parameter type is a class
-				else {
+				// Check container and parameters for a match by type.
+				if( $parameterType && !$parameterType->isBuiltin() ) {
 
 					if( $this->container && $this->container->has($parameterType->getName()) ){
 						return $this->container->get($parameterType->getName());
 					}
-					elseif( isset($userArgs[ServerRequestInterface::class]) &&
-						\is_a($userArgs[ServerRequestInterface::class], $parameterType->getName()) ){
-						return $userArgs[ServerRequestInterface::class];
-					}
-					else {
 
-						/**
-						 * @psalm-suppress ArgumentTypeCoercion
-						 */
-						return $this->make($parameterType->getName(), $userArgs);
+					// Try to find in the parameters supplied
+					$match = \array_filter(
+						$userArgs,
+						function($parameter) use ($parameterType) {
+							$parameter_type_name = $parameterType->getName();
+							return $parameter instanceof $parameter_type_name;
+						}
+					);
+
+					if( $match ){
+						return $match[
+							\array_keys($match)[0]
+						];
+					}
+
+					/**
+					 * @psalm-suppress ArgumentTypeCoercion
+					 */
+					return $this->make($parameterType->getName(), $userArgs);
+				}
+
+				// No type or the type is a primitive (built in)
+				if( empty($parameterType) || $parameterType->isBuiltin() ){
+
+					// Does parameter offer a default value?
+					if( $reflectionParameter->isDefaultValueAvailable() ){
+						return $reflectionParameter->getDefaultValue();
+					}
+
+					elseif( $reflectionParameter->allowsNull() ){
+						return null;
 					}
 				}
 
-				throw new DependencyResolutionException("Cannot resolve dependency for " . "<" . ($parameterType ? $parameterType->getName() : "mixed") . "> " . "\${$parameterName}.");
+				throw new DependencyResolutionException("Cannot resolve parameter \"{$parameterName}\".");
 			},
 			$reflectionParameters
 		);
