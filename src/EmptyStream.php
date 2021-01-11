@@ -73,6 +73,8 @@ class EmptyStream implements StreamInterface
 
     /**
      * @inheritDoc
+	 * @param int $offset
+	 * @param int $whence
 	 * @return void
      */
     public function seek($offset, $whence = SEEK_SET)
