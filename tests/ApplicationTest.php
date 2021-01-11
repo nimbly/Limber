@@ -25,6 +25,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionFunction;
+use Limber\Tests\Fixtures\ConstructorClass;
 
 /**
  * @covers Limber\Application
@@ -34,8 +35,15 @@ use ReflectionFunction;
  * @covers Limber\Middleware\CallableMiddleware
  * @covers Limber\Middleware\RequestHandler
  * @covers Limber\Middleware\PrepareHttpResponse
+ * @covers Limber\Exceptions\ApplicationException
+ * @covers Limber\Exceptions\RouteException
  * @covers Limber\Exceptions\HttpException
  * @covers Limber\Exceptions\MethodNotAllowedHttpException
+ * @covers Limber\Exceptions\NotFoundHttpException
+ * @covers Limber\Exceptions\DependencyResolutionException
+ * @covers Limber\EmptyStream
+ *
+ * @uses Limber\Router\RouterInterface
  */
 class ApplicationTest extends TestCase
 {
@@ -570,7 +578,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_making_class(): void
+	public function test_resolve_dependencies_with_making_class_with_constructor(): void
 	{
 		$application = new Application(
 			new Router
@@ -580,16 +588,24 @@ class ApplicationTest extends TestCase
 		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
 		$reflectionMethod->setAccessible(true);
 
-		$callable = function(DateTime $dateTime): void {
-			echo "The date is: " . $dateTime->format('c');
+		$callable = function(ConstructorClass $class): void {
+			echo $class->getParam1();
 		};
 
 		$reflectionFunction = new ReflectionFunction($callable);
 
-		$dependencies = $reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
+		$dependencies = $reflectionMethod->invokeArgs(
+			$application,
+			[
+				$reflectionFunction->getParameters(),
+				[
+					"param1" => ":param1:"
+				]
+			]
+		);
 
 		$this->assertInstanceOf(
-			DateTime::class,
+			ConstructorClass::class,
 			$dependencies[0]
 		);
 	}
@@ -643,15 +659,15 @@ class ApplicationTest extends TestCase
 
 		$container = new Container;
 
-		$dateTime = new DateTime;
+		$instance = new ConstructorClass(":param1:");
 
-		$container->set(DateTime::class, $dateTime);
+		$container->set(ConstructorClass::class, $instance);
 
 		$application->setContainer($container);
 
 		$this->assertSame(
-			$dateTime,
-			$application->make(DateTime::class)
+			$instance,
+			$application->make(ConstructorClass::class)
 		);
 	}
 
@@ -695,10 +711,15 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$instance = $application->make(DateTime::class);
+		$instance = $application->make(
+			ConstructorClass::class,
+			[
+				"param1" => ":param1:"
+			]
+		);
 
 		$this->assertInstanceOf(
-			DateTime::class,
+			ConstructorClass::class,
 			$instance
 		);
 	}
@@ -709,16 +730,21 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$instance = $application->make(DateTime::class, ["time" => "1977-01-28 02:15:00"]);
+		$instance = $application->make(
+			ConstructorClass::class,
+			[
+				"param1" => ":param1:"
+			]
+		);
 
 		$this->assertInstanceOf(
-			DateTime::class,
+			ConstructorClass::class,
 			$instance
 		);
 
 		$this->assertEquals(
-			"1977-01-28T02:15:00+00:00",
-			$instance->format("c")
+			":param1:",
+			$instance->getParam1()
 		);
 	}
 }
