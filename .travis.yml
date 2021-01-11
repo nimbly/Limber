@@ -9,7 +9,6 @@ install:
 
 script:
   - make coverage
-  - make analyze
 
 after_success:
   - travis_retry php vendor/bin/php-coveralls
