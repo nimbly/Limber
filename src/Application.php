@@ -191,30 +191,36 @@ class Application
 	/**
 	 * Normalize the given middlewares into instances of MiddlewareInterface.
 	 *
-	 * @param array<MiddlewareInterface|callable|string> $middlewares
+	 * @param array<MiddlewareInterface|callable|string|array<class-string,array<string,string>>> $middlewares
 	 * @throws ApplicationException
 	 * @return array<MiddlewareInterface>
 	 */
 	private function normalizeMiddleware(array $middlewares): array
 	{
-		return \array_map(function($middleware): MiddlewareInterface {
+		$normalized_middlewares = [];
+
+		foreach( $middlewares as $index => $middleware ){
 
 			if( \is_callable($middleware) ){
 				$middleware = new CallableMiddleware($middleware);
 			}
 
-			if( \is_string($middleware) &&
-				\class_exists($middleware) ){
+			elseif( \is_string($middleware) && \class_exists($middleware) ){
 				$middleware = $this->make($middleware);
 			}
 
-			if( $middleware instanceof MiddlewareInterface === false ){
+			elseif( \is_string($index) && \class_exists($index) && \is_array($middleware) ){
+				$middleware = $this->make($index, $middleware);
+			}
+
+			if( empty($middleware) || $middleware instanceof MiddlewareInterface === false ){
 				throw new ApplicationException("Provided middleware must be a class-string, a \callable, or an instance of Psr\Http\Server\MiddlewareInterface.");
 			}
 
-			return $middleware;
+			$normalized_middlewares[] = $middleware;
+		}
 
-		}, $middlewares);
+		return $normalized_middlewares;
 	}
 
 	/**

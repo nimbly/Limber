@@ -380,6 +380,28 @@ $application->addMiddleware(new GlobalMiddleware2);
 $application->addMiddleware(new GlobalMiddleware3);
 ```
 
+You can pass middleware as one or more of the following types:
+
+* An instance of `MiddlewareInterface`
+* A `callable`
+* A `class-string`
+* A `class-string` as an index and an array of key=>value pairs as parameters to be used in dependency injection when auto wiring.
+
+Any `class-string` types will be auto wired using the `Container` instance (if any) for dependency injection.
+
+If auto wiring fails, a `DependencyResolutionException` exception will be thrown.
+
+```php
+$application->setMiddleware([
+    new FooMiddleware,
+    FooMiddleware::class,
+    FooMiddleware::class => ["param1" => "Foo"],
+    function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
+        return $handler->handle($request);
+    }
+]);
+```
+
 ### Exception handling
 
 You can set a custom exception handler that will process any exception thrown *within* the middleware chain.

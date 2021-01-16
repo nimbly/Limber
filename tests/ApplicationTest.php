@@ -19,13 +19,16 @@ use Limber\Middleware\RequestHandler;
 use Limber\Router\Route;
 use Limber\Router\Router;
 use Limber\Router\RouterInterface;
+use Limber\Tests\Fixtures\ConstructorClass;
 use Limber\Tests\Fixtures\InvokableClass;
+use Limber\Tests\Fixtures\SampleMiddleware;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use ReflectionClass;
 use ReflectionFunction;
-use Limber\Tests\Fixtures\ConstructorClass;
 
 /**
  * @covers Limber\Application
@@ -53,7 +56,7 @@ class ApplicationTest extends TestCase
 
 		$application = new Application($router);
 
-		$reflection = new \ReflectionClass($application);
+		$reflection = new ReflectionClass($application);
 
 		$property = $reflection->getProperty('router');
 		$property->setAccessible(true);
@@ -73,7 +76,7 @@ class ApplicationTest extends TestCase
 		$container = new Container;
 		$application->setContainer($container);
 
-		$reflection = new \ReflectionClass($application);
+		$reflection = new ReflectionClass($application);
 
 		$property = $reflection->getProperty('container');
 		$property->setAccessible(true);
@@ -96,11 +99,9 @@ class ApplicationTest extends TestCase
 
 		};
 
-		$application->setMiddleware([
-			$middleware
-		]);
+		$application->setMiddleware([$middleware]);
 
-		$reflection = new \ReflectionClass($application);
+		$reflection = new ReflectionClass($application);
 
 		$property = $reflection->getProperty('middleware');
 		$property->setAccessible(true);
@@ -125,7 +126,7 @@ class ApplicationTest extends TestCase
 
 		$application->addMiddleware($middleware);
 
-		$reflection = new \ReflectionClass($application);
+		$reflection = new ReflectionClass($application);
 		$property = $reflection->getProperty('middleware');
 		$property->setAccessible(true);
 
@@ -135,7 +136,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_normalize_middleware(): void
+	public function test_normalize_callable_middleware(): void
 	{
 		$application = new Application(
 			new Router
@@ -145,7 +146,7 @@ class ApplicationTest extends TestCase
 			return $handler->handle($request);
 		};
 
-		$reflection = new \ReflectionClass($application);
+		$reflection = new ReflectionClass($application);
 		$method = $reflection->getMethod('normalizeMiddleware');
 		$method->setAccessible(true);
 
@@ -155,13 +156,81 @@ class ApplicationTest extends TestCase
 		);
 	}
 
+	public function test_normalize_instance_middleware(): void
+	{
+		$application = new Application(
+			new Router
+		);
+
+		$middleware = new class implements MiddlewareInterface {
+
+			public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+			{
+				return $handler->handle($request);
+			}
+
+		};
+
+		$reflection = new ReflectionClass($application);
+		$method = $reflection->getMethod('normalizeMiddleware');
+		$method->setAccessible(true);
+
+		$this->assertEquals(
+			[$middleware],
+			$method->invoke($application, [$middleware])
+		);
+	}
+
+	public function test_normalize_class_reference_middleware(): void
+	{
+		$application = new Application(
+			new Router
+		);
+
+		$reflection = new ReflectionClass($application);
+		$method = $reflection->getMethod('normalizeMiddleware');
+		$method->setAccessible(true);
+
+		$normalized_middleware = $method->invoke($application, [SampleMiddleware::class]);
+
+		$this->assertInstanceOf(
+			SampleMiddleware::class,
+			$normalized_middleware[0]
+		);
+	}
+
+	public function test_normalize_class_reference_middleware_with_user_args(): void
+	{
+		$application = new Application(
+			new Router
+		);
+
+		$reflection = new ReflectionClass($application);
+		$method = $reflection->getMethod('normalizeMiddleware');
+		$method->setAccessible(true);
+
+		$normalized_middleware = $method->invoke($application, [
+			SampleMiddleware::class => ["param" => "bar"]
+		]);
+
+		$this->assertInstanceOf(
+			SampleMiddleware::class,
+			$normalized_middleware[0]
+		);
+
+		$this->assertEquals(
+			"bar",
+			$normalized_middleware[0]->getParam()
+		);
+	}
+
 	public function test_normalize_middleware_throws_exception_if_unknown_type(): void
 	{
 		$application = new Application(
 			new Router
 		);
 
-		$reflection = new \ReflectionClass($application);
+		$reflection = new ReflectionClass($application);
 		$method = $reflection->getMethod('normalizeMiddleware');
 		$method->setAccessible(true);
 
@@ -179,7 +248,7 @@ class ApplicationTest extends TestCase
 
 		$application->setExceptionHandler($handler);
 
-		$reflection = new \ReflectionClass($application);
+		$reflection = new ReflectionClass($application);
 		$property = $reflection->getProperty('exceptionHandler');
 		$property->setAccessible(true);
 
@@ -198,7 +267,7 @@ class ApplicationTest extends TestCase
 
 		});
 
-		$reflection = new \ReflectionClass($application);
+		$reflection = new ReflectionClass($application);
 		$method = $reflection->getMethod('handleException');
 		$method->setAccessible(true);
 
@@ -212,7 +281,7 @@ class ApplicationTest extends TestCase
 	{
 		$application = new Application(new Router);
 
-		$reflection = new \ReflectionClass($application);
+		$reflection = new ReflectionClass($application);
 		$method = $reflection->getMethod('handleException');
 		$method->setAccessible(true);
 
@@ -328,7 +397,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('attachRequestAttributes');
 		$reflectionMethod->setAccessible(true);
 
@@ -373,7 +442,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('getParametersForCallable');
 		$reflectionMethod->setAccessible(true);
 
@@ -395,7 +464,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('getParametersForCallable');
 		$reflectionMethod->setAccessible(true);
 
@@ -415,7 +484,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('getParametersForCallable');
 		$reflectionMethod->setAccessible(true);
 
@@ -435,7 +504,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('getParametersForCallable');
 		$reflectionMethod->setAccessible(true);
 
@@ -455,7 +524,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
 		$reflectionMethod->setAccessible(true);
 
@@ -479,7 +548,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
 		$reflectionMethod->setAccessible(true);
 
@@ -503,7 +572,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
 		$reflectionMethod->setAccessible(true);
 
@@ -532,7 +601,7 @@ class ApplicationTest extends TestCase
 
 		$application->setContainer($container);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
 		$reflectionMethod->setAccessible(true);
 
@@ -556,7 +625,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
 		$reflectionMethod->setAccessible(true);
 
@@ -584,7 +653,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
 		$reflectionMethod->setAccessible(true);
 
@@ -616,7 +685,7 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$reflectionClass = new \ReflectionClass($application);
+		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
 		$reflectionMethod->setAccessible(true);
 
