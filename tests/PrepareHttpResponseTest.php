@@ -5,6 +5,7 @@ namespace Limber\Tests;
 use Capsule\Response;
 use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
+use Capsule\Stream\ResourceStream;
 use Limber\EmptyStream;
 use Limber\Middleware\PrepareHttpResponse;
 use Limber\Middleware\RequestHandler;
@@ -98,7 +99,7 @@ class PrepareHttpResponseTest extends TestCase
 
 				return new Response(
 					ResponseStatus::OK,
-					""
+					new ResourceStream(\fopen("https://google.com", "r"))
 				);
 			})
 		);
