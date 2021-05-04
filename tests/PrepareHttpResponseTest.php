@@ -88,6 +88,24 @@ class PrepareHttpResponseTest extends TestCase
 		$this->assertEquals(2, $response->getHeader('Content-Length')[0]);
 	}
 
+	public function test_skipping_setting_content_length_header_if_none_provided_and_size_is_falsey(): void
+	{
+		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
+
+		$response = $prepareHttpResponseMiddleware->process(
+			new ServerRequest('get', 'http://example.org/foo'),
+			new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
+
+				return new Response(
+					ResponseStatus::OK,
+					""
+				);
+			})
+		);
+
+		$this->assertFalse($response->hasHeader('Content-Length'));
+	}
+
 	public function test_removing_content_length_header_if_transfer_encoding_header_present(): void
 	{
 		$prepareHttpResponseMiddleware = new PrepareHttpResponse;
