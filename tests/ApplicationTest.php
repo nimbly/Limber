@@ -271,7 +271,7 @@ class ApplicationTest extends TestCase
 		$method = $reflection->getMethod('handleException');
 		$method->setAccessible(true);
 
-		$response = $method->invokeArgs($application, [new NotFoundHttpException("Route not found")]);
+		$response = $method->invokeArgs($application, [new NotFoundHttpException("Route not found"), new ServerRequest("get", "/")]);
 
 		$this->assertEquals(ResponseStatus::NOT_FOUND, $response->getStatusCode());
 		$this->assertEquals("Route not found", $response->getBody()->getContents());
@@ -287,7 +287,7 @@ class ApplicationTest extends TestCase
 
 		$this->expectException(NotFoundHttpException::class);
 
-		$method->invokeArgs($application, [new NotFoundHttpException("Route not found")]);
+		$method->invokeArgs($application, [new NotFoundHttpException("Route not found"), new ServerRequest("get", "/")]);
 	}
 
 	public function test_dispatch_with_unresolvable_route(): void

@@ -163,7 +163,7 @@ class Application
 
 				} catch( Throwable $exception ){
 
-					return $this->handleException($exception);
+					return $this->handleException($exception, $request);
 				}
 
 			})
@@ -245,7 +245,7 @@ class Application
 				}
 				catch( Throwable $exception ){
 
-					return $this->handleException($exception);
+					return $this->handleException($exception, $request);
 				}
 
 			});
@@ -258,13 +258,14 @@ class Application
 	 * or throwing it if no handler registered with application.
 	 *
 	 * @param Throwable $exception
+	 * @param ServerRequestInterface $request
 	 * @throws Throwable
 	 * @return ResponseInterface
 	 */
-	private function handleException(Throwable $exception): ResponseInterface
+	private function handleException(Throwable $exception, ServerRequestInterface $request): ResponseInterface
 	{
 		if( $this->exceptionHandler ){
-			return \call_user_func($this->exceptionHandler, $exception);
+			return \call_user_func($this->exceptionHandler, $exception, $request);
 		};
 
 		throw $exception;

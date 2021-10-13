@@ -406,20 +406,20 @@ $application->setMiddleware([
 
 You can set a custom exception handler that will process any exception thrown *within* the middleware chain.
 
-The exception handler must be a `\callable` and accept an instance of `Throwable` as its only argument and return an instance of `ResponseInterface`.
+The exception handler must be a `\callable` and accept an instance of `Throwable` and `ServerRequestInterface` as its only arguments and return an instance of `ResponseInterface`.
 
 ```php
-$application->setExceptionHandler(function(Throwable $exception): ResponseInterface {
-
-	return new Response(
-		\render("errors/" . $exception->getHttpStatus()),
-		$exception->getHttpStatus(),
-		[
-			"Content-Type" => "text/html"
-		]
-	);
-
-});
+$application->setExceptionHandler(
+    function(Throwable $exception, ServerRequestInterface $request): ResponseInterface {
+    	return new Response(
+    		\render("errors/" . $exception->getHttpStatus()),
+    		$exception->getHttpStatus(),
+    		[
+    			"Content-Type" => "text/html"
+    		]
+    	);
+    }
+);
 ```
 
 **NOTE** Exceptions thrown *outside* of the middleware chain will continue to bubble up unless caught elsewhere.
