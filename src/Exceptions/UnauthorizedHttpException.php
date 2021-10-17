@@ -2,7 +2,7 @@
 
 namespace Limber\Exceptions;
 
-use Exception;
+use Throwable;
 
 /**
  * 401 Unauthorized exception.
@@ -22,12 +22,17 @@ class UnauthorizedHttpException extends HttpException
 	 * @param string $authMethod Information on how the client should authorize.
 	 * @param string|null $message
 	 * @param integer|null $code
-	 * @param Exception|null $previous
+	 * @param Throwable|null $previous
 	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
 	 */
-	public function __construct(string $authMethod, ?string $message = null, ?int $code = null, ?Exception $previous = null)
+	public function __construct(string $authMethod, ?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
 		$this->headers["WWW-Authenticate"] = $authMethod;
-		parent::__construct($message ?? "Unauthorized", $code ?? $this->httpStatus, $previous);
+
+		parent::__construct(
+			$message ?? "Unauthorized",
+			$code ?? $this->httpStatus,
+			$previous
+		);
 	}
 }
