@@ -6,6 +6,7 @@ use Capsule\Response;
 use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
 use Carton\Container;
+use DateInterval;
 use DateTime;
 use Limber\Application;
 use Limber\EmptyStream;
@@ -679,7 +680,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_unresolvable_throws_application_exception(): void
+	public function test_resolve_dependencies_with_unresolvable_throws_dependency_resolution_exception(): void
 	{
 		$application = new Application(
 			new Router

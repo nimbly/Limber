@@ -428,6 +428,20 @@ $application->setExceptionHandler(
 
 Limber will invoke your route handlers using reflection based autowiring. The `ServerRequestInterface` instance and any URI path parameters will be automatically resolved for you.
 
+**NOTE:** *Union type autowiring is currently not supported.*
+
+With PHP 8.0, union types were introduced, however, they are currently *not supported* in autowiring and dependency resolution and will throw a `DependencyResolutionException`. The reasons are pretty straight-forward: if a function or method parameter can be any number of types and each of those types are registered in the container, it is impossible to
+know which type should be injected or built.
+
+For example:
+
+```php
+function foo(SomeType|OtherType $thing): void
+{
+    // Do some stuff
+}
+```
+
 ### PSR-11 Container support
 
 Optionally, you can provide the `Application` instance a PSR-11 compatible `ContainerInterface` instance to be used when invoking route handlers or instantiating class based

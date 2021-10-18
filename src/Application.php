@@ -17,8 +17,10 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
 use ReflectionFunction;
+use ReflectionNamedType;
 use ReflectionObject;
 use ReflectionParameter;
+use ReflectionUnionType;
 use Throwable;
 
 class Application
@@ -323,14 +325,21 @@ class Application
 				$parameterName = $reflectionParameter->getName();
 				$parameterType = $reflectionParameter->getType();
 
-				// Check parameters for a match by name.
+				// Check user arguments for a match by name.
 				if( \array_key_exists($parameterName, $userArgs) ){
 					return $userArgs[$parameterName];
+				}
+
+				if( $parameterType instanceof ReflectionUnionType ) {
+					throw new DependencyResolutionException("Cannot resolve union types");
 				}
 
 				// Check container and parameters for a match by type.
 				if( $parameterType && !$parameterType->isBuiltin() ) {
 
+					/**
+					 * @psalm-suppress UndefinedMethod
+					 */
 					if( $this->container && $this->container->has($parameterType->getName()) ){
 						return $this->container->get($parameterType->getName());
 					}
@@ -338,7 +347,10 @@ class Application
 					// Try to find in the parameters supplied
 					$match = \array_filter(
 						$userArgs,
-						function($parameter) use ($parameterType) {
+						function($parameter) use ($parameterType): bool {
+							/**
+							 * @psalm-suppress UndefinedMethod
+							 */
 							$parameter_type_name = $parameterType->getName();
 							return $parameter instanceof $parameter_type_name;
 						}
@@ -352,6 +364,7 @@ class Application
 
 					/**
 					 * @psalm-suppress ArgumentTypeCoercion
+					 * @psalm-suppress UndefinedMethod
 					 */
 					return $this->make($parameterType->getName(), $userArgs);
 				}
