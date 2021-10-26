@@ -17,7 +17,6 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
 use ReflectionFunction;
-use ReflectionNamedType;
 use ReflectionObject;
 use ReflectionParameter;
 use ReflectionUnionType;
@@ -330,6 +329,12 @@ class Application
 					return $userArgs[$parameterName];
 				}
 
+				/**
+				 * @todo These Psalm suppressions are needed for as long as Limber supports PHP 7.x
+				 *
+				 * @psalm-suppress UndefinedClass
+				 * @psalm-suppress TypeDoesNotContainType
+				 */
 				if( $parameterType instanceof ReflectionUnionType ) {
 					throw new DependencyResolutionException("Cannot resolve union types");
 				}
