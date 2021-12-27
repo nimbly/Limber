@@ -10,11 +10,6 @@ use Throwable;
 class ServiceUnavailableHttpException extends HttpException
 {
 	/**
-	 * @inheritDoc
-	 */
-	protected $httpStatus = 503;
-
-	/**
 	 * ServiceUnavailableHttpException contructor
 	 *
 	 * This HTTP status requires a Retry-After header to be sent.
@@ -27,11 +22,11 @@ class ServiceUnavailableHttpException extends HttpException
 	 */
 	public function __construct(string $retryAfter, ?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
-		$this->headers["Retry-After"] = $retryAfter;
-
 		parent::__construct(
+			503,
 			$message ?? "Service unavailable",
-			$code ?? $this->httpStatus,
+			["Retry-After" => $retryAfter],
+			$code,
 			$previous
 		);
 	}

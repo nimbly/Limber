@@ -8,20 +8,20 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class TreeRouter implements RouterInterface
 {
-    /**
-     * Set of indexed RouteBranches
-     *
-     * @var RouteBranch
-     */
-    protected $root;
+	/**
+	 * Set of indexed RouteBranches
+	 *
+	 * @var RouteBranch
+	 */
+	protected RouteBranch $root;
 
-    /**
-     * TreeRouter constructor.
+	/**
+	 * TreeRouter constructor.
 	 *
 	 * @param array<Route> $routes
-     */
-    public function __construct(array $routes = [])
-    {
+	 */
+	public function __construct(array $routes = [])
+	{
 		$this->root = new RouteBranch;
 		$this->load($routes);
 	}
@@ -48,7 +48,7 @@ class TreeRouter implements RouterInterface
 	 * Recursive method to traverse tree from given branch and flatten out routes.
 	 *
 	 * @param RouteBranch $branch
-	 * @return array
+	 * @return array<Route>
 	 */
 	private function getRoutesFromBranch(RouteBranch $branch): array
 	{
@@ -61,53 +61,53 @@ class TreeRouter implements RouterInterface
 		return $routes;
 	}
 
-    /**
-     * Index the route.
-     *
-     * @param Route $route
-     * @return void
-     */
-    protected function indexRoute(Route $route): void
-    {
-        $currentBranch = $this->root;
-        $patternParts = $route->getPatternParts();
+	/**
+	 * Index the route.
+	 *
+	 * @param Route $route
+	 * @return void
+	 */
+	protected function indexRoute(Route $route): void
+	{
+		$currentBranch = $this->root;
+		$patternParts = $route->getPatternParts();
 
-        foreach( $patternParts as $pattern ){
-            $currentBranch = $currentBranch->next($pattern);
-        }
+		foreach( $patternParts as $pattern ){
+			$currentBranch = $currentBranch->next($pattern);
+		}
 
-        $currentBranch->addRoute($route);
-    }
+		$currentBranch->addRoute($route);
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function add(array $methods, string $path, $action, array $config = []): Route
-    {
-        // Create new Route instance
-        $route = new Route($methods, $path, $action, $config);
+	/**
+	 * @inheritDoc
+	 */
+	public function add(array $methods, string $path, string|callable $handler, array $config = []): Route
+	{
+		// Create new Route instance
+		$route = new Route($methods, $path, $handler, $config);
 
-        // Index the route
-        $this->indexRoute($route);
+		// Index the route
+		$this->indexRoute($route);
 
-        return $route;
-    }
+		return $route;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function resolve(ServerRequestInterface $request): ?Route
-    {
-        // Break the request path apart
-        $pathParts = \explode("/", \trim($request->getUri()->getPath(), "/"));
+	/**
+	 * @inheritDoc
+	 */
+	public function resolve(ServerRequestInterface $request): ?Route
+	{
+		// Break the request path apart
+		$pathParts = \explode("/", \trim($request->getUri()->getPath(), "/"));
 
-        // Set the starting node.
-        $branch = $this->root;
+		// Set the starting node.
+		$branch = $this->root;
 
-        foreach( $pathParts as $part ){
-            if( ($branch = $branch->findBranch($part)) === null ){
-                return null;
-            }
+		foreach( $pathParts as $part ){
+			if( ($branch = $branch->findBranch($part)) === null ){
+				return null;
+			}
 		}
 
 		$route = $branch->getRouteForMethod($request->getMethod());
@@ -116,33 +116,33 @@ class TreeRouter implements RouterInterface
 			return null;
 		}
 
-        // Now match against the remaining criteria.
-        if( $route->matchScheme($request->getUri()->getScheme()) &&
-            $route->matchHostname($request->getUri()->getHost()) ){
+		// Now match against the remaining criteria.
+		if( $route->matchScheme($request->getUri()->getScheme()) &&
+			$route->matchHostname($request->getUri()->getHost()) ){
 
-            return $route;
+			return $route;
 		}
 
 		return null;
-    }
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function getMethods(ServerRequestInterface $request): array
-    {
-        // Break the request path apart
-        $pathParts = \explode("/", \trim($request->getUri()->getPath(), "/"));
+	/**
+	 * @inheritDoc
+	 */
+	public function getMethods(ServerRequestInterface $request): array
+	{
+		// Break the request path apart
+		$pathParts = \explode("/", \trim($request->getUri()->getPath(), "/"));
 
-        // Set the starting node.
-        $branch = $this->root;
+		// Set the starting node.
+		$branch = $this->root;
 
-        foreach( $pathParts as $part ){
-            if( ($branch = $branch->findBranch($part)) === null ){
-                return [];
-            }
-        }
+		foreach( $pathParts as $part ){
+			if( ($branch = $branch->findBranch($part)) === null ){
+				return [];
+			}
+		}
 
-        return $branch->getMethods();
-    }
+		return $branch->getMethods();
+	}
 }

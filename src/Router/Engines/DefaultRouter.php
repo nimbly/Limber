@@ -8,19 +8,18 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class DefaultRouter implements RouterInterface
 {
-    /**
-     * Set of indexed methods to routes.
-     *
-     * @var array<string,array<Route>>
-     */
-    protected $indexes = [];
+	/**
+	 * Set of indexed methods to routes.
+	 *
+	 * @var array<string,array<Route>>
+	 */
+	protected array $routes = [];
 
-    /**
-     * Router constructor.
-     * @param array<Route> $routes
-     */
-    public function __construct(array $routes = [])
-    {
+	/**
+	 * @param array<Route> $routes
+	 */
+	public function __construct(array $routes = [])
+	{
 		$this->load($routes);
 	}
 
@@ -30,12 +29,12 @@ class DefaultRouter implements RouterInterface
 	 * @param Route $route
 	 * @return void
 	 */
-    protected function indexRoute(Route $route): void
-    {
-        foreach( $route->getMethods() as $method ){
-            $this->indexes[$method][] = $route;
-        }
-    }
+	protected function indexRoute(Route $route): void
+	{
+		foreach( $route->getMethods() as $method ){
+			$this->routes[$method][] = $route;
+		}
+	}
 
 	/**
 	 * @inheritDoc
@@ -53,65 +52,65 @@ class DefaultRouter implements RouterInterface
 	public function getRoutes(): array
 	{
 		$routes = [];
-		foreach( $this->indexes as $indexedRoutes ){
+		foreach( $this->routes as $indexedRoutes ){
 			$routes = \array_merge($routes, $indexedRoutes);
 		}
 
 		return $routes;
 	}
 
-    /**
-     * @inheritDoc
-     */
-    public function add(array $methods, string $path, $action, array $config = []): Route
-    {
-        // Create new Route instance
-        $route = new Route($methods, $path, $action, $config);
+	/**
+	 * @inheritDoc
+	 */
+	public function add(array $methods, string $path, string|callable $handler, array $config = []): Route
+	{
+		// Create new Route instance
+		$route = new Route($methods, $path, $handler, $config);
 
-        // Index the route
-        $this->indexRoute($route);
+		// Index the route
+		$this->indexRoute($route);
 
-        return $route;
-    }
+		return $route;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function resolve(ServerRequestInterface $request): ?Route
-    {
-        foreach( $this->indexes[\strtoupper($request->getMethod())] ?? [] as $route ){
+	/**
+	 * @inheritDoc
+	 */
+	public function resolve(ServerRequestInterface $request): ?Route
+	{
+		foreach( $this->routes[\strtoupper($request->getMethod())] ?? [] as $route ){
 
-            if( $route->matchPath($request->getUri()->getPath()) &&
-                $route->matchMethod($request->getMethod()) &&
-                $route->matchHostname($request->getUri()->getHost()) &&
-                $route->matchScheme($request->getUri()->getScheme()) ){
+			if( $route->matchPath($request->getUri()->getPath()) &&
+				$route->matchMethod($request->getMethod()) &&
+				$route->matchHostname($request->getUri()->getHost()) &&
+				$route->matchScheme($request->getUri()->getScheme()) ){
 
-                return $route;
-            }
-        }
+				return $route;
+			}
+		}
 
-        return null;
-    }
+		return null;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function getMethods(ServerRequestInterface $request): array
-    {
-        $methods = [];
+	/**
+	 * @inheritDoc
+	 */
+	public function getMethods(ServerRequestInterface $request): array
+	{
+		$methods = [];
 
-        foreach( $this->indexes as $routes ) {
+		foreach( $this->routes as $routes ) {
 
-            foreach( $routes as $route ){
-                if( $route->matchPath($request->getUri()->getPath()) &&
-                    $route->matchHostname($request->getUri()->getHost()) &&
-                    $route->matchScheme($request->getUri()->getScheme()) ){
-                    $methods = \array_merge($methods, $route->getMethods());
-                }
-            }
+			foreach( $routes as $route ){
+				if( $route->matchPath($request->getUri()->getPath()) &&
+					$route->matchHostname($request->getUri()->getHost()) &&
+					$route->matchScheme($request->getUri()->getScheme()) ){
+					$methods = \array_merge($methods, $route->getMethods());
+				}
+			}
 
-        }
+		}
 
-        return \array_unique($methods);
-    }
+		return \array_unique($methods);
+	}
 }

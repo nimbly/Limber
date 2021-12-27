@@ -9,16 +9,13 @@ use Throwable;
  */
 class NotAcceptableHttpException extends HttpException
 {
-	/**
-	 * @inheritDoc
-	 */
-	protected $httpStatus = 406;
-
 	public function __construct(?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
 		parent::__construct(
+			406,
 			$message ?? "Not Acceptable",
-			$code ?? $this->httpStatus,
+			[],
+			$code,
 			$previous
 		);
 	}

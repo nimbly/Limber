@@ -9,16 +9,13 @@ use Throwable;
  */
 class UnsupportedMediaTypeHttpException extends HttpException
 {
-	/**
-	 * @inheritDoc
-	 */
-	protected $httpStatus = 415;
-
 	public function __construct(?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
 		parent::__construct(
+			415,
 			$message ?? "Unsupported Media Type",
-			$code ?? $this->httpStatus,
+			[],
+			$code,
 			$previous
 		);
 	}

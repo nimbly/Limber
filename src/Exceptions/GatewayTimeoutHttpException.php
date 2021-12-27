@@ -9,16 +9,13 @@ use Throwable;
  */
 class GatewayTimeoutHttpException extends HttpException
 {
-	/**
-	 * @inheritDoc
-	 */
-	protected $httpStatus = 504;
-
 	public function __construct(?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
 		parent::__construct(
+			504,
 			$message ?? "Gateway Timeout",
-			$code ?? $this->httpStatus,
+			[],
+			$code,
 			$previous
 		);
 	}

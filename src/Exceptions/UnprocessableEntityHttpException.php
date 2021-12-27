@@ -9,16 +9,13 @@ use Throwable;
  */
 class UnprocessableEntityHttpException extends HttpException
 {
-	/**
-	 * @inheritDoc
-	 */
-	protected $httpStatus = 422;
-
 	public function __construct(?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
 		parent::__construct(
+			422,
 			$message ?? "Unprocessable Entity",
-			$code ?? $this->httpStatus,
+			[],
+			$code,
 			$previous
 		);
 	}

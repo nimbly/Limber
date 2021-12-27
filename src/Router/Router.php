@@ -8,28 +8,28 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class Router
 {
-    /**
-     * @var array<string,mixed>
-     */
-    protected $config = [
-        'scheme' => null,
-        'host' => null,
-        'prefix' => null,
-        'namespace' => null,
-        'middleware' => []
-    ];
+	/**
+	 * @var array<string,mixed>
+	 */
+	protected array $config = [
+		"scheme" => null,
+		"host" => null,
+		"prefix" => null,
+		"namespace" => null,
+		"middleware" => []
+	];
 
-    /**
-     * Route path parameter patterns
-     *
-     * @var array<string,string>
-     */
-    protected static $patterns = [
-        'alpha' => '[a-z]+',
-        'int' => '\d+',
-        'alphanumeric' => '[a-z0-9]+',
-        'uuid' => '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',
-        'hex' => '[a-f0-9]+'
+	/**
+	 * Route path parameter patterns.
+	 *
+	 * @var array<string,string>
+	 */
+	protected static array $patterns = [
+		"alpha" => "[a-z]+",
+		"int" => "\d+",
+		"alphanumeric" => "[a-z0-9]+",
+		"uuid" => "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}",
+		"hex" => "[a-f0-9]+"
 	];
 
 	/**
@@ -39,52 +39,55 @@ class Router
 	 */
 	protected $engine;
 
-    /**
-     * Router constructor.
+	/**
+	 * Router constructor.
 	 *
-     * @param array<Route> $routes
-	 * @param RouterInterface $engine
-     */
-	public function __construct(array $routes = [], RouterInterface $engine = null)
+	 * @param array<Route> $routes
+	 * @param RouterInterface|null $engine
+	 */
+	public function __construct(
+		array $routes = [],
+		RouterInterface $engine = null)
 	{
 		if( empty($engine) ){
 			$engine = new DefaultRouter;
 		}
+
 		$this->engine = $engine;
 		$this->load($routes);
 	}
 
-    /**
-     * Set a regex pattern.
-     *
-     * @param string $name
-     * @param string $regex
-     * @return void
-     */
-    public static function setPattern(string $name, string $regex): void
-    {
-        static::$patterns[$name] = $regex;
-    }
+	/**
+	 * Set a regex pattern.
+	 *
+	 * @param string $name
+	 * @param string $regex
+	 * @return void
+	 */
+	public static function setPattern(string $name, string $regex): void
+	{
+		static::$patterns[$name] = $regex;
+	}
 
-    /**
-     * Get a regex pattern by name.
-     *
-     * @param string $name
-     * @return string|null
-     */
-    public static function getPattern(string $name): ?string
-    {
-        if( \array_key_exists($name, static::$patterns) ){
-            return static::$patterns[$name];
-        }
+	/**
+	 * Get a regex pattern by name.
+	 *
+	 * @param string $name
+	 * @return string|null
+	 */
+	public static function getPattern(string $name): ?string
+	{
+		if( \array_key_exists($name, static::$patterns) ){
+			return static::$patterns[$name];
+		}
 
-        return null;
+		return null;
 	}
 
 	/**
 	 * Load routes into router.
 	 *
-	 * @param array $routes
+	 * @param array<Route> $routes
 	 * @return void
 	 */
 	public function load(array $routes): void
@@ -106,7 +109,7 @@ class Router
 	/**
 	 * Get all registered routes.
 	 *
-	 * @return array
+	 * @return array<Route>
 	 */
 	public function getRoutes(): array
 	{
@@ -127,140 +130,140 @@ class Router
 	/**
 	 * Add a route.
 	 *
-	 * @param array<string> $methods
-	 * @param string $path
-	 * @param string|callable $action
+	 * @param array<string> $methods Accepted HTTP methods for route.
+	 * @param string $path Path or endpoint. For example (eg, "/books/{id}")
+	 * @param string|callable $handler The route handler as a string (eg, "\Fully\Namespaced\Class@methodName") or a callable.
 	 * @return Route
 	 */
-	public function add(array $methods, string $path, $action): Route
+	public function add(array $methods, string $path, string|callable $handler): Route
 	{
-		return $this->engine->add($methods, $path, $action, $this->config);
+		return $this->engine->add($methods, $path, $handler, $this->config);
 	}
 
-    /**
+	/**
 	 * Add a GET route.
 	 *
-     * @param string $path
-     * @param string|callable $action
-     * @return Route
-     */
-    public function get($path, $action): Route
-    {
-        return $this->add(["GET", "HEAD"], $path, $action);
-    }
+	 * @param string $path
+	 * @param string|callable $handler
+	 * @return Route
+	 */
+	public function get(string $path, string|callable $handler): Route
+	{
+		return $this->add(["GET", "HEAD"], $path, $handler);
+	}
 
-    /**
+	/**
 	 * Add a POST route.
 	 *
-     * @param string $path
-     * @param string|callable $action
-     * @return Route
-     */
-    public function post($path, $action): Route
-    {
-        return $this->add(["POST"], $path, $action);
-    }
+	 * @param string $path
+	 * @param string|callable $handler
+	 * @return Route
+	 */
+	public function post(string $path, string|callable $handler): Route
+	{
+		return $this->add(["POST"], $path, $handler);
+	}
 
-    /**
+	/**
 	 * Add a PUT route.
 	 *
-     * @param string $path
-     * @param string|callable $action
-     * @return Route
-     */
-    public function put($path, $action): Route
-    {
-        return $this->add(["PUT"], $path, $action);
-    }
+	 * @param string $path
+	 * @param string|callable $handler
+	 * @return Route
+	 */
+	public function put(string $path, string|callable $handler): Route
+	{
+		return $this->add(["PUT"], $path, $handler);
+	}
 
-    /**
+	/**
 	 * Add a PATCH route.
 	 *
-     * @param string $path
-     * @param string|callable $action
-     * @return Route
-     */
-    public function patch($path, $action): Route
-    {
-        return $this->add(["PATCH"], $path, $action);
-    }
+	 * @param string $path
+	 * @param string|callable $handler
+	 * @return Route
+	 */
+	public function patch(string $path, string|callable $handler): Route
+	{
+		return $this->add(["PATCH"], $path, $handler);
+	}
 
-    /**
+	/**
 	 * Add a DELETE route.
 	 *
-     * @param string $path
-     * @param string|callable $action
-     * @return Route
-     */
-    public function delete(string $path, $action): Route
-    {
-        return $this->add(["DELETE"], $path, $action);
-    }
+	 * @param string $path
+	 * @param string|callable $handler
+	 * @return Route
+	 */
+	public function delete(string $path, string|callable $handler): Route
+	{
+		return $this->add(["DELETE"], $path, $handler);
+	}
 
-    /**
+	/**
 	 * Add a HEAD route.
 	 *
-     * @param string $path
-     * @param string|callable $action
-     * @return Route
-     */
-    public function head(string $path, $action): Route
-    {
-        return $this->add(["HEAD"], $path, $action);
-    }
+	 * @param string $path
+	 * @param string|callable $handler
+	 * @return Route
+	 */
+	public function head(string $path, string|callable $handler): Route
+	{
+		return $this->add(["HEAD"], $path, $handler);
+	}
 
-    /**
+	/**
 	 * Add an OPTIONS route.
 	 *
-     * @param string $path
-     * @param string|callable $action
-     * @return Route
-     */
-    public function options(string $path, $action): Route
-    {
-        return $this->add(["OPTIONS"], $path, $action);
-    }
+	 * @param string $path
+	 * @param string|callable $handler
+	 * @return Route
+	 */
+	public function options(string $path, string|callable $handler): Route
+	{
+		return $this->add(["OPTIONS"], $path, $handler);
+	}
 
-    /**
+	/**
 	 * Group routes together with a set of shared configuration options.
 	 *
-     * @param array $groupConfig
-     * @param Closure $callback
-     * @return void
-     */
-    public function group(array $groupConfig, Closure $callback): void
-    {
-        // Save current config
-        $previousConfig = $this->config;
+	 * @param array<string,mixed> $groupConfig
+	 * @param Closure $callback
+	 * @return void
+	 */
+	public function group(array $groupConfig, Closure $callback): void
+	{
+		// Save current config
+		$previousConfig = $this->config;
 
-        // Merge group config values with current config
+		// Merge group config values with current config
 		$this->config = $this->mergeGroupConfig($this->config, $groupConfig);
 
-        // Process routes in closure
-        \call_user_func($callback, $this);
+		// Process routes in closure
+		\call_user_func($callback, $this);
 
-        // Restore previous config
-        $this->config = $previousConfig;
-    }
+		// Restore previous config
+		$this->config = $previousConfig;
+	}
 
-    /**
-     * Merge parent config in with group config.
-     *
+	/**
+	 * Merge parent config in with group config.
+	 *
 	 * @param array<string,mixed> $parentConfig
-     * @param array<string,mixed> $groupConfig
-     * @return array<string,mixed>
-     */
-    protected function mergeGroupConfig(array $parentConfig, array $groupConfig): array
-    {
+	 * @param array<string,mixed> $groupConfig
+	 * @return array<string,mixed>
+	 */
+	protected function mergeGroupConfig(array $parentConfig, array $groupConfig): array
+	{
 		return [
-			'scheme'=> $groupConfig['scheme'] ?? $parentConfig['scheme'] ?? null,
-			'hostname' => $groupConfig['hostname'] ?? $parentConfig['hostname'] ?? null,
-			'prefix' => $groupConfig['prefix'] ?? $parentConfig['prefix'] ?? null,
-			'namespace' => $groupConfig['namespace'] ?? $parentConfig['namespace'] ?? null,
-			'middleware' => \array_merge(
-				$parentConfig['middleware'] ?? [],
-				$groupConfig['middleware'] ?? []
+			"scheme"=> $groupConfig["scheme"] ?? $parentConfig["scheme"] ?? null,
+			"hostname" => $groupConfig["hostname"] ?? $parentConfig["hostname"] ?? null,
+			"prefix" => $groupConfig["prefix"] ?? $parentConfig["prefix"] ?? null,
+			"namespace" => $groupConfig["namespace"] ?? $parentConfig["namespace"] ?? null,
+			"middleware" => \array_merge(
+				$parentConfig["middleware"] ?? [],
+				$groupConfig["middleware"] ?? []
 			)
 		];
-    }
+	}
 }

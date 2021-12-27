@@ -15,127 +15,127 @@ use RuntimeException;
  */
 class EmptyStream implements StreamInterface
 {
-    /**
-     * @inheritDoc
-     */
-    public function __toString()
-    {
-        return $this->getContents();
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function __toString()
+	{
+		return $this->getContents();
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function close(): void
-    {
-        return;
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function close(): void
+	{
+		return;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function detach()
-    {
-        return null;
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function detach()
+	{
+		return null;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function getSize()
-    {
-        return 0;
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function getSize()
+	{
+		return 0;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function tell()
-    {
-        return 0;
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function tell()
+	{
+		return 0;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function eof()
-    {
-        return true;
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function eof()
+	{
+		return true;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function isSeekable()
-    {
-        return false;
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function isSeekable()
+	{
+		return false;
+	}
 
-    /**
-     * @inheritDoc
+	/**
+	 * @inheritDoc
 	 * @param int $offset
 	 * @param int $whence
 	 * @return void
-     */
-    public function seek($offset, $whence = SEEK_SET)
-    {
-        throw new RuntimeException("Stream not seekable");
-    }
+	 */
+	public function seek($offset, $whence = SEEK_SET)
+	{
+		throw new RuntimeException("Stream not seekable");
+	}
 
-    /**
-     * @inheritDoc
+	/**
+	 * @inheritDoc
 	 * @return void
-     */
-    public function rewind()
-    {
-        $this->seek(0);
-    }
+	 */
+	public function rewind()
+	{
+		$this->seek(0);
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function isWritable()
-    {
-        return false;
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function isWritable()
+	{
+		return false;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function write($string)
-    {
+	/**
+	 * @inheritDoc
+	 */
+	public function write($string)
+	{
 		throw new RuntimeException("Stream not writeable.");
-    }
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function isReadable()
-    {
-        return true;
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function isReadable()
+	{
+		return true;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function read($length)
-    {
-        return "";
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function read($length)
+	{
+		return "";
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function getContents()
-    {
-        return "";
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function getContents()
+	{
+		return "";
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function getMetadata($key = null)
-    {
-        return null;
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function getMetadata($key = null)
+	{
+		return null;
+	}
 }

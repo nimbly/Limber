@@ -9,16 +9,13 @@ use Throwable;
  */
 class InternalServerErrorHttpException extends HttpException
 {
-	/**
-	 * @inheritDoc
-	 */
-	protected $httpStatus = 500;
-
 	public function __construct(?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
 		parent::__construct(
+			500,
 			$message ?? "Internal Server Error",
-			$code ?? $this->httpStatus,
+			[],
+			$code,
 			$previous
 		);
 	}

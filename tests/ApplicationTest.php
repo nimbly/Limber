@@ -6,10 +6,10 @@ use Capsule\Response;
 use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
 use Carton\Container;
-use DateInterval;
 use DateTime;
 use Limber\Application;
 use Limber\EmptyStream;
+use Limber\ExceptionHandlerInterface;
 use Limber\Exceptions\ApplicationException;
 use Limber\Exceptions\DependencyResolutionException;
 use Limber\Exceptions\HttpException;
@@ -30,6 +30,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
 use ReflectionFunction;
+use Throwable;
 
 /**
  * @covers Limber\Application
@@ -54,16 +55,53 @@ class ApplicationTest extends TestCase
 	public function test_constructor(): void
 	{
 		$router = new Router;
+		$middleware = [FooMiddleware::class];
+		$container = new Container;
+		$exceptionHandler = new class implements ExceptionHandlerInterface {
+			public function handle(Throwable $exception, ServerRequestInterface $request): ResponseInterface
+			{
+				return new Response(204);
+			}
+		};
 
-		$application = new Application($router);
+
+		$application = new Application(
+			$router,
+			$middleware,
+			$container,
+			$exceptionHandler);
 
 		$reflection = new ReflectionClass($application);
 
-		$property = $reflection->getProperty('router');
+		$property = $reflection->getProperty("router");
 		$property->setAccessible(true);
 
 		$this->assertSame(
 			$router,
+			$property->getValue($application)
+		);
+
+		$property = $reflection->getProperty("middleware");
+		$property->setAccessible(true);
+
+		$this->assertEquals(
+			$middleware,
+			$property->getValue($application)
+		);
+
+		$property = $reflection->getProperty("container");
+		$property->setAccessible(true);
+
+		$this->assertSame(
+			$container,
+			$property->getValue($application)
+		);
+
+		$property = $reflection->getProperty("exceptionHandler");
+		$property->setAccessible(true);
+
+		$this->assertSame(
+			$exceptionHandler,
 			$property->getValue($application)
 		);
 	}
@@ -245,7 +283,12 @@ class ApplicationTest extends TestCase
 			new Router
 		);
 
-		$handler = function(\Throwable $exception): void {};
+		$handler = new class implements ExceptionHandlerInterface {
+			public function handle(Throwable $exception, ServerRequestInterface $request): ResponseInterface
+			{
+				return new Response(200);
+			}
+		};
 
 		$application->setExceptionHandler($handler);
 
@@ -259,14 +302,16 @@ class ApplicationTest extends TestCase
 	public function test_handle_exception_with_exception_handler_set(): void
 	{
 		$application = new Application(new Router);
-		$application->setExceptionHandler(function(HttpException $exception): ResponseInterface {
-
-			return new Response(
-				$exception->getHttpStatus(),
-				$exception->getMessage()
-			);
-
-		});
+		$application->setExceptionHandler(
+			new class implements ExceptionHandlerInterface {
+				public function handle(Throwable $exception, ServerRequestInterface $request): ResponseInterface {
+					return new Response(
+						$exception->getCode(),
+						$exception->getMessage()
+					);
+				}
+			}
+		);
 
 		$reflection = new ReflectionClass($application);
 		$method = $reflection->getMethod('handleException');

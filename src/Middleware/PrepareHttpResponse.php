@@ -8,7 +8,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-
 class PrepareHttpResponse implements MiddlewareInterface
 {
 	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -17,26 +16,26 @@ class PrepareHttpResponse implements MiddlewareInterface
 
 		// Force Content-Length to 0 for 204 No Content responses.
 		if( $response->getStatusCode() === 204 ){
-			$response = $response->withoutHeader('Content-Length')
-			->withoutHeader('Content-Type')
-			->withoutHeader('Transfer-Encoding');
+			$response = $response->withoutHeader("Content-Length")
+			->withoutHeader("Content-Type")
+			->withoutHeader("Transfer-Encoding");
 		}
 
 		// Set Content-Length header if none provided.
-		elseif( $response->hasHeader('Transfer-Encoding') === false &&
-				$response->hasHeader('Content-Length') === false &&
+		elseif( $response->hasHeader("Transfer-Encoding") === false &&
+				$response->hasHeader("Content-Length") === false &&
 				$response->getBody()->getSize() !== null ){
-			$response = $response->withHeader('Content-Length', (string) $response->getBody()->getSize());
+			$response = $response->withHeader("Content-Length", (string) $response->getBody()->getSize());
 		}
 
 		// Remove Content-Length header if Transfer-Encoding header is present.
-		if( $response->hasHeader('Transfer-Encoding') &&
-			$response->hasHeader('Content-Length') ){
-			$response = $response->withoutHeader('Content-Length');
+		if( $response->hasHeader("Transfer-Encoding") &&
+			$response->hasHeader("Content-Length") ){
+			$response = $response->withoutHeader("Content-Length");
 		}
 
 		// Set empty body stream for HEAD requests and 204 No Content responses.
-		if( \strtoupper($request->getMethod()) === 'HEAD' ||
+		if( \strtoupper($request->getMethod()) === "HEAD" ||
 			$response->getStatusCode() === 204 ){
 			$response = $response->withBody(new EmptyStream);
 		}

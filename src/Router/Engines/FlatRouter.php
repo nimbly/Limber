@@ -8,17 +8,17 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class FlatRouter implements RouterInterface
 {
-    /**
-     * @var array<Route>
-     */
-    protected $routes = [];
+	/**
+	 * @var array<Route>
+	 */
+	protected array $routes = [];
 
-    /**
-     * @inheritDoc
-     */
-    public function __construct(array $routes = [])
-    {
-        $this->load($routes);
+	/**
+	 * @inheritDoc
+	 */
+	public function __construct(array $routes = [])
+	{
+		$this->load($routes);
 	}
 
 	/**
@@ -37,50 +37,50 @@ class FlatRouter implements RouterInterface
 		return $this->routes;
 	}
 
-    /**
-     * @inheritDoc
-     */
-    public function add(array $methods, string $path, $action, array $config = []): Route
-    {
-        // Create new Route instance
-        $route = new Route($methods, $path, $action, $config);
-        $this->routes[] = $route;
-        return $route;
-    }
+	/**
+	 * @inheritDoc
+	 */
+	public function add(array $methods, string $path, string|callable $handler, array $config = []): Route
+	{
+		// Create new Route instance
+		$route = new Route($methods, $path, $handler, $config);
+		$this->routes[] = $route;
+		return $route;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function resolve(ServerRequestInterface $request): ?Route
-    {
-        foreach( $this->routes as $route ){
+	/**
+	 * @inheritDoc
+	 */
+	public function resolve(ServerRequestInterface $request): ?Route
+	{
+		foreach( $this->routes as $route ){
 
-            if( $route->matchPath($request->getUri()->getPath()) &&
-                $route->matchMethod($request->getMethod()) &&
-                $route->matchHostname($request->getUri()->getHost()) &&
-                $route->matchScheme($request->getUri()->getScheme()) ){
+			if( $route->matchPath($request->getUri()->getPath()) &&
+				$route->matchMethod($request->getMethod()) &&
+				$route->matchHostname($request->getUri()->getHost()) &&
+				$route->matchScheme($request->getUri()->getScheme()) ){
 
-                return $route;
-            }
-        }
+				return $route;
+			}
+		}
 
-        return null;
-    }
+		return null;
+	}
 
-    /**
-     * @inheritDoc
-     */
-    public function getMethods(ServerRequestInterface $request): array
-    {
-        $methods = [];
+	/**
+	 * @inheritDoc
+	 */
+	public function getMethods(ServerRequestInterface $request): array
+	{
+		$methods = [];
 
-        foreach( $this->routes as $route ) {
-            if( $route->matchHostname($request->getUri()->getHost()) &&
-                $route->matchPath($request->getUri()->getPath()) ){
-                $methods = \array_merge($methods, $route->getMethods());
-            }
-        }
+		foreach( $this->routes as $route ) {
+			if( $route->matchHostname($request->getUri()->getHost()) &&
+				$route->matchPath($request->getUri()->getPath()) ){
+				$methods = \array_merge($methods, $route->getMethods());
+			}
+		}
 
-        return \array_unique($methods);
-    }
+		return \array_unique($methods);
+	}
 }

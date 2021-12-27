@@ -10,11 +10,6 @@ use Throwable;
 class MethodNotAllowedHttpException extends HttpException
 {
 	/**
-	 * @inheritDoc
-	 */
-	protected $httpStatus = 405;
-
-	/**
 	 * MethodNotAllowedHttpException constructor.
 	 *
 	 * This HTTP status code requires a list of HTTP methods that *are* allowed on the resource.
@@ -27,10 +22,11 @@ class MethodNotAllowedHttpException extends HttpException
 	 */
 	public function __construct(array $methodsAllowed, ?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
-		$this->headers['Allow'] = \implode(", ", $methodsAllowed);
 		parent::__construct(
+			405,
 			$message ?? "Method not allowed",
-			$code ?? $this->httpStatus,
+			["Allow" => \implode(", ", $methodsAllowed)],
+			$code,
 			$previous
 		);
 	}

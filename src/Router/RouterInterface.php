@@ -4,7 +4,6 @@ namespace Limber\Router;
 
 use Psr\Http\Message\ServerRequestInterface;
 
-
 interface RouterInterface
 {
 	/**
@@ -24,23 +23,23 @@ interface RouterInterface
 	public function resolve(ServerRequestInterface $request): ?Route;
 
 	/**
-     * Add a route.
-     *
-     * @param array $methods
-     * @param string $path
-     * @param string|callable $action
-	 * @param array $config
-     * @return Route
-     */
-	public function add(array $methods, string $path, $action, array $config = []): Route;
+	 * Add a route.
+	 *
+	 * @param array<string> $methods Allowed HTTP methods for route.
+	 * @param string $path
+	 * @param string|callable $handler
+	 * @param array<string,mixed> $config
+	 * @return Route
+	 */
+	public function add(array $methods, string $path, string|callable $handler, array $config = []): Route;
 
 	/**
-     * Return all HTTP methods supported by the endpoint.
-     *
-     * @param ServerRequestInterface $request
-     * @return array<string>
-     */
-    public function getMethods(ServerRequestInterface $request): array;
+	 * Return all HTTP methods supported by the endpoint.
+	 *
+	 * @param ServerRequestInterface $request
+	 * @return array<string>
+	 */
+	public function getMethods(ServerRequestInterface $request): array;
 
 	/**
 	 * Get all routes registered.

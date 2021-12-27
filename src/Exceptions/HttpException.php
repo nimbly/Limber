@@ -4,32 +4,33 @@ namespace Limber\Exceptions;
 
 use Exception;
 use Throwable;
-use UnexpectedValueException;
 
 abstract class HttpException extends Exception
 {
 	/**
 	 * HTTP status code
 	 *
-	 * @var int|null
+	 * @var int
 	 */
-	protected $httpStatus;
+	protected int $httpStatus;
 
 	/**
 	 * Additional headers to send with this exception.
 	 *
 	 * @var array<string,string>
 	 */
-	protected $headers = [];
+	protected array $headers = [];
 
 	/**
 	 * @param string $message
 	 * @param integer $code
 	 * @param Throwable|null $previous
 	 */
-	public function __construct(string $message, int $code, ?Throwable $previous = null)
+	public function __construct(int $httpStatus, string $message, array $headers = [], ?int $code = null, ?Throwable $previous = null)
 	{
-		parent::__construct($message, $code, $previous);
+		$this->httpStatus = $httpStatus;
+		$this->headers = $headers;
+		parent::__construct($message, $code ?? $httpStatus, $previous);
 	}
 
 	/**
@@ -39,10 +40,6 @@ abstract class HttpException extends Exception
 	 */
 	public function getHttpStatus(): int
 	{
-		if( empty($this->httpStatus) ){
-			throw new UnexpectedValueException("HTTP status code has not been set");
-		}
-
 		return $this->httpStatus;
 	}
 

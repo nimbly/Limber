@@ -9,16 +9,13 @@ use Throwable;
  */
 class GoneHttpException extends HttpException
 {
-	/**
-	 * @inheritDoc
-	 */
-	protected $httpStatus = 410;
-
 	public function __construct(?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
 		parent::__construct(
+			410,
 			$message ?? "Gone",
-			$code ?? $this->httpStatus,
+			[],
+			$code,
 			$previous
 		);
 	}

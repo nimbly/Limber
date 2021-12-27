@@ -9,16 +9,13 @@ use Throwable;
  */
 class NotFoundHttpException extends HttpException
 {
-	/**
-	 * @inheritDoc
-	 */
-	protected $httpStatus = 404;
-
 	public function __construct(?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
 		parent::__construct(
+			404,
 			$message ?? "Not Found",
-			$code ?? $this->httpStatus,
+			[],
+			$code,
 			$previous
 		);
 	}

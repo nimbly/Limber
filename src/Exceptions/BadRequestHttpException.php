@@ -9,16 +9,13 @@ use Throwable;
  */
 class BadRequestHttpException extends HttpException
 {
-	/**
-	 * @inheritDoc
-	 */
-	protected $httpStatus = 400;
-
 	public function __construct(?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
 		parent::__construct(
+			400,
 			$message ?? "Bad Request",
-			$code ?? $this->httpStatus,
+			[],
+			$code,
 			$previous
 		);
 	}

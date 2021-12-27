@@ -43,7 +43,7 @@ class TreeRouterTest extends TestCase
 
         $this->assertEquals(["GET", "POST"], $route->getMethods());
         $this->assertEquals("books/edit", $route->getPath());
-        $this->assertEquals("BooksController@edit", $route->getAction());
+        $this->assertEquals("BooksController@edit", $route->getHandler());
     }
 
     public function test_resolve(): void
@@ -62,7 +62,7 @@ class TreeRouterTest extends TestCase
 
 		$this->assertNotNull($route);
         $this->assertEquals(["GET"], $route->getMethods());
-        $this->assertEquals("AuthorsController@get", $route->getAction());
+        $this->assertEquals("AuthorsController@get", $route->getHandler());
     }
 
     public function test_get_methods(): void

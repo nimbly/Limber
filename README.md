@@ -16,6 +16,10 @@ Limber is intended for advanced users who are comfortable setting up their own f
 * PSR-15 middleware compliant
 * A thin `Application` layer to tie everything together
 
+## Requirements
+
+* PHP 8.0+
+
 ## Installation
 
 ```bash
@@ -35,10 +39,8 @@ $router->get("/", function(ServerRequestInterface $request): ResponseInterface {
 
 });
 
-// Create Application instance with the Router
-$application = new Limber\Application(
-	$router
-);
+// Create Application instance.
+$application = new Limber\Application($router);
 
 // Dispatch a PSR-7 ServerRequestInterface instance and get back a PSR-7 ResponseInterface instance
 $response = $application->dispatch(
@@ -75,16 +77,16 @@ Create a `Router` instance and begin defining your routes. There are convenience
 
 ```php
 $router = new Limber\Router\Router;
-$router->get("/fruits", "FruitsController@all");
-$router->post("/fruits", "FruitsController@create");
-$router->patch("/fruits/{id}", "FruitsController@update");
-$router->delete("/fruits/{id}", "FruitsContoller@delete");
+$router->get("/fruits", "FruitsHandler@all");
+$router->post("/fruits", "FruitsHandler@create");
+$router->patch("/fruits/{id}", "FruitsHandler@update");
+$router->delete("/fruits/{id}", "FruitsHandler@delete");
 ```
 
-A route can respond to any number of HTTP verbs.
+A route can respond to any number of HTTP methods by using the `add` method and passing an array the methods as strings.
 
 ```php
-$router->add(["get", "post"], "/fruits", "FruitsController@create");
+$router->add(["get", "post"], "/fruits", "FruitsHandler@create");
 ```
 
 ### HEAD requests
@@ -97,13 +99,13 @@ Paths can be static or contain named parameters. Named parameters will be inject
 route handler if the handler also contains a parameter of the same name.
 
 ```php
-$router->get("/books/{isbn}", "BooksController@findByIsbn");
+$router->get("/books/{isbn}", "BooksHandler@findByIsbn");
 ```
 
 In the following handler, both the `$request` and `$isbn` parameters will be injected automatically.
 
 ```php
-class BooksController
+class BooksHandler
 {
     public function getByIsbn(ServerRequestInterface $request, string $isbn): ResponseInterface
     {
@@ -135,23 +137,23 @@ Limber has several predefined path patterns you can use:
 
 ```php
 // Get a book by its ID and match the ID to a UUID.
-$router->get("/books/{id:uuid}", "BooksController@get");
+$router->get("/books/{id:uuid}", "BooksHandler@get");
 ```
 
 You can define your own patterns to match using the `Router::setPattern()` static method.
 
 ```php
 Router::setPattern("isbn", "\d{9}[\d|X]");
-$router->get("/books/{id:isbn}", "BooksController@getByIsbn");
+$router->get("/books/{id:isbn}", "BooksHandler@getByIsbn");
 ```
 
-### Route actions
+### Route handlers
 
-Route actions (or handlers) may either be a `\callable` or a string in the format **Fully\Qualified\Namespace\ClassName@Method** (for example `App\Handlers\v1\BookHandler@create`).
+Route handlers may either be a `\callable` or a string in the format **Fully\Qualified\Namespace\ClassName@Method** (for example `App\Handlers\v1\BooksHandler@create`).
 
-Route actions *must* return a `ResponseInterface` instance.
+Route handlers *must* return a `ResponseInterface` instance.
 
-Limber uses reflection based autowiring to automatically resolve your route action"s parameters - including the `ServerRequestInterface` instance
+Limber uses reflection based autowiring to automatically resolve your route handler's parameters - including the `ServerRequestInterface` instance
 and any path parameters. This applies for both closure based handlers as well as **Class@Method** based handlers.
 
 You may also optionally supply a PSR-11 compliant `ContainerInterface` instance to aid in route handler resolution. By doing this, you can
@@ -159,7 +161,7 @@ easily have your application specific dependencies resolved and injected into yo
 for more information.
 
 ```php
-// Closure based actions
+// Closure based handler
 $router->get("/books/{id:isbn}", function(ServerRequestInterface $request, string $id): ResponseInterface {
 
 	$book = Books::find($id);
@@ -175,7 +177,7 @@ $router->get("/books/{id:isbn}", function(ServerRequestInterface $request, strin
 });
 
 // String references to ClassName@Method
-$router->patch("/books/{id:isbn}", "App\Controllers\BooksController@update");
+$router->patch("/books/{id:isbn}", "App\Handlers\BooksHandler@update");
 
 // If a ContainerInterface instance was assigned to the application and contains an InventoryService instance, it will be injected into this handler.
 $router->post("/books", function(ServerRequestInterface $request, InventoryService $inventoryService): ResponseInterface {
@@ -236,17 +238,17 @@ $router->group([
 		FooMiddleware::class,
 		BarMiddleware::class
 	],
-	"namespace" => "App\Sub.Domain\Controllers",
+	"namespace" => "App\Sub.Domain\Handlers",
 	"prefix" => "v1"
 ], function($router){
 
-	$router->get("books/{isbn}", "BooksController@getByIsbn");
-	$router->post("books", "BooksController@create");
+	$router->get("books/{isbn}", "BooksHandler@getByIsbn");
+	$router->post("books", "BooksHandler@create");
 
 });
 ```
 
-Groups can be nested and will inherit their parent group"s settings unless the setting is overridden. Middleware settings however are *merged* with their parent"s settings.
+Groups can be nested and will inherit their parent group's settings unless the setting is overridden. Middleware settings however are *merged* with their parent's settings.
 
 ```php
 $router->group([
@@ -255,12 +257,12 @@ $router->group([
 		FooMiddleware::class,
 		BarMiddleware::class
 	],
-	"namespace" => "App\Sub.Domain\Controllers",
+	"namespace" => "App\Sub.Domain\Handlers",
 	"prefix" => "v1"
 ], function($router){
 
-	$router->get("books/{isbn}", "BooksController@getByIsbn");
-	$router->post("books", "BooksController@create");
+	$router->get("books/{isbn}", "BooksHandler@getByIsbn");
+	$router->post("books", "BooksHandler@create");
 
 	// This group will inherit all group settings from the parent group
 	// and will merge in an additional middleware (AdminMiddleware).
@@ -300,7 +302,7 @@ Route middleware can be applied per route or per route group.
 ```php
 
 // Middleware applied to single route
-$route->get("/books/{id:isbn}", "BooksController@getByIsbn")->setMiddleware([
+$route->get("/books/{id:isbn}", "BooksHandler@getByIsbn")->setMiddleware([
 	FooMiddleware::class
 ]);
 
@@ -360,6 +362,20 @@ An `Application` instance requires only a `Router` instance.
 $application = new Application($router);
 ```
 
+You can also pass in the array of global middleware, a PSR-11 `ContainerInterface` instance, and an `ExceptionHandlerInterface` instance.
+
+```php
+$application = new Application(
+    $router,
+    [
+        AuthorizationMiddleware::class,
+        RequestValidationMiddleware::class
+    ]
+    new Container,
+    new ExceptionHandler
+);
+```
+
 ### Setting global middleware
 
 You can set global middleware directly on the `Application` instance. Global middleware is applied to *all* requests and processed in the order they are registered.
@@ -406,20 +422,10 @@ $application->setMiddleware([
 
 You can set a custom exception handler that will process any exception thrown *within* the middleware chain.
 
-The exception handler must be a `\callable` and accept an instance of `Throwable` and `ServerRequestInterface` as its only arguments and return an instance of `ResponseInterface`.
+The exception handler must implement the `ExceptionHandlerInterface`.
 
 ```php
-$application->setExceptionHandler(
-    function(Throwable $exception, ServerRequestInterface $request): ResponseInterface {
-    	return new Response(
-    		\render("errors/" . $exception->getHttpStatus()),
-    		$exception->getHttpStatus(),
-    		[
-    			"Content-Type" => "text/html"
-    		]
-    	);
-    }
-);
+$application->setExceptionHandler(new ExceptionHandler);
 ```
 
 **NOTE** Exceptions thrown *outside* of the middleware chain will continue to bubble up unless caught elsewhere.
@@ -511,13 +517,14 @@ composer install react/http
 
 ### Create entry point
 
-Create a file called `main.php` (or whatever you want) to be the container"s command/entry point.
+Create a file called `main.php` (or whatever you want) to be the container's command/entry point.
 
 ```php
 <?php
 
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Nimbly\Capsule\Response;
 
 // Create the router and some routes.
 $router = new Limber\Router;
@@ -530,38 +537,42 @@ $router->get("/", function(ServerRequestInterface $request): ResponseInterface {
 // Create the Limber Application instance.
 $application = new Limber\Application($router);
 
-// Create the React EventLoop instance.
-$eventLoop = React\EventLoop\Factory::create();
-
 // Create the HTTP server to handle incoming HTTP requests with your Limber Application instance.
 $httpServer = new React\Http\Server(
-    $eventLoop,
     function(ServerRequestInterface $request) use ($application): ResponseInterface {
-
 	    return $application->dispatch($request);
-
     }
 );
 
 // Listen on port 8000.
 $httpServer->listen(
-	new React\Socket\Server("0.0.0.0:8000", $eventLoop);
+	new React\Socket\Server("0.0.0.0:8000");
 );
-
-// Run the server!
-$eventLoop->run();
 ```
 
 ### Create Dockerfile
 
-```bash
-FROM php:7.4-cli
+Create a `Dockerfile` in the root of your application.
+
+We'll extend from the official PHP 8 docker image and add some useful tools like `composer`, a better event loop library from PECL, and install support for process control (`pcntl`).
+
+Obviously, edit this file to match your specific needs.
+
+```docker
+FROM php:8-cli
+
+RUN apt-get update && apt-get upgrade --yes
+RUN curl --silent --show-error https://getcomposer.org/installer | php && \
+   mv composer.phar /usr/bin/composer
+RUN mkdir -p /usr/src/php/ext && curl --silent https://pecl.php.net/get/ev-1.1.5.tgz | tar xvzf - -C /usr/src/php/ext
+
+# Add other PHP modules
+RUN docker-php-ext-install pcntl ev-1.1.5
 
 WORKDIR /opt/service
-
-COPY . .
-
-CMD ["php", "/opt/service/main.php"]
+ADD . .
+RUN composer install --no-dev
+CMD [ "php", "main.php" ]
 ```
 
 ### Build docker image

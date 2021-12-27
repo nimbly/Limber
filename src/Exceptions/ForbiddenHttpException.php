@@ -9,16 +9,13 @@ use Throwable;
  */
 class ForbiddenHttpException extends HttpException
 {
-	/**
-	 * @inheritDoc
-	 */
-	protected $httpStatus = 403;
-
 	public function __construct(?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
 		parent::__construct(
+			403,
 			$message ?? "Forbidden",
-			$code ?? $this->httpStatus,
+			[],
+			$code,
 			$previous
 		);
 	}
