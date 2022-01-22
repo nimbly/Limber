@@ -1,6 +1,6 @@
 <?php
 
-namespace Limber\Middleware;
+namespace Nimbly\Limber\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

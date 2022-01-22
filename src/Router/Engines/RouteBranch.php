@@ -1,8 +1,8 @@
 <?php
 
-namespace Limber\Router\Engines;
+namespace Nimbly\Limber\Router\Engines;
 
-use Limber\Router\Route;
+use Nimbly\Limber\Router\Route;
 
 class RouteBranch
 {

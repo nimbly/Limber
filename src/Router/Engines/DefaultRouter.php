@@ -1,9 +1,9 @@
 <?php
 
-namespace Limber\Router\Engines;
+namespace Nimbly\Limber\Router\Engines;
 
-use Limber\Router\Route;
-use Limber\Router\RouterInterface;
+use Nimbly\Limber\Router\Route;
+use Nimbly\Limber\Router\RouterInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class DefaultRouter implements RouterInterface

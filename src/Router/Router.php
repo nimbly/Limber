@@ -1,9 +1,9 @@
 <?php
 
-namespace Limber\Router;
+namespace Nimbly\Limber\Router;
 
 use Closure;
-use Limber\Router\Engines\DefaultRouter;
+use Nimbly\Limber\Router\Engines\DefaultRouter;
 use Psr\Http\Message\ServerRequestInterface;
 
 class Router

@@ -1,15 +1,15 @@
 <?php
 
-namespace Limber;
+namespace Nimbly\Limber;
 
-use Limber\Exceptions\ApplicationException;
-use Limber\Exceptions\DependencyResolutionException;
-use Limber\Exceptions\MethodNotAllowedHttpException;
-use Limber\Exceptions\NotFoundHttpException;
-use Limber\Middleware\CallableMiddleware;
-use Limber\Middleware\PrepareHttpResponse;
-use Limber\Middleware\RequestHandler;
-use Limber\Router\Router;
+use Nimbly\Limber\Exceptions\ApplicationException;
+use Nimbly\Limber\Exceptions\DependencyResolutionException;
+use Nimbly\Limber\Exceptions\MethodNotAllowedHttpException;
+use Nimbly\Limber\Exceptions\NotFoundHttpException;
+use Nimbly\Limber\Middleware\CallableMiddleware;
+use Nimbly\Limber\Middleware\PrepareHttpResponse;
+use Nimbly\Limber\Middleware\RequestHandler;
+use Nimbly\Limber\Router\Router;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -25,49 +25,17 @@ use Throwable;
 class Application
 {
 	/**
-	 * Router instance.
-	 *
-	 * @var Router
-	 */
-	protected Router $router;
-
-	/**
-	 * ContainerInterface instance.
-	 *
-	 * @var ContainerInterface|null
-	 */
-	protected ?ContainerInterface $container;
-
-	/**
-	 * Global middleware.
-	 *
-	 * @var array<class-string|callable|MiddlewareInterface>
-	 */
-	protected array $middleware = [];
-
-	/**
-	 * Registered exception handler.
-	 *
-	 * @var ExceptionHandlerInterface|null
-	 */
-	protected ?ExceptionHandlerInterface $exceptionHandler;
-
-	/**
 	 * @param Router $router
 	 * @param array<class-string|callable|MiddlewareInterface> $middleware
 	 * @param ContainerInterface|null $container
 	 * @param ExceptionHandlerInterface|null $exceptionHandler
 	 */
 	public function __construct(
-		Router $router,
-		array $middleware = [],
-		?ContainerInterface $container = null,
-		?ExceptionHandlerInterface $exceptionHandler = null)
+		protected Router $router,
+		protected array $middleware = [],
+		protected ?ContainerInterface $container = null,
+		protected ?ExceptionHandlerInterface $exceptionHandler = null)
 	{
-		$this->router = $router;
-		$this->middleware = $middleware;
-		$this->container = $container;
-		$this->exceptionHandler = $exceptionHandler;
 	}
 
 	/**

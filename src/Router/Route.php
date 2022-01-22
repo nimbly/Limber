@@ -1,8 +1,8 @@
 <?php
 
-namespace Limber\Router;
+namespace Nimbly\Limber\Router;
 
-use Limber\Exceptions\RouteException;
+use Nimbly\Limber\Exceptions\RouteException;
 use Psr\Http\Server\MiddlewareInterface;
 
 class Route

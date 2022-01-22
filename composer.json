@@ -1,14 +1,7 @@
 {
     "name": "nimbly/limber",
     "description": "A super minimal HTTP framework that doesn't get in your way.",
-    "keywords": [
-		"php",
-		"http",
-		"api",
-		"framework",
-		"middleware",
-		"container"
-    ],
+    "keywords": ["php", "http", "rest", "api", "framework", "middleware"],
     "type": "library",
     "require": {
         "php": "^8.0",
@@ -25,7 +18,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "Limber\\": "src/"
+            "Nimbly\\Limber\\": "src/"
         }
     },
     "require-dev": {
@@ -38,7 +31,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Limber\\Tests\\": "tests/"
+            "Nimbly\\Limber\\Tests\\": "tests/"
         }
     }
 }

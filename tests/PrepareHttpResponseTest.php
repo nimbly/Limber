@@ -6,16 +6,16 @@ use Capsule\Response;
 use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
 use Capsule\Stream\ResourceStream;
-use Limber\EmptyStream;
-use Limber\Middleware\PrepareHttpResponse;
-use Limber\Middleware\RequestHandler;
+use Nimbly\Limber\EmptyStream;
+use Nimbly\Limber\Middleware\PrepareHttpResponse;
+use Nimbly\Limber\Middleware\RequestHandler;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * @covers Limber\Middleware\PrepareHttpResponse
- * @covers Limber\Middleware\RequestHandler
+ * @covers Nimbly\Limber\Middleware\PrepareHttpResponse
+ * @covers Nimbly\Limber\Middleware\RequestHandler
  */
 class PrepareHttpResponseTest extends TestCase
 {

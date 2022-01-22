@@ -2,12 +2,12 @@
 
 namespace Limber\Tests;
 
-use Limber\EmptyStream;
+use Nimbly\Limber\EmptyStream;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
- * @covers Limber\EmptyStream
+ * @covers Nimbly\Limber\EmptyStream
  */
 class EmptyStreamTest extends TestCase
 {

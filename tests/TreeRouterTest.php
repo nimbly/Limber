@@ -3,15 +3,15 @@
 namespace Limber\Tests;
 
 use Capsule\ServerRequest;
-use Limber\Router\Route;
-use Limber\Router\Engines\TreeRouter as Router;
+use Nimbly\Limber\Router\Route;
+use Nimbly\Limber\Router\Engines\TreeRouter as Router;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers Limber\Router\Engines\TreeRouter
- * @covers Limber\Router\Router
- * @covers Limber\Router\Route
- * @covers Limber\Router\Engines\RouteBranch
+ * @covers Nimbly\Limber\Router\Engines\TreeRouter
+ * @covers Nimbly\Limber\Router\Router
+ * @covers Nimbly\Limber\Router\Route
+ * @covers Nimbly\Limber\Router\Engines\RouteBranch
  */
 class TreeRouterTest extends TestCase
 {

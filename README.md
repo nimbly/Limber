@@ -5,7 +5,7 @@
 [![Code Coverage](https://img.shields.io/coveralls/github/nimbly/Limber.svg?style=flat-square)](https://coveralls.io/github/nimbly/Limber)
 [![License](https://img.shields.io/github/license/nimbly/Limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
 
-A super minimal PSR-7 and PSR-15 compliant HTTP framework that doesn"t get in your way.
+A super minimal PSR-7, 15, and 11 compliant HTTP framework that doesn't get in your way.
 
 Limber is intended for advanced users who are comfortable setting up their own framework and pulling in packages best suited for their particular use case.
 
@@ -28,23 +28,27 @@ composer require nimbly/limber
 
 ## Quick start
 
+Limber does not ship with a PSR-7 implementation which is required to receive HTTP requests and send back responses. Let's pull one into our project.
+
+```bash
+composer require nimbly/capsule
+```
+
+Create your entrypoint file, for example `index.php`:
+
 ```php
-// Create a Router instance and define routes
-$router = new Limber\Router\Router;
-$router->get("/", function(ServerRequestInterface $request): ResponseInterface {
+require __DIR__ . "/vendor/autoload.php";
 
-	return new Response(
-		\render("home/index")
-	);
+// Create a Router instance and define a route.
+$router = new Nimbly\Limber\Router\Router;
+$router->get("/", fn() => new Capsule\Response(200, "Hello World!"));
 
-});
-
-// Create Application instance.
-$application = new Limber\Application($router);
+// Create Application instance with router.
+$application = new Nimbly\Limber\Application($router);
 
 // Dispatch a PSR-7 ServerRequestInterface instance and get back a PSR-7 ResponseInterface instance
 $response = $application->dispatch(
-	Some\Psr7\ServerRequest::createFromGlobals()
+	Capsule\Factory\ServerRequestFactory::createFromGlobals()
 );
 
 // Send the ResponseInterface instance
@@ -321,7 +325,7 @@ $route->group([
 
 ## Middleware
 
-Limber uses PSR-15 middleware. All middleware must implement `Psr\Http\Server\MiddlewareInterface`.
+Limber uses PSR-15 middleware. All middleware must implement `Psr\Http\Server\MiddlewareInterface`. You can assign middleware to `Application` instance by passing an array into the construtor or by using the helper methods `setMiddleware` or `addMiddleware`.
 
 ```php
 class FooMiddleware implements MiddlewareInterface
@@ -378,7 +382,23 @@ $application = new Application(
 
 ### Setting global middleware
 
-You can set global middleware directly on the `Application` instance. Global middleware is applied to *all* requests and processed in the order they are registered.
+Global middleware is applied to *all* requests and processed in the order they are registered.
+
+You can set global middleware directly on the `Application` instance by passing into the constructor.
+
+```php
+$application = new Application(
+    $router,
+    [
+        new GlobalMiddleware1,
+	    new GlobalMiddleware2,
+	    new GlobalMiddleware3
+    ]
+);
+```
+
+Or use the `setMiddleware` or `addMiddleware` methods.
+
 
 ```php
 $application->setMiddleware([
@@ -422,7 +442,7 @@ $application->setMiddleware([
 
 You can set a custom exception handler that will process any exception thrown *within* the middleware chain.
 
-The exception handler must implement the `ExceptionHandlerInterface`.
+The exception handler must implement `Limber\ExceptionHandlerInterface`.
 
 ```php
 $application->setExceptionHandler(new ExceptionHandler);

@@ -1,6 +1,6 @@
 <?php
 
-namespace Limber\Tests\Fixtures;
+namespace Nimbly\Limber\Tests\Fixtures;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;

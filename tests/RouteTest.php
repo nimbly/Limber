@@ -4,8 +4,8 @@ namespace Limber\Tests;
 
 use Capsule\Response;
 use Capsule\ResponseStatus;
-use Limber\Exceptions\RouteException;
-use Limber\Router\Route;
+use Nimbly\Limber\Exceptions\RouteException;
+use Nimbly\Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -13,8 +13,8 @@ use ReflectionClass;
 use Throwable;
 
 /**
- * @covers Limber\Router\Route
- * @covers Limber\Router\Router
+ * @covers Nimbly\Limber\Router\Route
+ * @covers Nimbly\Limber\Router\Router
  */
 class RouteTest extends TestCase
 {

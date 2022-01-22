@@ -3,13 +3,13 @@
 namespace Limber\Tests;
 
 use Capsule\ServerRequest;
-use Limber\Router\Engines\FlatRouter as Router;
-use Limber\Router\Route;
+use Nimbly\Limber\Router\Engines\FlatRouter as Router;
+use Nimbly\Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers Limber\Router\Route
- * @covers Limber\Router\Engines\FlatRouter
+ * @covers Nimbly\Limber\Router\Route
+ * @covers Nimbly\Limber\Router\Engines\FlatRouter
  */
 class FlatRouterTest extends TestCase
 {

@@ -2,13 +2,13 @@
 
 namespace Limber\Tests;
 
-use Limber\Router\Router;
+use Nimbly\Limber\Router\Router;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers Limber\Router\Router
- * @covers Limber\Router\Engines\DefaultRouter
- * @covers Limber\Router\Route
+ * @covers Nimbly\Limber\Router\Router
+ * @covers Nimbly\Limber\Router\Engines\DefaultRouter
+ * @covers Nimbly\Limber\Router\Route
  */
 class RouterTest extends TestCase
 {

@@ -2,38 +2,38 @@
 
 namespace Limber\Tests;
 
-use Limber\Exceptions\BadGatewayHttpException;
-use Limber\Exceptions\BadRequestHttpException;
-use Limber\Exceptions\ConflictHttpException;
-use Limber\Exceptions\ForbiddenHttpException;
-use Limber\Exceptions\GatewayTimeoutHttpException;
-use Limber\Exceptions\GoneHttpException;
-use Limber\Exceptions\InternalServerErrorHttpException;
-use Limber\Exceptions\MethodNotAllowedHttpException;
-use Limber\Exceptions\NotAcceptableHttpException;
-use Limber\Exceptions\NotFoundHttpException;
-use Limber\Exceptions\ServiceUnavailableHttpException;
-use Limber\Exceptions\TooManyRequestsHttpException;
-use Limber\Exceptions\UnauthorizedHttpException;
-use Limber\Exceptions\UnprocessableEntityHttpException;
+use Nimbly\Limber\Exceptions\BadGatewayHttpException;
+use Nimbly\Limber\Exceptions\BadRequestHttpException;
+use Nimbly\Limber\Exceptions\ConflictHttpException;
+use Nimbly\Limber\Exceptions\ForbiddenHttpException;
+use Nimbly\Limber\Exceptions\GatewayTimeoutHttpException;
+use Nimbly\Limber\Exceptions\GoneHttpException;
+use Nimbly\Limber\Exceptions\InternalServerErrorHttpException;
+use Nimbly\Limber\Exceptions\MethodNotAllowedHttpException;
+use Nimbly\Limber\Exceptions\NotAcceptableHttpException;
+use Nimbly\Limber\Exceptions\NotFoundHttpException;
+use Nimbly\Limber\Exceptions\ServiceUnavailableHttpException;
+use Nimbly\Limber\Exceptions\TooManyRequestsHttpException;
+use Nimbly\Limber\Exceptions\UnauthorizedHttpException;
+use Nimbly\Limber\Exceptions\UnprocessableEntityHttpException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers Limber\Exceptions\HttpException
- * @covers Limber\Exceptions\BadGatewayHttpException
- * @covers Limber\Exceptions\BadRequestHttpException
- * @covers Limber\Exceptions\ConflictHttpException
- * @covers Limber\Exceptions\ForbiddenHttpException
- * @covers Limber\Exceptions\GatewayTimeoutHttpException
- * @covers Limber\Exceptions\GoneHttpException
- * @covers Limber\Exceptions\InternalServerErrorHttpException
- * @covers Limber\Exceptions\MethodNotAllowedHttpException
- * @covers Limber\Exceptions\NotAcceptableHttpException
- * @covers Limber\Exceptions\NotFoundHttpException
- * @covers Limber\Exceptions\ServiceUnavailableHttpException
- * @covers Limber\Exceptions\TooManyRequestsHttpException
- * @covers Limber\Exceptions\UnauthorizedHttpException
- * @covers Limber\Exceptions\UnprocessableEntityHttpException
+ * @covers Nimbly\Limber\Exceptions\HttpException
+ * @covers Nimbly\Limber\Exceptions\BadGatewayHttpException
+ * @covers Nimbly\Limber\Exceptions\BadRequestHttpException
+ * @covers Nimbly\Limber\Exceptions\ConflictHttpException
+ * @covers Nimbly\Limber\Exceptions\ForbiddenHttpException
+ * @covers Nimbly\Limber\Exceptions\GatewayTimeoutHttpException
+ * @covers Nimbly\Limber\Exceptions\GoneHttpException
+ * @covers Nimbly\Limber\Exceptions\InternalServerErrorHttpException
+ * @covers Nimbly\Limber\Exceptions\MethodNotAllowedHttpException
+ * @covers Nimbly\Limber\Exceptions\NotAcceptableHttpException
+ * @covers Nimbly\Limber\Exceptions\NotFoundHttpException
+ * @covers Nimbly\Limber\Exceptions\ServiceUnavailableHttpException
+ * @covers Nimbly\Limber\Exceptions\TooManyRequestsHttpException
+ * @covers Nimbly\Limber\Exceptions\UnauthorizedHttpException
+ * @covers Nimbly\Limber\Exceptions\UnprocessableEntityHttpException
  */
 class ExceptionTest extends TestCase
 {

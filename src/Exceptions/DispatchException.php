@@ -1,6 +1,6 @@
 <?php
 
-namespace Limber\Exceptions;
+namespace Nimbly\Limber\Exceptions;
 
 use Exception;
 

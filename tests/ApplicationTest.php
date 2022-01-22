@@ -7,22 +7,22 @@ use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
 use Carton\Container;
 use DateTime;
-use Limber\Application;
-use Limber\EmptyStream;
-use Limber\ExceptionHandlerInterface;
-use Limber\Exceptions\ApplicationException;
-use Limber\Exceptions\DependencyResolutionException;
-use Limber\Exceptions\HttpException;
-use Limber\Exceptions\MethodNotAllowedHttpException;
-use Limber\Exceptions\NotFoundHttpException;
-use Limber\Middleware\CallableMiddleware;
-use Limber\Middleware\RequestHandler;
-use Limber\Router\Route;
-use Limber\Router\Router;
-use Limber\Router\RouterInterface;
-use Limber\Tests\Fixtures\ConstructorClass;
-use Limber\Tests\Fixtures\InvokableClass;
-use Limber\Tests\Fixtures\SampleMiddleware;
+use Nimbly\Limber\Application;
+use Nimbly\Limber\EmptyStream;
+use Nimbly\Limber\ExceptionHandlerInterface;
+use Nimbly\Limber\Exceptions\ApplicationException;
+use Nimbly\Limber\Exceptions\DependencyResolutionException;
+use Nimbly\Limber\Exceptions\HttpException;
+use Nimbly\Limber\Exceptions\MethodNotAllowedHttpException;
+use Nimbly\Limber\Exceptions\NotFoundHttpException;
+use Nimbly\Limber\Middleware\CallableMiddleware;
+use Nimbly\Limber\Middleware\RequestHandler;
+use Nimbly\Limber\Router\Route;
+use Nimbly\Limber\Router\Router;
+use Nimbly\Limber\Router\RouterInterface;
+use Nimbly\Limber\Tests\Fixtures\ConstructorClass;
+use Nimbly\Limber\Tests\Fixtures\InvokableClass;
+use Nimbly\Limber\Tests\Fixtures\SampleMiddleware;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -33,20 +33,20 @@ use ReflectionFunction;
 use Throwable;
 
 /**
- * @covers Limber\Application
- * @covers Limber\Router\Router
- * @covers Limber\Router\Engines\DefaultRouter
- * @covers Limber\Router\Route
- * @covers Limber\Middleware\CallableMiddleware
- * @covers Limber\Middleware\RequestHandler
- * @covers Limber\Middleware\PrepareHttpResponse
- * @covers Limber\Exceptions\ApplicationException
- * @covers Limber\Exceptions\RouteException
- * @covers Limber\Exceptions\HttpException
- * @covers Limber\Exceptions\MethodNotAllowedHttpException
- * @covers Limber\Exceptions\NotFoundHttpException
- * @covers Limber\Exceptions\DependencyResolutionException
- * @covers Limber\EmptyStream
+ * @covers Nimbly\Limber\Application
+ * @covers Nimbly\Limber\Router\Router
+ * @covers Nimbly\Limber\Router\Engines\DefaultRouter
+ * @covers Nimbly\Limber\Router\Route
+ * @covers Nimbly\Limber\Middleware\CallableMiddleware
+ * @covers Nimbly\Limber\Middleware\RequestHandler
+ * @covers Nimbly\Limber\Middleware\PrepareHttpResponse
+ * @covers Nimbly\Limber\Exceptions\ApplicationException
+ * @covers Nimbly\Limber\Exceptions\RouteException
+ * @covers Nimbly\Limber\Exceptions\HttpException
+ * @covers Nimbly\Limber\Exceptions\MethodNotAllowedHttpException
+ * @covers Nimbly\Limber\Exceptions\NotFoundHttpException
+ * @covers Nimbly\Limber\Exceptions\DependencyResolutionException
+ * @covers Nimbly\Limber\EmptyStream
  *
  * @uses Limber\Router\RouterInterface
  */

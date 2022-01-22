@@ -1,8 +1,8 @@
 <?php
 
-namespace Limber\Middleware;
+namespace Nimbly\Limber\Middleware;
 
-use Limber\EmptyStream;
+use Nimbly\Limber\EmptyStream;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;

@@ -3,13 +3,13 @@
 namespace Limber\Tests;
 
 use Capsule\ServerRequest;
-use Limber\Router\Engines\DefaultRouter as Router;
-use Limber\Router\Route;
+use Nimbly\Limber\Router\Engines\DefaultRouter as Router;
+use Nimbly\Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers Limber\Router\Engines\DefaultRouter
- * @covers Limber\Router\Route
+ * @covers Nimbly\Limber\Router\Engines\DefaultRouter
+ * @covers Nimbly\Limber\Router\Route
  */
 class IndexedRouterTest extends TestCase
 {

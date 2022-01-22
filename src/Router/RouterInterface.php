@@ -1,6 +1,6 @@
 <?php
 
-namespace Limber\Router;
+namespace Nimbly\Limber\Router;
 
 use Psr\Http\Message\ServerRequestInterface;
 

@@ -5,8 +5,8 @@ namespace Limber\Tests;
 use Capsule\Response;
 use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
-use Limber\Middleware\CallableMiddleware;
-use Limber\Middleware\RequestHandler;
+use Nimbly\Limber\Middleware\CallableMiddleware;
+use Nimbly\Limber\Middleware\RequestHandler;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -14,8 +14,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 
 /**
- * @covers Limber\Middleware\CallableMiddleware
- * @covers Limber\Middleware\RequestHandler
+ * @covers Nimbly\Limber\Middleware\CallableMiddleware
+ * @covers Nimbly\Limber\Middleware\RequestHandler
  */
 class CallableMiddlewareTest extends TestCase
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Limber;
+namespace Nimbly\Limber;
 
 use Psr\Http\Message\StreamInterface;
 use RuntimeException;
