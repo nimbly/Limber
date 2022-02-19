@@ -44,7 +44,9 @@ $router = new Nimbly\Limber\Router\Router;
 $router->get("/", fn() => new Capsule\Response(200, "Hello World!"));
 
 // Create Application instance with router.
-$application = new Nimbly\Limber\Application($router);
+$application = new Nimbly\Limber\Application(
+    router: $router
+);
 
 // Dispatch a PSR-7 ServerRequestInterface instance and get back a PSR-7 ResponseInterface instance
 $response = $application->dispatch(
@@ -226,7 +228,7 @@ $router->post("books", "BooksHandler@create")->setAttributes(["Attribute" => "Va
 
 ### Route groups
 
-You can group routes together using the `group` method and passing in array of configurations that you want applied to all routes within that group.
+You can group routes together using the `group` method and passing in an array of configurations that you want applied to all routes within that group.
 
 * `scheme` *string* The HTTP scheme (http or https) to match against.
 * `middleware` *array&lt;string&gt;* or *array&lt;MiddlewareInterface&gt;* or *array&lt;callable&gt;* An array of all middleware classes (fullname space) or actual instances of middleware.
@@ -325,7 +327,7 @@ $route->group([
 
 ## Middleware
 
-Limber uses PSR-15 middleware. All middleware must implement `Psr\Http\Server\MiddlewareInterface`. You can assign middleware to `Application` instance by passing an array into the construtor or by using the helper methods `setMiddleware` or `addMiddleware`.
+Limber uses PSR-15 middleware. All middleware must implement `Psr\Http\Server\MiddlewareInterface`.
 
 ```php
 class FooMiddleware implements MiddlewareInterface
@@ -388,32 +390,13 @@ You can set global middleware directly on the `Application` instance by passing 
 
 ```php
 $application = new Application(
-    $router,
-    [
+    router: $router,
+    middleware: [
         new GlobalMiddleware1,
 	    new GlobalMiddleware2,
 	    new GlobalMiddleware3
     ]
 );
-```
-
-Or use the `setMiddleware` or `addMiddleware` methods.
-
-
-```php
-$application->setMiddleware([
-	new GlobalMiddleware1,
-	new GlobalMiddleware2,
-	new GlobalMiddleware3
-]);
-```
-
-Or you can add global middleware individually.
-
-```php
-$application->addMiddleware(new GlobalMiddleware1);
-$application->addMiddleware(new GlobalMiddleware2);
-$application->addMiddleware(new GlobalMiddleware3);
 ```
 
 You can pass middleware as one or more of the following types:
@@ -428,25 +411,23 @@ Any `class-string` types will be auto wired using the `Container` instance (if a
 If auto wiring fails, a `DependencyResolutionException` exception will be thrown.
 
 ```php
-$application->setMiddleware([
-    new FooMiddleware,
-    FooMiddleware::class,
-    FooMiddleware::class => ["param1" => "Foo"],
-    function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
-        return $handler->handle($request);
-    }
-]);
+$application = new Application(
+    router: $router,
+    middleware: [
+        new FooMiddleware,
+        FooMiddleware::class,
+        FooMiddleware::class => ["param1" => "Foo"],
+        function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
+            return $handler->handle($request);
+        }
+    ]);
 ```
 
 ### Exception handling
 
 You can set a custom exception handler that will process any exception thrown *within* the middleware chain.
 
-The exception handler must implement `Limber\ExceptionHandlerInterface`.
-
-```php
-$application->setExceptionHandler(new ExceptionHandler);
-```
+The exception handler must implement `ExceptionHandlerInterface`.
 
 **NOTE** Exceptions thrown *outside* of the middleware chain will continue to bubble up unless caught elsewhere.
 
@@ -579,7 +560,7 @@ We'll extend from the official PHP 8 docker image and add some useful tools like
 Obviously, edit this file to match your specific needs.
 
 ```docker
-FROM php:8-cli
+FROM php:8.0-cli
 
 RUN apt-get update && apt-get upgrade --yes
 RUN curl --silent --show-error https://getcomposer.org/installer | php && \

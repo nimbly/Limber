@@ -106,75 +106,6 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_set_container(): void
-	{
-		$application = new Application(
-			new Router
-		);
-
-		$container = new Container;
-		$application->setContainer($container);
-
-		$reflection = new ReflectionClass($application);
-
-		$property = $reflection->getProperty('container');
-		$property->setAccessible(true);
-
-		$this->assertSame(
-			$container,
-			$property->getValue($application)
-		);
-	}
-
-	public function test_set_middleware(): void
-	{
-		$application = new Application(
-			new Router
-		);
-
-		$middleware = function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
-
-			return $handler->handle($request);
-
-		};
-
-		$application->setMiddleware([$middleware]);
-
-		$reflection = new ReflectionClass($application);
-
-		$property = $reflection->getProperty('middleware');
-		$property->setAccessible(true);
-
-		$this->assertEquals(
-			[$middleware],
-			$property->getValue($application)
-		);
-	}
-
-	public function test_add_middleware(): void
-	{
-		$application = new Application(
-			new Router
-		);
-
-		$middleware = function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
-
-			return $handler->handle($request);
-
-		};
-
-		$application->addMiddleware($middleware);
-
-		$reflection = new ReflectionClass($application);
-		$property = $reflection->getProperty('middleware');
-		$property->setAccessible(true);
-
-		$this->assertEquals(
-			[$middleware],
-			$property->getValue($application)
-		);
-	}
-
 	public function test_normalize_callable_middleware(): void
 	{
 		$application = new Application(
@@ -277,33 +208,11 @@ class ApplicationTest extends TestCase
 		$method->invoke($application, [new \stdClass]);
 	}
 
-	public function test_set_exception_handler(): void
-	{
-		$application = new Application(
-			new Router
-		);
-
-		$handler = new class implements ExceptionHandlerInterface {
-			public function handle(Throwable $exception, ServerRequestInterface $request): ResponseInterface
-			{
-				return new Response(200);
-			}
-		};
-
-		$application->setExceptionHandler($handler);
-
-		$reflection = new ReflectionClass($application);
-		$property = $reflection->getProperty('exceptionHandler');
-		$property->setAccessible(true);
-
-		$this->assertSame($handler, $property->getValue($application));
-	}
-
 	public function test_handle_exception_with_exception_handler_set(): void
 	{
-		$application = new Application(new Router);
-		$application->setExceptionHandler(
-			new class implements ExceptionHandlerInterface {
+		$application = new Application(
+			router: new Router,
+			exceptionHandler: new class implements ExceptionHandlerInterface {
 				public function handle(Throwable $exception, ServerRequestInterface $request): ResponseInterface {
 					return new Response(
 						$exception->getCode(),
@@ -638,14 +547,14 @@ class ApplicationTest extends TestCase
 
 	public function test_resolve_dependencies_with_class_using_container(): void
 	{
+		$container = new Container;
+
 		$application = new Application(
-			new Router
+			router: new Router,
+			container: $container
 		);
 
-		$container = new Container;
 		$container->set(Application::class, $application);
-
-		$application->setContainer($container);
 
 		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
@@ -768,17 +677,15 @@ class ApplicationTest extends TestCase
 
 	public function test_make_with_class_already_in_container(): void
 	{
-		$application = new Application(
-			new Router
-		);
-
-		$container = new Container;
-
 		$instance = new ConstructorClass(":param1:");
 
+		$container = new Container;
 		$container->set(ConstructorClass::class, $instance);
 
-		$application->setContainer($container);
+		$application = new Application(
+			router: new Router,
+			container: $container
+		);
 
 		$this->assertSame(
 			$instance,

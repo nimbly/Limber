@@ -39,49 +39,6 @@ class Application
 	}
 
 	/**
-	 * Set a ContainerInterface instance to be used when autowiring route handlers.
-	 *
-	 * @param ContainerInterface $container
-	 * @return void
-	 */
-	public function setContainer(ContainerInterface $container): void
-	{
-		$this->container = $container;
-	}
-
-	/**
-	 * Set the global middleware to run.
-	 *
-	 * @param array<MiddlewareInterface|class-string|callable> $middlewares
-	 * @return void
-	 */
-	public function setMiddleware(array $middlewares): void
-	{
-		$this->middleware = $middlewares;
-	}
-
-	/**
-	 * Add a middleware to the stack.
-	 *
-	 * @param MiddlewareInterface|callable|class-string $middleware
-	 */
-	public function addMiddleware($middleware): void
-	{
-		$this->middleware[] = $middleware;
-	}
-
-	/**
-	 * Add a default application-level exception handler.
-	 *
-	 * @param ExceptionHandlerInterface $exceptionHandler
-	 * @return void
-	 */
-	public function setExceptionHandler(ExceptionHandlerInterface $exceptionHandler): void
-	{
-		$this->exceptionHandler = $exceptionHandler;
-	}
-
-	/**
 	 * Dispatch a request.
 	 *
 	 * @param ServerRequestInterface $request
