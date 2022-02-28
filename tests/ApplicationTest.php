@@ -48,7 +48,7 @@ use Throwable;
  * @covers Nimbly\Limber\Exceptions\DependencyResolutionException
  * @covers Nimbly\Limber\EmptyStream
  *
- * @uses Limber\Router\RouterInterface
+ * @uses Nimbly\Limber\Router\RouterInterface
  */
 class ApplicationTest extends TestCase
 {
