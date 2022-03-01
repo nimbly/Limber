@@ -28,15 +28,26 @@ composer require nimbly/limber
 
 ## Quick start
 
+### Install PSR-7 library
+
 Limber does not ship with a PSR-7 implementation which is required to receive HTTP requests and send back responses. Let's pull one into our project.
+
+* [slim/psr7](https://github.com/slimphp/Slim-Psr7)
+* [laminas/laminas-diactoros](https://github.com/laminas/laminas-diactoros)
+* [guzzlehttp/psr7](https://github.com/guzzle/psr7)
+* [nimbly/Capsule](https://github.com/nimbly/Capsule)
 
 ```bash
 composer require nimbly/capsule
 ```
 
-Create your entrypoint file, for example `index.php`:
+### Entry point
+
+Create your entrypoint (or front controller), for example `index.php`:
 
 ```php
+<?php
+
 require __DIR__ . "/vendor/autoload.php";
 
 // Create a Router instance and define a route.
@@ -44,9 +55,7 @@ $router = new Nimbly\Limber\Router\Router;
 $router->get("/", fn() => new Capsule\Response(200, "Hello World!"));
 
 // Create Application instance with router.
-$application = new Nimbly\Limber\Application(
-    router: $router
-);
+$application = new Nimbly\Limber\Application($router);
 
 // Dispatch a PSR-7 ServerRequestInterface instance and get back a PSR-7 ResponseInterface instance
 $response = $application->dispatch(
@@ -57,21 +66,154 @@ $response = $application->dispatch(
 $application->send($response);
 ```
 
-## PSR-7
+## Advanced configuration
 
-Limber *does not ship* with a PSR-7 HTTP Message implementation so you will need to bring your own. Here are some options:
+### A note on autowiring support
 
-* [slim/psr7](https://github.com/slimphp/Slim-Psr7)
-* [laminas/laminas-diactoros](https://github.com/laminas/laminas-diactoros)
-* [guzzlehttp/psr7](https://github.com/guzzle/psr7)
-* [nimbly/Capsule](https://github.com/nimbly/Capsule)
+Limber will invoke your route handlers using reflection based autowiring. The `ServerRequestInterface` instance and any URI path parameters defined in the route will be automatically resolved for you, without the need of a PSR-11 container.
 
-## PSR-11
+However, any domain specific services and classes that are required in your handlers, should be defined in a PSR-11 container instance.
 
-Limber *does not ship* with a PSR-11 Container implementation, so you will need to bring your own if you need one. Here are some options:
+**NOTE:** *Union type autowiring is currently not supported.*
 
-* [PHP-DI](http://php-di.org/)
+### Adding PSR-11 container support
+
+Limber is able to autowire your request handlers and middleware with the aid of a PSR-11 container instance. However, Limber *does not ship* with a PSR-11 Container implementation, so you will need to bring your own if you require one. Here are some options:
+
+* [PHP-DI](https://php-di.org/)
 * [nimbly/Carton](https://github.com/nimbly/Carton)
+
+Let's add container support into Limber application instance.
+
+```php
+<?php
+
+require __DIR__ . "/vendor/autoload.php";
+
+// Create a Router instance and define a route.
+$router = new Nimbly\Limber\Router\Router;
+$router->get("/", fn() => new Capsule\Response(200, "Hello World!"));
+
+// Create PSR-11 container instance and configure.
+$container = new Container;
+$container->set(
+	Foo:class,
+	fn(): Foo => new Foo(\getenv("FOO_NAME"))
+);
+
+// Create Application instance with router and container.
+$application = new Nimbly\Limber\Application(
+	router: $router,
+	container: $container
+);
+```
+
+### Middleware
+
+Limber uses PSR-15 middleware. All middleware must implement `Psr\Http\Server\MiddlewareInterface`.
+
+You can pass middleware as one or more of the following types:
+
+* An instance of `MiddlewareInterface`
+* A `class-string` that implements `MiddlewareInterface`
+* A `class-string` that implements `MiddlewareInterface` as an index and an array of key=>value pairs as parameters to be used in dependency injection when autowiring.
+
+Any `class-string` types will be auto wired using the `Container` instance (if any) for dependency injection.
+
+If auto wiring fails, a `DependencyResolutionException` exception will be thrown.
+
+```php
+class FooMiddleware implements MiddlewareInterface
+{
+	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+	{
+		// Add a custom header to the request before sending to route handler
+		$request = $request->withAddedHeader("X-Foo", "Bar");
+
+		$response = $handler->handle($request);
+
+		// Add a custom header to the response before sending back to client
+		return $response->withAddedHeader("X-Custom-Header", "Foo");
+	}
+}
+```
+
+Now let's add this middleware layer to the Limber application instance.
+
+```php
+<?php
+
+require __DIR__ . "/vendor/autoload.php";
+
+// Create a Router instance and define a route.
+$router = new Nimbly\Limber\Router\Router;
+$router->get("/", fn() => new Capsule\Response(200, "Hello World!"));
+
+// Create PSR-11 container instance and configure.
+$container = new Container;
+$container->set(
+	Foo:class,
+	fn(): Foo => new Foo(\getenv("FOO_NAME"))
+);
+
+// Create Application instance with router and container.
+$application = new Nimbly\Limber\Application(
+	router: $router,
+	container: $container,
+	middleware: [
+		App\Http\Middleware\FooMiddlware::class
+	]
+);
+```
+
+### Exception handling
+
+You can set a custom default exception handler that will process any exception thrown *within* the middleware chain.
+
+The exception handler must implement `Nimbly\Limber\ExceptionHandlerInterface`.
+
+**NOTE** Exceptions thrown *outside* of the middleware chain will continue to bubble up unless caught elsewhere.
+
+```php
+namespace App\Http;
+
+use Nimbly\Limber\ExceptionHandlerInterface;
+use Nimbly\Limber\Exceptions\HttpException;
+
+class ExceptionHandler implements ExceptionHandlerInterface
+{
+	public function handle(Throwable $exception, ServerRequestInterface $request): ResponseInterface
+	{
+		$status_code = $exception instanceof HttpException ? $exception->getCode() : 500;
+
+		return new Response(
+			$status_code,
+			\json_encode([
+				"error" => [
+					"code" => $exception->getCode(),
+					"message" => $exception->getMessage()
+				]
+			]),
+			[
+				"Content-Type" => "application/json"
+			]
+		);
+	}
+}
+```
+
+Now let's add the exception handler to the Limber application instance.
+
+```php
+$application = new Nimbly\Limber\Application(
+	router: $router,
+	container: $container,
+	middleware: [
+		App\Http\Middleware\FooMiddlware::class
+	],
+	exceptionHandler: new App\Http\ExceptionHandler
+);
+```
 
 ## Router
 
@@ -82,7 +224,7 @@ The `Router` builds and collects `Route` instances and provides helper methods t
 Create a `Router` instance and begin defining your routes. There are convenience methods for all major HTTP verbs (get, post, put, patch, and delete).
 
 ```php
-$router = new Limber\Router\Router;
+$router = new Nimbly\Limber\Router\Router;
 $router->get("/fruits", "FruitsHandler@all");
 $router->post("/fruits", "FruitsHandler@create");
 $router->patch("/fruits/{id}", "FruitsHandler@update");
@@ -113,19 +255,19 @@ In the following handler, both the `$request` and `$isbn` parameters will be inj
 ```php
 class BooksHandler
 {
-    public function getByIsbn(ServerRequestInterface $request, string $isbn): ResponseInterface
-    {
-        $book = BookModel::findByIsbn($isbn);
+	public function getByIsbn(ServerRequestInterface $request, string $isbn): ResponseInterface
+	{
+		$book = BookModel::findByIsbn($isbn);
 
-        if( empty($book) ){
-            throw new NotFoundHttpException("ISBN not found.");
-        }
+		if( empty($book) ){
+			throw new NotFoundHttpException("ISBN not found.");
+		}
 
-        return new JsonResponse(
-            200,
-            $book->toArray()
-        );
-    }
+		return new JsonResponse(
+			200,
+			$book->toArray()
+		);
+	}
 }
 ```
 
@@ -210,6 +352,8 @@ $router->post("books", "BooksHandler@create")->setScheme("https");
 
 #### Middleware
 
+### Route middleware
+
 ```php
 $router->post("books", "BooksHandler@create")->setMiddleware([new FooMiddleware]);
 ```
@@ -246,7 +390,7 @@ $router->group([
 	],
 	"namespace" => "App\Sub.Domain\Handlers",
 	"prefix" => "v1"
-], function($router){
+], function(Router $router): void {
 
 	$router->get("books/{isbn}", "BooksHandler@getByIsbn");
 	$router->post("books", "BooksHandler@create");
@@ -265,7 +409,7 @@ $router->group([
 	],
 	"namespace" => "App\Sub.Domain\Handlers",
 	"prefix" => "v1"
-], function($router){
+], function(Router $router): void {
 
 	$router->get("books/{isbn}", "BooksHandler@getByIsbn");
 	$router->post("books", "BooksHandler@create");
@@ -276,7 +420,7 @@ $router->group([
 		"middleware" => [
 			AdminMiddleware::class
 		]
-	], function($router) {
+	], function(Router $router): void {
 
 		...
 
@@ -301,212 +445,6 @@ $routes = Cache::getItem("Limber\Routes");
 $router = new Router($routes);
 ```
 
-### Route middleware
-
-Route middleware can be applied per route or per route group.
-
-```php
-
-// Middleware applied to single route
-$route->get("/books/{id:isbn}", "BooksHandler@getByIsbn")->setMiddleware([
-	FooMiddleware::class
-]);
-
-// Middleware applied to entire group
-$route->group([
-	"middleware" => [
-		FooMiddleware::class,
-		BarMiddleware::class
-	]
-], function($router){
-
-	...
-
-});
-```
-
-## Middleware
-
-Limber uses PSR-15 middleware. All middleware must implement `Psr\Http\Server\MiddlewareInterface`.
-
-```php
-class FooMiddleware implements MiddlewareInterface
-{
-	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-	{
-		// Add a custom header to the request before sending to route handler
-		$request = $request->withAddedHeader("X-Foo", "Bar");
-
-		$response = $handler->handle($request);
-
-		// Add a custom header to the response before sending back to client
-		return $response->withAddedHeader("X-Custom-Header", "Foo");
-	}
-}
-```
-
-### Middleware as Closures
-
-Limber supports any `\callable` as a middleware as long as the `\callable` signature matches `Psr\Http\Server\MiddlewareInterface`.
-
-```php
-$application->addMiddleware(function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
-
-	Log::info("Received request!");
-	return $handler->handle($request);
-
-});
-```
-
-## Application
-
-### Instantiating
-
-An `Application` instance requires only a `Router` instance.
-
-```php
-$application = new Application($router);
-```
-
-You can also pass in the array of global middleware, a PSR-11 `ContainerInterface` instance, and an `ExceptionHandlerInterface` instance.
-
-```php
-$application = new Application(
-    $router,
-    [
-        AuthorizationMiddleware::class,
-        RequestValidationMiddleware::class
-    ]
-    new Container,
-    new ExceptionHandler
-);
-```
-
-### Setting global middleware
-
-Global middleware is applied to *all* requests and processed in the order they are registered.
-
-You can set global middleware directly on the `Application` instance by passing into the constructor.
-
-```php
-$application = new Application(
-    router: $router,
-    middleware: [
-        new GlobalMiddleware1,
-	    new GlobalMiddleware2,
-	    new GlobalMiddleware3
-    ]
-);
-```
-
-You can pass middleware as one or more of the following types:
-
-* An instance of `MiddlewareInterface`
-* A `callable`
-* A `class-string`
-* A `class-string` as an index and an array of key=>value pairs as parameters to be used in dependency injection when auto wiring.
-
-Any `class-string` types will be auto wired using the `Container` instance (if any) for dependency injection.
-
-If auto wiring fails, a `DependencyResolutionException` exception will be thrown.
-
-```php
-$application = new Application(
-    router: $router,
-    middleware: [
-        new FooMiddleware,
-        FooMiddleware::class,
-        FooMiddleware::class => ["param1" => "Foo"],
-        function(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface {
-            return $handler->handle($request);
-        }
-    ]);
-```
-
-### Exception handling
-
-You can set a custom exception handler that will process any exception thrown *within* the middleware chain.
-
-The exception handler must implement `ExceptionHandlerInterface`.
-
-**NOTE** Exceptions thrown *outside* of the middleware chain will continue to bubble up unless caught elsewhere.
-
-### Autowiring support
-
-Limber will invoke your route handlers using reflection based autowiring. The `ServerRequestInterface` instance and any URI path parameters will be automatically resolved for you.
-
-**NOTE:** *Union type autowiring is currently not supported.*
-
-With PHP 8.0, union types were introduced, however, they are currently *not supported* in autowiring and dependency resolution and will throw a `DependencyResolutionException`. The reasons are pretty straight-forward: if a function or method parameter can be any number of types and each of those types are registered in the container, it is impossible to
-know which type should be injected or built.
-
-For example:
-
-```php
-function foo(SomeType|OtherType $thing): void
-{
-    // Do some stuff
-}
-```
-
-### PSR-11 Container support
-
-Optionally, you can provide the `Application` instance a PSR-11 compatible `ContainerInterface` instance to be used when invoking route handlers or instantiating class based
-handlers to inject your application specific dependencies where needed.
-
-```php
-$container = new Psr11\Library\Container;
-$container->register(
-	[
-		// register your service providers
-	]
-);
-
-$application->setContainer($container);
-```
-
-### Dependency injection
-
-Limber can call any `callable` for you with the added benefit of having dependencies resolved and injected for you.
-
-```php
-$callable = function(DependencyInContainer $dep1): Foo {
-    return $dep1->getFoo();
-};
-
-$foo = $application->call($callable);
-```
-
-You can pass in user arguments as a second parameter to `call`.
-
-```php
-$callable = function(DependencyInContainer $dep1, string $name): Foo {
-    return $dep1->getFoo($name);
-};
-
-$foo = $application->call($callable, ["name" => $name]);
-```
-
-If the dependency cannot be resolved, Limber will attempt to `make` one for you. If it cannot `make`, a `DependencyResolutionException` will be thrown.
-
-### Handling a Request
-
-To handle an incoming request, simply `dispatch` a PSR-7 `ServerRequestInterface` instance and capture the response.
-
-```php
-$response = $application->dispatch(
-	ServerRequest::createFromGlobals()
-);
-```
-
-### Sending the Response
-
-To send a PSR-7 `ResponseInterface` instance, call the `send` method with the `ResponseInteface` instance.
-
-```php
-$application->send($response);
-```
-
 ## Using with React/Http
 
 Because Limber is PSR-7 compliant, it works very well with [react/http](https://github.com/reactphp/http) to create a standalone HTTP service without the need for an additional HTTP server (nginx, Apache, etc) - great for containerizing your service with minimal dependencies.
@@ -528,7 +466,7 @@ use Psr\Http\Message\ResponseInterface;
 use Nimbly\Capsule\Response;
 
 // Create the router and some routes.
-$router = new Limber\Router;
+$router = new Nimbly\Limber\Router;
 $router->get("/", function(ServerRequestInterface $request): ResponseInterface {
 	return new Response(
 		"Hello world!"
@@ -536,18 +474,18 @@ $router->get("/", function(ServerRequestInterface $request): ResponseInterface {
 });
 
 // Create the Limber Application instance.
-$application = new Limber\Application($router);
+$application = new Nimbly\Limber\Application($router);
 
 // Create the HTTP server to handle incoming HTTP requests with your Limber Application instance.
-$httpServer = new React\Http\Server(
-    function(ServerRequestInterface $request) use ($application): ResponseInterface {
-	    return $application->dispatch($request);
-    }
+$httpServer = new React\Http\HttpServer(
+	function(ServerRequestInterface $request) use ($application): ResponseInterface {
+		return $application->dispatch($request);
+	}
 );
 
 // Listen on port 8000.
 $httpServer->listen(
-	new React\Socket\Server("0.0.0.0:8000");
+	new React\Socket\SocketServer("0.0.0.0:8000");
 );
 ```
 
@@ -564,7 +502,7 @@ FROM php:8.0-cli
 
 RUN apt-get update && apt-get upgrade --yes
 RUN curl --silent --show-error https://getcomposer.org/installer | php && \
-   mv composer.phar /usr/bin/composer
+	mv composer.phar /usr/bin/composer
 RUN mkdir -p /usr/src/php/ext && curl --silent https://pecl.php.net/get/ev-1.1.5.tgz | tar xvzf - -C /usr/src/php/ext
 
 # Add other PHP modules
