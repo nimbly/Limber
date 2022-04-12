@@ -7,10 +7,12 @@ use Capsule\ResponseStatus;
 use Capsule\ServerRequest;
 use Carton\Container;
 use DateTime;
+use DateTimeImmutable;
 use Nimbly\Limber\Application;
 use Nimbly\Limber\EmptyStream;
 use Nimbly\Limber\ExceptionHandlerInterface;
 use Nimbly\Limber\Exceptions\ApplicationException;
+use Nimbly\Limber\Exceptions\CallableResolutionException;
 use Nimbly\Limber\Exceptions\ClassResolutionException;
 use Nimbly\Limber\Exceptions\HttpException;
 use Nimbly\Limber\Exceptions\MethodNotAllowedHttpException;
@@ -21,6 +23,7 @@ use Nimbly\Limber\Middleware\RequestHandler;
 use Nimbly\Limber\Router\Router;
 use Nimbly\Limber\Router\RouterInterface;
 use Nimbly\Limber\Tests\Fixtures\ConstructorClass;
+use Nimbly\Limber\Tests\Fixtures\HandlerClass;
 use Nimbly\Limber\Tests\Fixtures\InvokableClass;
 use Nimbly\Limber\Tests\Fixtures\SampleMiddleware;
 use PHPUnit\Framework\TestCase;
@@ -568,9 +571,7 @@ class ApplicationTest extends TestCase
 
 	public function test_resolve_reflection_parameters_with_server_request_instance(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$reflectionClass = new ReflectionClass($application);
 		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
@@ -624,7 +625,43 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_reflection_parameters_with_unresolvable_throws_dependency_resolution_exception(): void
+	public function test_resolve_reflection_parameters_with_non_reflection_named_type_throws_parameter_resolution_exception(): void
+	{
+		$application = new Application(new Router);
+
+		$reflectionClass = new ReflectionClass($application);
+		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
+		$reflectionMethod->setAccessible(true);
+
+		$callable = function(DateTime|DateTimeImmutable $dateTime): void {
+			echo "The date is now: " . $dateTime;
+		};
+
+		$reflectionFunction = new ReflectionFunction($callable);
+
+		$this->expectException(ParameterResolutionException::class);
+		$reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
+	}
+
+	public function test_resolve_reflection_parameters_with_unmakeable_throws_parameter_resolution_exception(): void
+	{
+		$application = new Application(new Router);
+
+		$reflectionClass = new ReflectionClass($application);
+		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
+		$reflectionMethod->setAccessible(true);
+
+		$callable = function(ServerRequest $request): void {
+			echo "Hello world!";
+		};
+
+		$reflectionFunction = new ReflectionFunction($callable);
+
+		$this->expectException(ParameterResolutionException::class);
+		$reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
+	}
+
+	public function test_resolve_reflection_parameters_with_unresolvable_throws_parameter_resolution_exception(): void
 	{
 		$application = new Application(new Router);
 
@@ -640,6 +677,28 @@ class ApplicationTest extends TestCase
 
 		$this->expectException(ParameterResolutionException::class);
 		$reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
+	}
+
+	public function test_resolve_reflection_parameters_with_default_values(): void
+	{
+		$application = new Application(new Router);
+
+		$reflectionClass = new ReflectionClass($application);
+		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
+		$reflectionMethod->setAccessible(true);
+
+		$callable = function(string $option = "opt1", ?string $option2 = null): void {
+			echo "Hello world with " . $option;
+		};
+
+		$reflectionFunction = new ReflectionFunction($callable);
+
+		$parameters = $reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
+
+		$this->assertEquals(
+			["opt1", null],
+			$parameters
+		);
 	}
 
 	public function test_call(): void
@@ -724,6 +783,64 @@ class ApplicationTest extends TestCase
 		);
 	}
 
+	public function test_make_callable_on_class_string(): void
+	{
+		$application = new Application(new Router);
+
+		$reflectionClass = new ReflectionClass($application);
+		$reflectionMethod = $reflectionClass->getMethod("makeCallable");
+		$reflectionMethod->setAccessible(true);
+
+		$callable = $reflectionMethod->invokeArgs($application, [InvokableClass::class]);
+
+		$this->assertIsCallable($callable);
+		$this->assertInstanceOf(InvokableClass::class, $callable);
+	}
+
+	public function test_make_callable_on_class_and_method_string(): void
+	{
+		$application = new Application(new Router);
+
+		$reflectionClass = new ReflectionClass($application);
+		$reflectionMethod = $reflectionClass->getMethod("makeCallable");
+		$reflectionMethod->setAccessible(true);
+
+		$class_string = HandlerClass::class . "@handle";
+
+		$callable = $reflectionMethod->invokeArgs($application, [$class_string]);
+
+		$this->assertIsCallable($callable);
+		$this->assertIsArray($callable);
+		$this->assertInstanceOf(HandlerClass::class, $callable[0]);
+		$this->assertEquals("handle", $callable[1]);
+	}
+
+	public function test_make_callable_on_callable_returns_callable(): void
+	{
+		$application = new Application(new Router);
+
+		$reflectionClass = new ReflectionClass($application);
+		$reflectionMethod = $reflectionClass->getMethod("makeCallable");
+		$reflectionMethod->setAccessible(true);
+
+		$callable = $reflectionMethod->invokeArgs($application, ["\\strtolower"]);
+
+		$this->assertIsCallable($callable);
+		$this->assertEquals("\\strtolower", $callable);
+	}
+
+	public function test_make_callable_on_non_callable_throws_callable_resolution_exception(): void
+	{
+		$application = new Application(new Router);
+
+		$reflectionClass = new ReflectionClass($application);
+		$reflectionMethod = $reflectionClass->getMethod("makeCallable");
+		$reflectionMethod->setAccessible(true);
+
+		$this->expectException(CallableResolutionException::class);
+		$reflectionMethod->invokeArgs($application, ["\\non_existent_callable"]);
+	}
+
 	public function test_make_on_class_with_constructor_and_user_args(): void
 	{
 		$application = new Application(new Router);
@@ -744,5 +861,14 @@ class ApplicationTest extends TestCase
 			":param1:",
 			$instance->getParam1()
 		);
+	}
+
+	public function test_make_on_non_makeable_class_throws_class_resolution_exception(): void
+	{
+		$application = new Application(new Router);
+
+		$this->expectException(ClassResolutionException::class);
+
+		$application->make("\\Non\\Existent\\Class");
 	}
 }

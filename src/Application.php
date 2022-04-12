@@ -224,13 +224,12 @@ class Application
 			$reflector = $reflectionClass->getMethod($method);
 		}
 
-		elseif( \is_object($handler) && \method_exists($handler, "__invoke")) {
-
+		elseif( \is_object($handler) && \method_exists($handler, "__invoke") ) {
 			$reflectionObject = new ReflectionObject($handler);
 			$reflector = $reflectionObject->getMethod("__invoke");
 		}
 
-		elseif( \is_string($handler)) {
+		elseif( \is_string($handler) ) {
 			$reflector = new ReflectionFunction($handler);
 		}
 

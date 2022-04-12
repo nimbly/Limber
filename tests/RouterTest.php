@@ -8,6 +8,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers Nimbly\Limber\Router\Router
  * @covers Nimbly\Limber\Router\Route
+ *
+ * @uses Nimbly\Limber\Router\RouterInterface
  */
 class RouterTest extends TestCase
 {
