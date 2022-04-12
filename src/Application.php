@@ -3,9 +3,11 @@
 namespace Nimbly\Limber;
 
 use Nimbly\Limber\Exceptions\ApplicationException;
-use Nimbly\Limber\Exceptions\DependencyResolutionException;
+use Nimbly\Limber\Exceptions\CallableResolutionException;
+use Nimbly\Limber\Exceptions\ClassResolutionException;
 use Nimbly\Limber\Exceptions\MethodNotAllowedHttpException;
 use Nimbly\Limber\Exceptions\NotFoundHttpException;
+use Nimbly\Limber\Exceptions\ParameterResolutionException;
 use Nimbly\Limber\Middleware\CallableMiddleware;
 use Nimbly\Limber\Middleware\PrepareHttpResponse;
 use Nimbly\Limber\Middleware\RequestHandler;
@@ -16,10 +18,10 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionFunction;
 use ReflectionObject;
 use ReflectionParameter;
-use ReflectionUnionType;
 use Throwable;
 
 class Application
@@ -74,7 +76,7 @@ class Application
 
 					if( empty($route) ){
 
-						$methods = $this->router->getMethods($request);
+						$methods = $this->router->getSupportedMethods($request);
 
 						// 404 Not Found
 						if( empty($methods) ){
@@ -89,9 +91,12 @@ class Application
 
 					return \call_user_func_array(
 						$routeHandler,
-						$this->resolveDependencies(
-							$this->getParametersForCallable($routeHandler),
-							\array_merge([ServerRequestInterface::class => $request], $route->getPathParams($request->getUri()->getPath()))
+						$this->resolveReflectionParameters(
+							$this->getReflectionParametersForCallable($routeHandler),
+							\array_merge(
+								[ServerRequestInterface::class => $request],
+								$route->getPathParameters($request->getUri()->getPath())
+							)
 						)
 					);
 
@@ -113,7 +118,7 @@ class Application
 	 * @param array<string,mixed> $attributes
 	 * @return ServerRequestInterface
 	 */
-	private function attachRequestAttributes(ServerRequestInterface $request, array $attributes = []): ServerRequestInterface
+	private function attachRequestAttributes(ServerRequestInterface $request, array $attributes): ServerRequestInterface
 	{
 		foreach( $attributes as $attribute => $value ){
 			$request = $request->withAttribute($attribute, $value);
@@ -196,26 +201,25 @@ class Application
 	 */
 	private function handleException(Throwable $exception, ServerRequestInterface $request): ResponseInterface
 	{
-		if( $this->exceptionHandler ){
-			return $this->exceptionHandler->handle($exception, $request);
+		if( !$this->exceptionHandler ){
+			throw $exception;
 		};
 
-		throw $exception;
+		return $this->exceptionHandler->handle($exception, $request);
 	}
 
 	/**
 	 * Get the reflection parameters for a callable.
 	 *
 	 * @param callable $handler
-	 * @throws ApplicationException
+	 * @throws ParameterResolutionException
 	 * @return array<ReflectionParameter>
 	 */
-	private function getParametersForCallable(callable $handler): array
+	private function getReflectionParametersForCallable(callable $handler): array
 	{
 		if( \is_array($handler) ){
 			[$class, $method] = $handler;
 
-			/** @psalm-suppress ArgumentTypeCoercion */
 			$reflectionClass = new ReflectionClass($class);
 			$reflector = $reflectionClass->getMethod($method);
 		}
@@ -231,7 +235,7 @@ class Application
 		}
 
 		else {
-			throw new DependencyResolutionException("Limber does not have support for this type of callable.");
+			throw new ParameterResolutionException("Given handler is not callable.");
 		}
 
 		return $reflector->getParameters();
@@ -240,53 +244,53 @@ class Application
 	/**
 	 * Resolve an array of reflection parameters into an array of concrete instances/values.
 	 *
-	 * @param array<ReflectionParameter> $reflectionParameters
-	 * @param array<string,mixed> $userArgs Array of user supplied arguments to be fed into dependecy resolution.
-	 * @return array<mixed>
+	 * This will resolve dependencies from:
+	 * 		o The ContainerInterface instance (if any)
+	 * 		o The $parameters array
+	 * 		o Try to recursively make() new instances
+	 * 		o Default values provided by method/function signature
+	 *
+	 * @param array<ReflectionParameter> $reflection_parameters
+	 * @param array<string,mixed> $parameters Additional named parameters and values to use during dependency resolution.
+	 * @throws ParameterResolutionException
+	 * @throws ClassResolutionException
+	 * @return array<mixed> All resolved parameters in the order they appeared in $reflection_parameters
 	 */
-	private function resolveDependencies(array $reflectionParameters, array $userArgs = []): array
+	private function resolveReflectionParameters(array $reflection_parameters, array $parameters = []): array
 	{
 		return \array_map(
 			/**
 			 * @return mixed
 			 */
-			function(ReflectionParameter $reflectionParameter) use ($userArgs) {
+			function(ReflectionParameter $reflectionParameter) use ($parameters) {
 
-				$parameterName = $reflectionParameter->getName();
+				$parameter_name = $reflectionParameter->getName();
 
 				// Check user arguments for a match by name.
-				if( \array_key_exists($parameterName, $userArgs) ){
-					return $userArgs[$parameterName];
+				if( \array_key_exists($parameter_name, $parameters) ){
+					return $parameters[$parameter_name];
 				}
 
-				$parameterType = $reflectionParameter->getType();
+				$parameter_type = $reflectionParameter->getType();
 
-				if( $parameterType instanceof ReflectionUnionType ) {
-					throw new DependencyResolutionException("Cannot resolve union types");
+				if( $parameter_type instanceof \ReflectionNamedType === false ) {
+					throw new ParameterResolutionException("Cannot resolve union or intersection types");
 				}
 
 				/**
 				 * Check container and parameters for a match by type.
-				 *
-				 * @psalm-suppress UndefinedMethod
 				 */
-				if( $parameterType && !$parameterType->isBuiltin() ) {
+				if( !$parameter_type->isBuiltin() ) {
 
-					/**
-					 * @psalm-suppress UndefinedMethod
-					 */
-					if( $this->container && $this->container->has($parameterType->getName()) ){
-						return $this->container->get($parameterType->getName());
+					if( $this->container && $this->container->has($parameter_type->getName()) ){
+						return $this->container->get($parameter_type->getName());
 					}
 
 					// Try to find in the parameters supplied
 					$match = \array_filter(
-						$userArgs,
-						function($parameter) use ($parameterType): bool {
-							/**
-							 * @psalm-suppress UndefinedMethod
-							 */
-							$parameter_type_name = $parameterType->getName();
+						$parameters,
+						function($parameter) use ($parameter_type): bool {
+							$parameter_type_name = $parameter_type->getName();
 							return $parameter instanceof $parameter_type_name;
 						}
 					);
@@ -297,40 +301,46 @@ class Application
 						];
 					}
 
-					/**
-					 * @psalm-suppress ArgumentTypeCoercion
-					 * @psalm-suppress UndefinedMethod
-					 */
-					return $this->make($parameterType->getName(), $userArgs);
+					try {
+
+						return $this->make(
+							$parameter_type->getName(),
+							$parameters
+						);
+					}
+					catch( \Exception $exception ){}
 				}
 
 				/**
-				 * No type or the type is a primitive (built in)
-				 *
-				 * @psalm-suppress UndefinedMethod
+				 * If a default value is defined, use that, including a null value.
 				 */
-				if( empty($parameterType) || $parameterType->isBuiltin() ){
-
-					// Does parameter offer a default value?
-					if( $reflectionParameter->isDefaultValueAvailable() ){
-						return $reflectionParameter->getDefaultValue();
-					}
-
-					elseif( $reflectionParameter->allowsNull() ){
-						return null;
-					}
+				if( $reflectionParameter->isDefaultValueAvailable() ){
+					return $reflectionParameter->getDefaultValue();
+				}
+				elseif( $reflectionParameter->allowsNull() ){
+					return null;
 				}
 
-				throw new DependencyResolutionException("Cannot resolve parameter \"{$parameterName}\".");
+				if( !empty($exception) ){
+					throw $exception;
+				}
+
+				throw new ParameterResolutionException("Cannot resolve parameter \"{$parameter_name}\".");
 			},
-			$reflectionParameters
+			$reflection_parameters
 		);
 	}
 
 	/**
-	 * Make a thing callable.
+	 * Try to make a thing callable.
+	 *
+	 * You can pass something that PHP considers "callable" OR a string that represents
+	 * a callable in the format: \Fully\Qualiafied\Namespace@methodName.
 	 *
 	 * @param string|callable $thing
+	 * @throws ParameterResolutionException
+	 * @throws ClassResolutionException
+	 * @throws CallableResolutionException
 	 * @return callable
 	 */
 	private function makeCallable(string|callable $thing): callable
@@ -338,14 +348,18 @@ class Application
 		if( \is_string($thing) ){
 
 			if( \class_exists($thing) ){
-				return $this->make($thing);
+				$thing = $this->make($thing);
 			}
 
-			if( \preg_match("/^(.+)@(.+)$/", $thing, $match) ){
+			elseif( \preg_match("/^(.+)@(.+)$/", $thing, $match) ){
 				if( \class_exists($match[1]) ){
-					return [$this->make($match[1]), $match[2]];
+					$thing = [$this->make($match[1]), $match[2]];
 				}
 			}
+		}
+
+		if( !\is_callable($thing) ){
+			throw new CallableResolutionException("Cannot make callable");
 		}
 
 		return $thing;
@@ -355,13 +369,13 @@ class Application
 	 * Call a callable with optional given parameters.
 	 *
 	 * @param callable $callable
-	 * @param array<string,mixed> $parameters
+	 * @param array<string,mixed> $parameters Additional named parameters and values to use during dependency resolution.
 	 * @return mixed
 	 */
 	public function call(callable $callable, array $parameters = [])
 	{
-		$args = $this->resolveDependencies(
-			$this->getParametersForCallable($callable),
+		$args = $this->resolveReflectionParameters(
+			$this->getReflectionParametersForCallable($callable),
 			$parameters
 		);
 
@@ -371,21 +385,36 @@ class Application
 	/**
 	 * Make an instance of a class using autowiring with values from the container.
 	 *
-	 * @param class-string $className
-	 * @param array<string,mixed> $userArgs
+	 * @param string $class_name Fully qualified namespace of class to make.
+	 * @param array<string,mixed> $parameters Additional named parameters and values to use during dependency resolution.
+	 * @throws ParameterResolutionException
+	 * @throws ClassResolutionException
 	 * @return object
 	 */
-	public function make(string $className, array $userArgs = []): object
+	public function make(string $class_name, array $parameters = []): object
 	{
 		if( $this->container &&
-			$this->container->has($className) ){
-			return $this->container->get($className);
+			$this->container->has($class_name) ){
+			return $this->container->get($class_name);
 		}
 
-		$reflectionClass = new ReflectionClass($className);
+		try {
+
+			/**
+		 	* @psalm-suppress ArgumentTypeCoercion
+		 	*/
+			$reflectionClass = new ReflectionClass($class_name);
+		}
+		catch( ReflectionException $reflectionException ){
+			throw new ClassResolutionException(
+				$reflectionException->getMessage(),
+				$reflectionException->getCode(),
+				$reflectionException
+			);
+		}
 
 		if( $reflectionClass->isInterface() || $reflectionClass->isAbstract() ){
-			throw new DependencyResolutionException("Cannot make an instance of an Interface or Abstract.");
+			throw new ClassResolutionException("Cannot make an instance of an Interface or Abstract.");
 		}
 
 		$constructor = $reflectionClass->getConstructor();
@@ -394,12 +423,12 @@ class Application
 			return $reflectionClass->newInstance();
 		}
 
-		$args = $this->resolveDependencies(
+		$resolved_arguments = $this->resolveReflectionParameters(
 			$constructor->getParameters(),
-			$userArgs
+			$parameters
 		);
 
-		return $reflectionClass->newInstanceArgs($args);
+		return $reflectionClass->newInstanceArgs($resolved_arguments);
 	}
 
 	/**

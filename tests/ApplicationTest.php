@@ -11,13 +11,13 @@ use Nimbly\Limber\Application;
 use Nimbly\Limber\EmptyStream;
 use Nimbly\Limber\ExceptionHandlerInterface;
 use Nimbly\Limber\Exceptions\ApplicationException;
-use Nimbly\Limber\Exceptions\DependencyResolutionException;
+use Nimbly\Limber\Exceptions\ClassResolutionException;
 use Nimbly\Limber\Exceptions\HttpException;
 use Nimbly\Limber\Exceptions\MethodNotAllowedHttpException;
 use Nimbly\Limber\Exceptions\NotFoundHttpException;
+use Nimbly\Limber\Exceptions\ParameterResolutionException;
 use Nimbly\Limber\Middleware\CallableMiddleware;
 use Nimbly\Limber\Middleware\RequestHandler;
-use Nimbly\Limber\Router\Route;
 use Nimbly\Limber\Router\Router;
 use Nimbly\Limber\Router\RouterInterface;
 use Nimbly\Limber\Tests\Fixtures\ConstructorClass;
@@ -35,7 +35,6 @@ use Throwable;
 /**
  * @covers Nimbly\Limber\Application
  * @covers Nimbly\Limber\Router\Router
- * @covers Nimbly\Limber\Router\Engines\DefaultRouter
  * @covers Nimbly\Limber\Router\Route
  * @covers Nimbly\Limber\Middleware\CallableMiddleware
  * @covers Nimbly\Limber\Middleware\RequestHandler
@@ -45,7 +44,9 @@ use Throwable;
  * @covers Nimbly\Limber\Exceptions\HttpException
  * @covers Nimbly\Limber\Exceptions\MethodNotAllowedHttpException
  * @covers Nimbly\Limber\Exceptions\NotFoundHttpException
- * @covers Nimbly\Limber\Exceptions\DependencyResolutionException
+ * @covers Nimbly\Limber\Exceptions\CallableResolutionException
+ * @covers Nimbly\Limber\Exceptions\ClassResolutionException
+ * @covers Nimbly\Limber\Exceptions\ParameterResolutionException
  * @covers Nimbly\Limber\EmptyStream
  *
  * @uses Nimbly\Limber\Router\RouterInterface
@@ -279,14 +280,13 @@ class ApplicationTest extends TestCase
 		$application = new Application($router);
 
 		try {
+
 			$application->dispatch(
 				new ServerRequest("delete", "/books")
 			);
 		}
 		catch( MethodNotAllowedHttpException $exception ){
-
 			$headers = $exception->getHeaders();
-
 		}
 
 		$this->assertEquals(
@@ -317,20 +317,26 @@ class ApplicationTest extends TestCase
 
 	public function test_dispatch_attaches_route_attributes_to_request(): void
 	{
-		$route = (new Route(["get"], "/books", function(ServerRequestInterface $request){
-			return new Response(
-				ResponseStatus::OK,
-				\json_encode(
-					[
-						"attributes" => $request->getAttributes()
-					]
-				)
-			);
-		}))->setAttribute("Attribute", "Value");
-
-		$application = new Application(
-			new Router([$route])
+		$router = new Router;
+		$router->add(
+			methods: ["get"],
+			path: "/^books$/",
+			handler: function(ServerRequestInterface $request) {
+				return new Response(
+					ResponseStatus::OK,
+					\json_encode(
+						[
+							"attributes" => $request->getAttributes()
+						]
+					)
+				);
+			},
+			attributes: [
+				"Attribute" => "Value"
+			]
 		);
+
+		$application = new Application($router);
 
 		$response = $application->dispatch(
 			new ServerRequest("get", "http://example.org/books")
@@ -353,7 +359,7 @@ class ApplicationTest extends TestCase
 		);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('attachRequestAttributes');
+		$reflectionMethod = $reflectionClass->getMethod("attachRequestAttributes");
 		$reflectionMethod->setAccessible(true);
 
 		$request = $reflectionMethod->invokeArgs(
@@ -391,14 +397,12 @@ class ApplicationTest extends TestCase
 		$this->assertEquals("Limber send() test", $responseData);
 	}
 
-	public function test_get_parameters_for_callable_on_closure(): void
+	public function test_get_reflection_parameters_for_callable_on_closure(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('getParametersForCallable');
+		$reflectionMethod = $reflectionClass->getMethod("getReflectionParametersForCallable");
 		$reflectionMethod->setAccessible(true);
 
 		$callable = function(string $firstname, string $lastname): void {
@@ -413,14 +417,12 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_get_parameters_for_callable_on_array(): void
+	public function test_get_reflection_parameters_for_callable_on_array(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('getParametersForCallable');
+		$reflectionMethod = $reflectionClass->getMethod("getReflectionParametersForCallable");
 		$reflectionMethod->setAccessible(true);
 
 		$callable = [new DateTime, "format"];
@@ -433,14 +435,12 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_get_parameters_for_callable_on_invokable_instance(): void
+	public function test_get_reflection_parameters_for_callable_on_invokable_instance(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('getParametersForCallable');
+		$reflectionMethod = $reflectionClass->getMethod("getReflectionParametersForCallable");
 		$reflectionMethod->setAccessible(true);
 
 		$callable = new InvokableClass;
@@ -453,14 +453,12 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_get_parameters_for_callable_on_string(): void
+	public function test_get_reflection_parameters_for_callable_on_string(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('getParametersForCallable');
+		$reflectionMethod = $reflectionClass->getMethod("getReflectionParametersForCallable");
 		$reflectionMethod->setAccessible(true);
 
 		$callable = "\strtolower";
@@ -473,14 +471,12 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_primitive_in_user_args(): void
+	public function test_resolve_reflection_parameters_with_primitive_in_user_args(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
+		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
 		$reflectionMethod->setAccessible(true);
 
 		$callable = function(string $firstname, string $lastname): void {
@@ -497,14 +493,12 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_primitive_using_default_value(): void
+	public function test_resolve_reflection_parameters_with_primitive_using_default_value(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
+		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
 		$reflectionMethod->setAccessible(true);
 
 		$callable = function(string $firstname, string $lastname = "Limber"): void {
@@ -521,14 +515,12 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_primitive_using_optional_or_allows_null(): void
+	public function test_resolve_reflection_parameters_with_primitive_using_optional_or_allows_null(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
+		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
 		$reflectionMethod->setAccessible(true);
 
 		$callable = function(string $firstname, ?string $lastname): void {
@@ -545,7 +537,7 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_class_using_container(): void
+	public function test_resolve_reflection_parameters_with_class_using_container(): void
 	{
 		$container = new Container;
 
@@ -557,7 +549,7 @@ class ApplicationTest extends TestCase
 		$container->set(Application::class, $application);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
+		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
 		$reflectionMethod->setAccessible(true);
 
 		$callable = function(Application $application): bool {
@@ -574,14 +566,14 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_server_request_instance(): void
+	public function test_resolve_reflection_parameters_with_server_request_instance(): void
 	{
 		$application = new Application(
 			new Router
 		);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
+		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
 		$reflectionMethod->setAccessible(true);
 
 		$callable = function(ServerRequestInterface $request): ResponseInterface {
@@ -602,14 +594,12 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_making_class_with_constructor(): void
+	public function test_resolve_reflection_parameters_with_making_class_with_constructor(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
+		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
 		$reflectionMethod->setAccessible(true);
 
 		$callable = function(ConstructorClass $class): void {
@@ -634,14 +624,12 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_resolve_dependencies_with_unresolvable_throws_dependency_resolution_exception(): void
+	public function test_resolve_reflection_parameters_with_unresolvable_throws_dependency_resolution_exception(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod('resolveDependencies');
+		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
 		$reflectionMethod->setAccessible(true);
 
 		$callable = function(string $dateTime): void {
@@ -650,15 +638,13 @@ class ApplicationTest extends TestCase
 
 		$reflectionFunction = new ReflectionFunction($callable);
 
-		$this->expectException(DependencyResolutionException::class);
+		$this->expectException(ParameterResolutionException::class);
 		$reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
 	}
 
 	public function test_call(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$name = $application->call(
 			function(string $name): string {
@@ -695,29 +681,23 @@ class ApplicationTest extends TestCase
 
 	public function test_make_with_interface_throws_application_exception(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
-		$this->expectException(DependencyResolutionException::class);
+		$this->expectException(ClassResolutionException::class);
 		$application->make(RouterInterface::class);
 	}
 
 	public function test_make_with_abstract_throws_application_exception(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
-		$this->expectException(DependencyResolutionException::class);
+		$this->expectException(ClassResolutionException::class);
 		$application->make(HttpException::class);
 	}
 
 	public function test_make_on_class_with_no_constructor(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$instance = $application->make(EmptyStream::class);
 
@@ -729,9 +709,7 @@ class ApplicationTest extends TestCase
 
 	public function test_make_on_class_with_constructor(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$instance = $application->make(
 			ConstructorClass::class,
@@ -748,9 +726,7 @@ class ApplicationTest extends TestCase
 
 	public function test_make_on_class_with_constructor_and_user_args(): void
 	{
-		$application = new Application(
-			new Router
-		);
+		$application = new Application(new Router);
 
 		$instance = $application->make(
 			ConstructorClass::class,

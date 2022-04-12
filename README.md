@@ -110,7 +110,7 @@ $application = new Nimbly\Limber\Application(
 
 ### Middleware
 
-Limber uses PSR-15 middleware. All middleware must implement `Psr\Http\Server\MiddlewareInterface`.
+Limber supports PSR-15 middleware. All middleware must implement `Psr\Http\Server\MiddlewareInterface`.
 
 You can pass middleware as one or more of the following types:
 
@@ -123,7 +123,7 @@ Any `class-string` types will be auto wired using the `Container` instance (if a
 If auto wiring fails, a `DependencyResolutionException` exception will be thrown.
 
 ```php
-class FooMiddleware implements MiddlewareInterface
+class SampleMiddleware implements MiddlewareInterface
 {
 	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
 	{
@@ -161,7 +161,7 @@ $application = new Nimbly\Limber\Application(
 	router: $router,
 	container: $container,
 	middleware: [
-		App\Http\Middleware\FooMiddlware::class
+		App\Http\Middleware\SampleMiddlware::class
 	]
 );
 ```
@@ -172,7 +172,7 @@ You can set a custom default exception handler that will process any exception t
 
 The exception handler must implement `Nimbly\Limber\ExceptionHandlerInterface`.
 
-**NOTE** Exceptions thrown *outside* of the middleware chain will continue to bubble up unless caught elsewhere.
+**NOTE** Exceptions thrown *outside* of the middleware chain (e.g. during bootstrap process) will continue to bubble up unless caught elsewhere.
 
 ```php
 namespace App\Http;
@@ -288,10 +288,11 @@ Limber has several predefined path patterns you can use:
 $router->get("/books/{id:uuid}", "BooksHandler@get");
 ```
 
-You can define your own patterns to match using the `Router::setPattern()` static method.
+You can define your own patterns to match using the `setPattern()` method.
 
 ```php
-Router::setPattern("isbn", "\d{9}[\d|X]");
+$router = new Router;
+$router->setPattern("isbn", "\d{9}[\d|X]");
 $router->get("/books/{id:isbn}", "BooksHandler@getByIsbn");
 ```
 
@@ -310,34 +311,37 @@ for more information.
 
 ```php
 // Closure based handler
-$router->get("/books/{id:isbn}", function(ServerRequestInterface $request, string $id): ResponseInterface {
+$router->get(
+    "/books/{id:isbn}",
+    function(ServerRequestInterface $request, string $id): ResponseInterface {
+    	$book = Books::find($id);
 
-	$book = Books::find($id);
+    	if( empty($book) ){
+    		throw new NotFoundHttpException("Book not found.");
+    	}
 
-	if( empty($book) ){
-		throw new NotFoundHttpException("Book not found.");
-	}
-
-	return new Response(
-		\json_encode($book)
-	);
-
-});
+    	return new Response(
+    		\json_encode($book)
+    	);
+    }
+);
 
 // String references to ClassName@Method
 $router->patch("/books/{id:isbn}", "App\Handlers\BooksHandler@update");
 
 // If a ContainerInterface instance was assigned to the application and contains an InventoryService instance, it will be injected into this handler.
-$router->post("/books", function(ServerRequestInterface $request, InventoryService $inventoryService): ResponseInterface {
+$router->post(
+    "/books",
+    function(ServerRequestInterface $request, InventoryService $inventoryService): ResponseInterface {
+    	$book = Book::make($request->getAll());
 
-	$book = Book::make($request->getAll());
+    	$inventoryService->add($book);
 
-	$inventoryService->add($book);
-
-	return new Response(
-		\json_encode($book)
-	);
-});
+    	return new Response(
+    		\json_encode($book)
+    	);
+    }
+);
 ```
 
 ### Route configuration
@@ -347,104 +351,102 @@ You can configure individual routes to respond to a specific scheme, a specific 
 #### Scheme
 
 ```php
-$router->post("books", "BooksHandler@create")->setScheme("https");
+$router->post(
+    path: "books",
+    handler: "\App\Http\Handlers\BooksHandler@create",
+    scheme: "https"
+);
 ```
 
-#### Middleware
-
-### Route middleware
+### Route specific middleware
 
 ```php
-$router->post("books", "BooksHandler@create")->setMiddleware([new FooMiddleware]);
+$router->post(
+    path: "books",
+    handler: "\App\Http\Handlers\BooksHandler@create",
+    middleware: [new FooMiddleware]
+);
 ```
 
 #### Hostname
 
 ```php
-$router->post("books", "BooksHandler@create")->setHostname("example.org");
+$router->post(
+    path: "books",
+    handler: "\App\Http\Handlers\BooksHandler@create",
+    hostnames: ["example.org"]
+);
 ```
 
 #### Attributes
 
 ```php
-$router->post("books", "BooksHandler@create")->setAttributes(["Attribute" => "Value"]);
+$router->post(
+    path: "books",
+    handler: "\App\Http\Handlers\BooksHandler@create",
+    attributes: [
+        "Attribute1" => "Value1"
+    ]
+);
 ```
 
 ### Route groups
 
-You can group routes together using the `group` method and passing in an array of configurations that you want applied to all routes within that group.
+You can group routes together using the `group` method and all routes contained will inherit the configuration you have defined.
 
 * `scheme` *string* The HTTP scheme (http or https) to match against.
 * `middleware` *array&lt;string&gt;* or *array&lt;MiddlewareInterface&gt;* or *array&lt;callable&gt;* An array of all middleware classes (fullname space) or actual instances of middleware.
 * `prefix` *string* A string prepended to all URIs when matching the request.
-* `namespace` *string* A string prepended to all string based actions before instantiating a new class.
-* `hostname` *string* A host name to be matched against.
+* `namespace` *string* A string prepended to all string based handlers before instantiating a new class.
+* `hostnames` *string* A host name to be matched against.
 * `attributes` *array&lt;string,mixed&gt;* An array of key=>value pairs representing attributes that will be attached to the `ServerRequestInterface` instance if the route matches.
 
 ```php
-$router->group([
-	"hostname" => "sub.domain.com",
-	"middleware" => [
+$router->group(
+	hostnames: ["sub.domain.com"],
+	middleware: [
 		FooMiddleware::class,
 		BarMiddleware::class
 	],
-	"namespace" => "App\Sub.Domain\Handlers",
-	"prefix" => "v1"
-], function(Router $router): void {
-
-	$router->get("books/{isbn}", "BooksHandler@getByIsbn");
-	$router->post("books", "BooksHandler@create");
-
-});
+	namespace: "\App\Sub.Domain\Handlers",
+	prefix: "v1",
+    routes: function(Router $router): void {
+	    $router->get("books/{isbn}", "BooksHandler@getByIsbn");
+	    $router->post("books", "BooksHandler@create");
+    }
+);
 ```
 
 Groups can be nested and will inherit their parent group's settings unless the setting is overridden. Middleware settings however are *merged* with their parent's settings.
 
 ```php
-$router->group([
-	"hostname" => "sub.domain.com",
-	"middleware" => [
+$router->group(
+	hostnames: ["sub.domain.com"],
+	middleware: [
 		FooMiddleware::class,
 		BarMiddleware::class
 	],
-	"namespace" => "App\Sub.Domain\Handlers",
-	"prefix" => "v1"
-], function(Router $router): void {
+	namespace: "\App\Sub.Domain\Handlers",
+	prefix: "v1",
+    routes: function(Router $router): void {
 
-	$router->get("books/{isbn}", "BooksHandler@getByIsbn");
-	$router->post("books", "BooksHandler@create");
+    	$router->get("books/{isbn}", "BooksHandler@getByIsbn");
+    	$router->post("books", "BooksHandler@create");
 
-	// This group will inherit all group settings from the parent group
-	// and will merge in an additional middleware (AdminMiddleware).
-	$router->group([
-		"middleware" => [
-			AdminMiddleware::class
-		]
-	], function(Router $router): void {
-
-		...
-
-	});
-
-});
+    	// This group will inherit all group settings from the parent group, override
+        // the namespace property, and will merge in an additional middleware (AdminMiddleware).
+    	$router->group(
+            namespace: "\App\Sub.Domain\Handlers\Admin",
+    		middleware: [
+    			AdminMiddleware::class
+    		],
+            routes: function(Router $router): void {
+                $route->delete("books/{isbn}", "BooksHandler@deleteBook");
+        	}
+        );
+    }
+);
 ```
-
-### Loading routes from cache
-
-When instantiating a `Router`, you can pass in an array of `Route` instances that will be loaded directly into the router.
-
-This allows you to load your routes from disk or memory and inject directly into the router if you choose.
-
-```php
-// Load from disk
-$routes = require __DIR__ . "/cache/routes.php";
-$router = new Router($routes);
-
-// Load from a cache
-$routes = Cache::getItem("Limber\Routes");
-$router = new Router($routes);
-```
-
 ## Using with React/Http
 
 Because Limber is PSR-7 compliant, it works very well with [react/http](https://github.com/reactphp/http) to create a standalone HTTP service without the need for an additional HTTP server (nginx, Apache, etc) - great for containerizing your service with minimal dependencies.
