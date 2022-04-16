@@ -23,9 +23,9 @@ interface RouterInterface
 		array $methods,
 		string $path,
 		string|callable $handler,
-		array $middleware = [],
 		?string $scheme = null,
 		array $hostnames = [],
+		array $middleware = [],
 		array $attributes = [],
 	): Route;
 

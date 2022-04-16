@@ -27,7 +27,8 @@
         "symfony/var-dumper": "^4.2",
         "php-coveralls/php-coveralls": "^2.1",
         "nimbly/capsule": "^1.0",
-        "nimbly/carton": "^1.0"
+        "nimbly/carton": "^1.0",
+        "react/http": "^1.6"
     },
     "autoload-dev": {
         "psr-4": {

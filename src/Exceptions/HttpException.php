@@ -17,13 +17,15 @@ abstract class HttpException extends Exception
 	/**
 	 * Additional headers to send with this exception.
 	 *
-	 * @var array<string,string>
+	 * @var array<array-key,string>
 	 */
 	protected array $headers = [];
 
 	/**
+	 * @param integer $httpStatus
 	 * @param string $message
-	 * @param integer $code
+	 * @param array<array-key,string> $headers
+	 * @param integer|null $code
 	 * @param Throwable|null $previous
 	 */
 	public function __construct(int $httpStatus, string $message, array $headers = [], ?int $code = null, ?Throwable $previous = null)
@@ -46,7 +48,7 @@ abstract class HttpException extends Exception
 	/**
 	 * Get additional headers that should be sent with the response.
 	 *
-	 * @return array<string,string>
+	 * @return array<array-key,string>
 	 */
 	public function getHeaders(): array
 	{

@@ -15,8 +15,8 @@ class RouteTest extends TestCase
 	{
 		$route = new Route(
 			methods: ["get", "post"],
-			path: "v1/books/{id}",
-			handler: "Handlers\\BooksController@edit",
+			path: "v1/books/{id:isbn}",
+			handler: "Handlers\\BooksHandler@edit",
 			scheme: "https",
 			hostnames: ["localhost"],
 			middleware: [
@@ -28,8 +28,8 @@ class RouteTest extends TestCase
 		);
 
 		$this->assertEquals(["GET", "POST"], $route->getMethods());
-		$this->assertEquals("v1/books/{id}", $route->getPath());
-		$this->assertEquals("Handlers\BooksController@edit", $route->getHandler());
+		$this->assertEquals("v1/books/{id:isbn}", $route->getPath());
+		$this->assertEquals("Handlers\BooksHandler@edit", $route->getHandler());
 		$this->assertEquals("https", $route->getScheme());
 		$this->assertEquals(["localhost"], $route->getHostnames());
 		$this->assertEquals(["App\Middleware\SomeMiddleware"], $route->getMiddleware());
@@ -40,8 +40,8 @@ class RouteTest extends TestCase
 	{
 		$route = new Route(
 			methods: ["get"],
-			path: "/^books\/(?<bookId>.+)\/comments\/(?<commentId>.+)$/",
-			handler: "BooksController@get"
+			path: "books/{bookId}/comments/{commentId}",
+			handler: "BooksHandler@get"
 		);
 
 		$params = $route->getPathParameters("books/1234/comments/5678");
@@ -57,7 +57,7 @@ class RouteTest extends TestCase
 		$route = new Route(
 			methods: ["get"],
 			path: "books",
-			handler: "BooksController@get",
+			handler: "BooksHandler@get",
 			scheme: "http"
 		);
 
@@ -69,7 +69,7 @@ class RouteTest extends TestCase
 		$route = new Route(
 			methods: ["get"],
 			path: "books",
-			handler: "BooksController@get"
+			handler: "BooksHandler@get"
 		);
 
 		$this->assertTrue($route->matchScheme("http"));
@@ -81,7 +81,7 @@ class RouteTest extends TestCase
 		$route = new Route(
 			methods: ["get"],
 			path: "books",
-			handler: "BooksController@get",
+			handler: "BooksHandler@get",
 			scheme: "http"
 		);
 
@@ -93,7 +93,7 @@ class RouteTest extends TestCase
 		$route = new Route(
 			methods: ["get"],
 			path: "books",
-			handler: "BooksController@get",
+			handler: "BooksHandler@get",
 			hostnames: ["localhost"]
 		);
 
@@ -105,7 +105,7 @@ class RouteTest extends TestCase
 		$route = new Route(
 			methods: ["get"],
 			path: "books",
-			handler: "BooksController@get",
+			handler: "BooksHandler@get",
 			hostnames: ["localhost", "api.localhost"]
 		);
 
@@ -118,7 +118,7 @@ class RouteTest extends TestCase
 		$route = new Route(
 			methods: ["get"],
 			path: "books",
-			handler: "BooksController@get",
+			handler: "BooksHandler@get",
 			hostnames: ["localhost"]
 		);
 
@@ -130,7 +130,7 @@ class RouteTest extends TestCase
 		$route = new Route(
 			methods: ["get"],
 			path: "books",
-			handler: "BooksController@get"
+			handler: "BooksHandler@get"
 		);
 
 		$this->assertTrue($route->matchMethod("get"));
@@ -141,7 +141,7 @@ class RouteTest extends TestCase
 		$route = new Route(
 			methods: ["get", "post"],
 			path: "books",
-			handler: "BooksController@get"
+			handler: "BooksHandler@get"
 		);
 
 		$this->assertTrue($route->matchMethod("get"));
@@ -153,7 +153,7 @@ class RouteTest extends TestCase
 		$route = new Route(
 			methods: ["get"],
 			path: "books",
-			handler: "BooksController@get"
+			handler: "BooksHandler@get"
 		);
 
 		$this->assertFalse($route->matchMethod("post"));
@@ -163,8 +163,8 @@ class RouteTest extends TestCase
 	{
 		$route = new Route(
 			methods: ["get"],
-			path: "/^books\/(?<bookId>.+)\/comments\/(?<commentId>.+)$/",
-			handler: "BooksController@get"
+			path: "books/{bookId}/comments/{commentId}",
+			handler: "BooksHandler@get"
 		);
 
 		$this->assertTrue($route->matchPath("books/1234/comments/5678"));
@@ -174,8 +174,8 @@ class RouteTest extends TestCase
 	{
 		$route = new Route(
 			methods: ["get"],
-			path: "/^books\/(?<bookId>\d+)\/comments\/(?<commentId>[a-f0-9]+)$/",
-			handler: "BooksController@get"
+			path: "books/{bookId:int}/comments/{commentId:hex}/",
+			handler: "BooksHandler@get"
 		);
 
 		$this->assertTrue($route->matchPath("books/1234/comments/a5f9"));
@@ -185,8 +185,8 @@ class RouteTest extends TestCase
 	{
 		$route = new Route(
 			methods: ["get"],
-			path: "/^books\/(?<bookId>\d+)\/comments$/",
-			handler: "BooksController@get"
+			path: "books/{bookId:int}/comments",
+			handler: "BooksHandler@get"
 		);
 
 		$this->assertFalse($route->matchPath("books/book-23"));
@@ -196,8 +196,8 @@ class RouteTest extends TestCase
 	{
 		$route = new Route(
 			methods: ["get"],
-			path: "/^books\/(?<bookId>.+)\/comments\/(?<commentId>.+)$/",
-			handler: "BooksController@get"
+			path: "books/{bookId}/comments/{commentId}",
+			handler: "BooksHandler@get"
 		);
 
 		$this->assertFalse($route->matchPath("books/1234"));

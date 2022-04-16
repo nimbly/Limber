@@ -52,7 +52,7 @@ class Application
 		// Resolve the route now to check for Routed middleware.
 		$route = $this->router->resolve($request);
 
-		// Attach Request attributes
+		// Attach route attributes to Request
 		$request = $this->attachRequestAttributes(
 			$request,
 			$route ? $route->getAttributes() : []
@@ -61,7 +61,7 @@ class Application
 		// Normalize the middlewares to be array<MiddlewareInterface>
 		$middleware = $this->normalizeMiddleware(
 			\array_merge(
-				$this->middleware, // Global user-space middleware
+				$this->middleware, // Global middleware
 				$route ? $route->getMiddleware() : [], // Route specific middleware
 				[PrepareHttpResponse::class] // Application specific middleware
 			)

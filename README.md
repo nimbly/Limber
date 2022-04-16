@@ -288,11 +288,12 @@ Limber has several predefined path patterns you can use:
 $router->get("/books/{id:uuid}", "BooksHandler@get");
 ```
 
-You can define your own patterns to match using the `setPattern()` method.
+You can define your own patterns to match using the `Router::setPattern()` static method.
 
 ```php
+Router::setPattern("isbn", "\d{9}[\d|X]");
+
 $router = new Router;
-$router->setPattern("isbn", "\d{9}[\d|X]");
 $router->get("/books/{id:isbn}", "BooksHandler@getByIsbn");
 ```
 

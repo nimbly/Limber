@@ -2,36 +2,34 @@
 
 namespace Nimbly\Limber\Router;
 
-use Nimbly\Limber\Exceptions\RouteException;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 
 class Router implements RouterInterface
 {
 	/**
-	 * @var array<string,mixed>
-	 */
-	protected array $config = [
-		"scheme" => null,
-		"host" => null,
-		"prefix" => null,
-		"namespace" => null,
-		"hostnames" => [],
-		"middleware" => [],
-		"attributes" => [],
-	];
-
-	/**
 	 * Route path parameter patterns.
 	 *
 	 * @var array<string,string>
 	 */
-	protected array $patterns = [
+	protected static array $patterns = [
 		"alpha" => "[a-z]+",
 		"int" => "\d+",
 		"alphanumeric" => "[a-z0-9]+",
 		"uuid" => "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}",
 		"hex" => "[a-f0-9]+"
+	];
+
+	/**
+	 * @var array{scheme:string|null,prefix:string|null,namespace:string|null,hostnames:array<string>,middleware:array<string|MiddlewareInterface>,attributes:array<string,mixed>}
+	 */
+	protected array $group_config = [
+		"scheme" => null,
+		"prefix" => null,
+		"namespace" => null,
+		"hostnames" => [],
+		"middleware" => [],
+		"attributes" => [],
 	];
 
 	/**
@@ -43,22 +41,37 @@ class Router implements RouterInterface
 
 	/**
 	 * @param array<Route> $routes
-	 * @param array<string,string> $patterns
 	 */
-	public function __construct(
-		array $routes = [],
-		array $patterns = [])
+	public function __construct(array $routes = [])
 	{
 		foreach( $routes as $route ){
 			foreach( $route->getMethods() as $method ){
 				$this->routes[$method][] = $route;
 			}
 		}
+	}
 
-		$this->patterns = \array_merge(
-			$this->patterns,
-			$patterns
-		);
+	/**
+	 * Set a path regex pattern.
+	 *
+	 * @param string $name
+	 * @param string $pattern
+	 * @return void
+	 */
+	public static function setPattern(string $name, string $pattern): void
+	{
+		self::$patterns[$name] = $pattern;
+	}
+
+	/**
+	 * Get a particular path pattern by name.
+	 *
+	 * @param string $name
+	 * @return string|null
+	 */
+	public static function getPattern(string $name): ?string
+	{
+		return self::$patterns[$name] ?? null;
 	}
 
 	/**
@@ -83,32 +96,32 @@ class Router implements RouterInterface
 		array $methods,
 		string $path,
 		string|callable $handler,
-		array $middleware = [],
 		?string $scheme = null,
 		array $hostnames = [],
+		array $middleware = [],
 		array $attributes = [],
 	): Route
 	{
-		if( $this->config["prefix"] ){
-			$path = \trim($this->config["prefix"], "/") . "/" . \trim($path, "/");
+		if( $this->group_config["prefix"] ){
+			$path = \trim($this->group_config["prefix"], "/") . "/" . \trim($path, "/");
 		}
 
-		if( $this->config["namespace"] && \is_string($handler) && \strpos($handler, "@") ){
+		if( $this->group_config["namespace"] && \is_string($handler) && \strpos($handler, "@") ){
 			$handler = \sprintf(
 				"\\%s\\%s",
-				\trim($this->config["namespace"], "\\"),
+				\trim($this->group_config["namespace"], "\\"),
 				\trim($handler, "\\")
 			);
 		}
 
 		$route = new Route(
 			methods: $methods,
-			path: $this->compileRegexPattern($path),
+			path: $path,
 			handler: $handler,
-			middleware: \array_merge($this->config["middleware"], $middleware),
-			scheme: $scheme ?? $this->config["scheme"],
-			hostnames: $hostnames ?: $this->config["hostnames"],
-			attributes: $attributes ?: $this->config["attributes"]
+			middleware: \array_merge($this->group_config["middleware"], $middleware),
+			scheme: $scheme ?? $this->group_config["scheme"],
+			hostnames: $hostnames ?: $this->group_config["hostnames"],
+			attributes: $attributes ?: $this->group_config["attributes"]
 		);
 
 		foreach( $route->getMethods() as $method ){
@@ -161,85 +174,13 @@ class Router implements RouterInterface
 	}
 
 	/**
-	 * Compile the regular expression for path matching.
-	 *
-	 * @param array<string,string> $patterns
-	 * @return string
-	 */
-	private function compileRegexPattern(string $path): string
-	{
-		$parts = [];
-
-		foreach( \explode("/", \trim($path, "/")) as $part ){
-
-			// Is this a named parameter?
-			if( \preg_match("/{([a-z0-9_]+)(?:\:([a-z0-9_]+))?}/i", $part, $match) ){
-
-				// Predefined pattern
-				if( isset($match[2]) ){
-					$part = $this->getPattern($match[2]);
-
-					if( empty($part) ){
-						throw new RouteException("Router pattern \"{$match[2]}\" not found.");
-					}
-				}
-
-				// Match anything
-				else {
-					$part = "[^\/]+";
-				}
-
-				$part = "(?<{$match[1]}>{$part})";
-			}
-
-			$parts[] = $part;
-		}
-
-		return \sprintf("/^%s$/", \implode("\/", $parts));
-	}
-
-	/**
-	 * Set a route pattern.
-	 *
-	 * @param string $name
-	 * @param string $pattern
-	 * @return void
-	 */
-	public function setPattern(string $name, string $pattern): void
-	{
-		$this->patterns[$name] = $pattern;
-	}
-
-	/**
-	 * Get a particular pattern by name.
-	 *
-	 * @param string $name
-	 * @return string|null
-	 */
-	public function getPattern(string $name): ?string
-	{
-		return $this->patterns[$name] ?? null;
-	}
-
-	/**
-	 * Get all patterns.
-	 *
-	 * @return array<string,string>
-	 */
-	public function getPatterns(): array
-	{
-		return $this->patterns;
-	}
-
-	/**
 	 * Add a GET route.
 	 *
 	 * @param string $path
 	 * @param string|callable $handler
-	 * @param array<string|MiddlewareInterface> $middleware
-	 * @param string|null $namespace
 	 * @param string|null $scheme
 	 * @param array<string> $hostnames
+	 * @param array<string|MiddlewareInterface> $middleware
 	 * @param array<string,mixed> $attributes
 	 * @return Route
 	 */
@@ -251,7 +192,15 @@ class Router implements RouterInterface
 		array $hostnames = [],
 		array $attributes = []): Route
 	{
-		return $this->add(["GET", "HEAD"], $path, $handler, $middleware, $scheme, $hostnames, $attributes);
+		return $this->add(
+			methods: ["GET", "HEAD"],
+			path: $path,
+			handler: $handler,
+			scheme: $scheme,
+			hostnames: $hostnames,
+			middleware: $middleware,
+			attributes: $attributes
+		);
 	}
 
 	/**
@@ -259,22 +208,29 @@ class Router implements RouterInterface
 	 *
 	 * @param string $path
 	 * @param string|callable $handler
-	 * @param array<string|MiddlewareInterface> $middleware
-	 * @param string|null $namespace
 	 * @param string|null $scheme
 	 * @param array<string> $hostnames
+	 * @param array<string|MiddlewareInterface> $middleware
 	 * @param array<string,mixed> $attributes
 	 * @return Route
 	 */
 	public function post(
 		string $path,
 		string|callable $handler,
-		array $middleware = [],
 		?string $scheme = null,
 		array $hostnames = [],
+		array $middleware = [],
 		array $attributes = []): Route
 	{
-		return $this->add(["POST"], $path, $handler, $middleware, $scheme, $hostnames, $attributes);
+		return $this->add(
+			methods: ["POST"],
+			path: $path,
+			handler: $handler,
+			scheme: $scheme,
+			hostnames: $hostnames,
+			middleware: $middleware,
+			attributes: $attributes
+		);
 	}
 
 	/**
@@ -282,22 +238,29 @@ class Router implements RouterInterface
 	 *
 	 * @param string $path
 	 * @param string|callable $handler
-	 * @param array<string|MiddlewareInterface> $middleware
-	 * @param string|null $namespace
 	 * @param string|null $scheme
 	 * @param array<string> $hostnames
+	 * @param array<string|MiddlewareInterface> $middleware
 	 * @param array<string,mixed> $attributes
 	 * @return Route
 	 */
 	public function put(
 		string $path,
 		string|callable $handler,
-		array $middleware = [],
 		?string $scheme = null,
 		array $hostnames = [],
+		array $middleware = [],
 		array $attributes = []): Route
 	{
-		return $this->add(["PUT"], $path, $handler, $middleware, $scheme, $hostnames, $attributes);
+		return $this->add(
+			methods: ["PUT"],
+			path: $path,
+			handler: $handler,
+			scheme: $scheme,
+			hostnames: $hostnames,
+			middleware: $middleware,
+			attributes: $attributes
+		);
 	}
 
 	/**
@@ -305,22 +268,29 @@ class Router implements RouterInterface
 	 *
 	 * @param string $path
 	 * @param string|callable $handler
-	 * @param array<string|MiddlewareInterface> $middleware
-	 * @param string|null $namespace
 	 * @param string|null $scheme
 	 * @param array<string> $hostnames
+	 * @param array<string|MiddlewareInterface> $middleware
 	 * @param array<string,mixed> $attributes
 	 * @return Route
 	 */
 	public function patch(
 		string $path,
 		string|callable $handler,
-		array $middleware = [],
 		?string $scheme = null,
 		array $hostnames = [],
+		array $middleware = [],
 		array $attributes = []): Route
 	{
-		return $this->add(["PATCH"], $path, $handler, $middleware, $scheme, $hostnames, $attributes);
+		return $this->add(
+			methods: ["PATCH"],
+			path: $path,
+			handler: $handler,
+			scheme: $scheme,
+			hostnames: $hostnames,
+			middleware: $middleware,
+			attributes: $attributes
+		);
 	}
 
 	/**
@@ -328,22 +298,29 @@ class Router implements RouterInterface
 	 *
 	 * @param string $path
 	 * @param string|callable $handler
-	 * @param array<string|MiddlewareInterface> $middleware
-	 * @param string|null $namespace
 	 * @param string|null $scheme
 	 * @param array<string> $hostnames
+	 * @param array<string|MiddlewareInterface> $middleware
 	 * @param array<string,mixed> $attributes
 	 * @return Route
 	 */
 	public function delete(
 		string $path,
 		string|callable $handler,
-		array $middleware = [],
 		?string $scheme = null,
 		array $hostnames = [],
+		array $middleware = [],
 		array $attributes = []): Route
 	{
-		return $this->add(["DELETE"], $path, $handler, $middleware, $scheme, $hostnames, $attributes);
+		return $this->add(
+			methods: ["DELETE"],
+			path: $path,
+			handler: $handler,
+			scheme: $scheme,
+			hostnames: $hostnames,
+			middleware: $middleware,
+			attributes: $attributes
+		);
 	}
 
 	/**
@@ -351,22 +328,29 @@ class Router implements RouterInterface
 	 *
 	 * @param string $path
 	 * @param string|callable $handler
-	 * @param array<string|MiddlewareInterface> $middleware
-	 * @param string|null $namespace
 	 * @param string|null $scheme
 	 * @param array<string> $hostnames
+	 * @param array<string|MiddlewareInterface> $middleware
 	 * @param array<string,mixed> $attributes
 	 * @return Route
 	 */
 	public function head(
 		string $path,
 		string|callable $handler,
-		array $middleware = [],
 		?string $scheme = null,
 		array $hostnames = [],
+		array $middleware = [],
 		array $attributes = []): Route
 	{
-		return $this->add(["HEAD"], $path, $handler, $middleware, $scheme, $hostnames, $attributes);
+		return $this->add(
+			methods: ["HEAD"],
+			path: $path,
+			handler: $handler,
+			middleware: $middleware,
+			scheme: $scheme,
+			hostnames: $hostnames,
+			attributes: $attributes
+		);
 	}
 
 	/**
@@ -374,22 +358,29 @@ class Router implements RouterInterface
 	 *
 	 * @param string $path
 	 * @param string|callable $handler
-	 * @param array<string|MiddlewareInterface> $middleware
-	 * @param string|null $namespace
 	 * @param string|null $scheme
 	 * @param array<string> $hostnames
+	 * @param array<string|MiddlewareInterface> $middleware
 	 * @param array<string,mixed> $attributes
 	 * @return Route
 	 */
 	public function options(
 		string $path,
 		string|callable $handler,
-		array $middleware = [],
 		?string $scheme = null,
 		array $hostnames = [],
+		array $middleware = [],
 		array $attributes = []): Route
 	{
-		return $this->add(["OPTIONS"], $path, $handler, $middleware, $scheme, $hostnames, $attributes);
+		return $this->add(
+			methods: ["OPTIONS"],
+			path: $path,
+			handler: $handler,
+			scheme: $scheme,
+			hostnames: $hostnames,
+			middleware: $middleware,
+			attributes: $attributes
+		);
 	}
 
 	/**
@@ -414,24 +405,25 @@ class Router implements RouterInterface
 		array $attributes = []): void
 	{
 		// Save current config
-		$previous_config = $this->config;
+		$previous_config = $this->group_config;
 
-		$this->config = [
-			"scheme"=> $scheme ?? $this->config["scheme"] ?? null,
-			"hostnames" => $hostnames ?: $this->config["hostnames"],
-			"prefix" => $prefix ?? $this->config["prefix"] ?? null,
-			"namespace" => $namespace ?? $this->config["namespace"] ?? null,
+		// Build the new merged config
+		$this->group_config = [
+			"scheme"=> $scheme ?? $this->group_config["scheme"] ?? null,
+			"hostnames" => $hostnames ?: $this->group_config["hostnames"],
+			"prefix" => $prefix ?? $this->group_config["prefix"] ?? null,
+			"namespace" => $namespace ?? $this->group_config["namespace"] ?? null,
 			"middleware" => \array_merge(
-				$this->config["middleware"],
+				$this->group_config["middleware"],
 				$middleware
 			),
-			"attributes" => $attributes ?: $this->config["attributes"]
+			"attributes" => $attributes ?: $this->group_config["attributes"]
 		];
 
 		// Process routes in closure
 		\call_user_func($routes, $this);
 
 		// Restore previous config
-		$this->config = $previous_config;
+		$this->group_config = $previous_config;
 	}
 }
