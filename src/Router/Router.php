@@ -75,21 +75,6 @@ class Router implements RouterInterface
 	}
 
 	/**
-	 * Get all routes.
-	 *
-	 * @return array<Route>
-	 */
-	public function getRoutes(): array
-	{
-		$routes = [];
-		foreach( $this->routes as $indexedRoutes ){
-			$routes = \array_merge($routes, $indexedRoutes);
-		}
-
-		return $routes;
-	}
-
-	/**
 	 * @inheritDoc
 	 */
 	public function add(
@@ -106,7 +91,7 @@ class Router implements RouterInterface
 			$path = \trim($this->group_config["prefix"], "/") . "/" . \trim($path, "/");
 		}
 
-		if( $this->group_config["namespace"] && \is_string($handler) && \strpos($handler, "@") ){
+		if( $this->group_config["namespace"] && \is_string($handler) && \strpos($handler, "@") !== false ){
 			$handler = \sprintf(
 				"\\%s\\%s",
 				\trim($this->group_config["namespace"], "\\"),

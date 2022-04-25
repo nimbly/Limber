@@ -4,6 +4,7 @@ namespace Limber\Tests;
 
 use Nimbly\Limber\Router\Router;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 /**
  * @covers Nimbly\Limber\Router\Router
@@ -13,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  */
 class RouterTest extends TestCase
 {
-	public function test_set_pattern(): void
+	public function test_set_get_pattern(): void
 	{
 		Router::setPattern("isbn", "\d{3}\-\d\-\d{3}\-\d{5}\-\d");
 
@@ -191,7 +192,10 @@ class RouterTest extends TestCase
 			}
 		);
 
-		$routes = $router->getRoutes();
+		$reflectionClass = new ReflectionClass($router);
+		$reflectionProperty = $reflectionClass->getProperty("routes");
+		$reflectionProperty->setAccessible(true);
+		$routes = $reflectionProperty->getValue($router)["GET"];
 
 		$this->assertEquals("https", $routes[0]->getScheme());
 		$this->assertEquals(["example.org"], $routes[0]->getHostnames());
@@ -229,7 +233,10 @@ class RouterTest extends TestCase
 			}
 		);
 
-		$routes = $router->getRoutes();
+		$reflectionClass = new ReflectionClass($router);
+		$reflectionProperty = $reflectionClass->getProperty("routes");
+		$reflectionProperty->setAccessible(true);
+		$routes = $reflectionProperty->getValue($router)["GET"];
 
 		$this->assertEquals("http", $routes[0]->getScheme());
 		$this->assertEquals(["sub.example.org"], $routes[0]->getHostnames());
@@ -261,7 +268,10 @@ class RouterTest extends TestCase
 			}
 		);
 
-		$routes = $router->getRoutes();
+		$reflectionClass = new ReflectionClass($router);
+		$reflectionProperty = $reflectionClass->getProperty("routes");
+		$reflectionProperty->setAccessible(true);
+		$routes = $reflectionProperty->getValue($router)["GET"];
 
 		$this->assertEquals("https", $routes[0]->getScheme());
 		$this->assertEquals(["example.org"], $routes[0]->getHostnames());
