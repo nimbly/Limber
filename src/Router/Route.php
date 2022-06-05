@@ -10,6 +10,8 @@ class Route
 	/**
 	 * Compiled regular expression for path matching.
 	 *
+	 * This will be compiled lazily as needed.
+	 *
 	 * @var string|null
 	 */
 	private ?string $path_regex = null;

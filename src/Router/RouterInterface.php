@@ -30,7 +30,7 @@ interface RouterInterface
 	): Route;
 
 	/**
-	 * Match a ServerReqeuestInterface instance to a Route. Returns null of no route
+	 * Match a ServerReqeuestInterface instance to a Route. Returns null if no route
 	 * matched request.
 	 *
 	 * @param ServerRequestInterface $request
@@ -39,7 +39,7 @@ interface RouterInterface
 	public function resolve(ServerRequestInterface $request): ?Route;
 
 	/**
-	 * Given a ServerRequestInterface instance, return which methods that endpoint accepts.
+	 * Given a ServerRequestInterface instance, return which methods that endpoint responds to.
 	 *
 	 * @param ServerRequestInterface $request
 	 * @return array<string>
