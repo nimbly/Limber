@@ -19,6 +19,7 @@ Limber is intended for advanced users who are comfortable setting up their own f
 ## Requirements
 
 * PHP 8.0+
+* PSR-7 HTTP Message library
 
 ## Installation
 
@@ -83,7 +84,13 @@ Limber is able to autowire your request handlers and middleware with the aid of 
 * [PHP-DI](https://php-di.org/)
 * [nimbly/Carton](https://github.com/nimbly/Carton)
 
-Let's add container support into Limber application instance.
+Let's add container support to our application.
+
+```bash
+composer require nimbly/carton
+```
+
+And update our entry point by passing the container instance into the `Application` constructor.
 
 ```php
 <?php
@@ -313,18 +320,18 @@ for more information.
 ```php
 // Closure based handler
 $router->get(
-    "/books/{id:isbn}",
-    function(ServerRequestInterface $request, string $id): ResponseInterface {
-    	$book = Books::find($id);
+	"/books/{id:isbn}",
+	function(ServerRequestInterface $request, string $id): ResponseInterface {
+		$book = Books::find($id);
 
-    	if( empty($book) ){
-    		throw new NotFoundHttpException("Book not found.");
-    	}
+		if( empty($book) ){
+			throw new NotFoundHttpException("Book not found.");
+		}
 
-    	return new Response(
-    		\json_encode($book)
-    	);
-    }
+		return new Response(
+			\json_encode($book)
+		);
+	}
 );
 
 // String references to ClassName@Method
@@ -332,16 +339,16 @@ $router->patch("/books/{id:isbn}", "App\Handlers\BooksHandler@update");
 
 // If a ContainerInterface instance was assigned to the application and contains an InventoryService instance, it will be injected into this handler.
 $router->post(
-    "/books",
-    function(ServerRequestInterface $request, InventoryService $inventoryService): ResponseInterface {
-    	$book = Book::make($request->getAll());
+	"/books",
+	function(ServerRequestInterface $request, InventoryService $inventoryService): ResponseInterface {
+		$book = Book::make($request->getAll());
 
-    	$inventoryService->add($book);
+		$inventoryService->add($book);
 
-    	return new Response(
-    		\json_encode($book)
-    	);
-    }
+		return new Response(
+			\json_encode($book)
+		);
+	}
 );
 ```
 
@@ -353,9 +360,9 @@ You can configure individual routes to respond to a specific scheme, a specific 
 
 ```php
 $router->post(
-    path: "books",
-    handler: "\App\Http\Handlers\BooksHandler@create",
-    scheme: "https"
+	path: "books",
+	handler: "\App\Http\Handlers\BooksHandler@create",
+	scheme: "https"
 );
 ```
 
@@ -363,9 +370,9 @@ $router->post(
 
 ```php
 $router->post(
-    path: "books",
-    handler: "\App\Http\Handlers\BooksHandler@create",
-    middleware: [new FooMiddleware]
+	path: "books",
+	handler: "\App\Http\Handlers\BooksHandler@create",
+	middleware: [new FooMiddleware]
 );
 ```
 
@@ -373,9 +380,9 @@ $router->post(
 
 ```php
 $router->post(
-    path: "books",
-    handler: "\App\Http\Handlers\BooksHandler@create",
-    hostnames: ["example.org"]
+	path: "books",
+	handler: "\App\Http\Handlers\BooksHandler@create",
+	hostnames: ["example.org"]
 );
 ```
 
@@ -383,11 +390,11 @@ $router->post(
 
 ```php
 $router->post(
-    path: "books",
-    handler: "\App\Http\Handlers\BooksHandler@create",
-    attributes: [
-        "Attribute1" => "Value1"
-    ]
+	path: "books",
+	handler: "\App\Http\Handlers\BooksHandler@create",
+	attributes: [
+		"Attribute1" => "Value1"
+	]
 );
 ```
 
@@ -411,10 +418,10 @@ $router->group(
 	],
 	namespace: "\App\Sub.Domain\Handlers",
 	prefix: "v1",
-    routes: function(Router $router): void {
-	    $router->get("books/{isbn}", "BooksHandler@getByIsbn");
-	    $router->post("books", "BooksHandler@create");
-    }
+	routes: function(Router $router): void {
+		$router->get("books/{isbn}", "BooksHandler@getByIsbn");
+		$router->post("books", "BooksHandler@create");
+	}
 );
 ```
 
@@ -429,23 +436,23 @@ $router->group(
 	],
 	namespace: "\App\Sub.Domain\Handlers",
 	prefix: "v1",
-    routes: function(Router $router): void {
+	routes: function(Router $router): void {
 
-    	$router->get("books/{isbn}", "BooksHandler@getByIsbn");
-    	$router->post("books", "BooksHandler@create");
+		$router->get("books/{isbn}", "BooksHandler@getByIsbn");
+		$router->post("books", "BooksHandler@create");
 
-    	// This group will inherit all group settings from the parent group, override
-        // the namespace property, and will merge in an additional middleware (AdminMiddleware).
-    	$router->group(
-            namespace: "\App\Sub.Domain\Handlers\Admin",
-    		middleware: [
-    			AdminMiddleware::class
-    		],
-            routes: function(Router $router): void {
-                $route->delete("books/{isbn}", "BooksHandler@deleteBook");
-        	}
-        );
-    }
+		// This group will inherit all group settings from the parent group, override
+		// the namespace property, and will merge in an additional middleware (AdminMiddleware).
+		$router->group(
+			namespace: "\App\Sub.Domain\Handlers\Admin",
+			middleware: [
+				AdminMiddleware::class
+			],
+			routes: function(Router $router): void {
+				$route->delete("books/{isbn}", "BooksHandler@deleteBook");
+			}
+		);
+	}
 );
 ```
 ## Using with React/Http
