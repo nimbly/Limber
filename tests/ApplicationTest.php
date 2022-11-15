@@ -2,29 +2,16 @@
 
 namespace Limber\Tests;
 
-use Capsule\Response;
-use Capsule\ResponseStatus;
-use Capsule\ServerRequest;
 use Carton\Container;
-use DateTime;
-use DateTimeImmutable;
+use Nimbly\Capsule\Response;
+use Nimbly\Capsule\ResponseStatus;
+use Nimbly\Capsule\ServerRequest;
 use Nimbly\Limber\Application;
-use Nimbly\Limber\EmptyStream;
 use Nimbly\Limber\ExceptionHandlerInterface;
 use Nimbly\Limber\Exceptions\ApplicationException;
-use Nimbly\Limber\Exceptions\CallableResolutionException;
-use Nimbly\Limber\Exceptions\ClassResolutionException;
-use Nimbly\Limber\Exceptions\HttpException;
 use Nimbly\Limber\Exceptions\MethodNotAllowedHttpException;
 use Nimbly\Limber\Exceptions\NotFoundHttpException;
-use Nimbly\Limber\Exceptions\ParameterResolutionException;
-use Nimbly\Limber\Middleware\CallableMiddleware;
-use Nimbly\Limber\Middleware\RequestHandler;
 use Nimbly\Limber\Router\Router;
-use Nimbly\Limber\Router\RouterInterface;
-use Nimbly\Limber\Tests\Fixtures\ConstructorClass;
-use Nimbly\Limber\Tests\Fixtures\HandlerClass;
-use Nimbly\Limber\Tests\Fixtures\InvokableClass;
 use Nimbly\Limber\Tests\Fixtures\SampleMiddleware;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
@@ -32,14 +19,12 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
-use ReflectionFunction;
 use Throwable;
 
 /**
  * @covers Nimbly\Limber\Application
  * @covers Nimbly\Limber\Router\Router
  * @covers Nimbly\Limber\Router\Route
- * @covers Nimbly\Limber\Middleware\CallableMiddleware
  * @covers Nimbly\Limber\Middleware\RequestHandler
  * @covers Nimbly\Limber\Middleware\PrepareHttpResponse
  * @covers Nimbly\Limber\Exceptions\ApplicationException
@@ -47,9 +32,6 @@ use Throwable;
  * @covers Nimbly\Limber\Exceptions\HttpException
  * @covers Nimbly\Limber\Exceptions\MethodNotAllowedHttpException
  * @covers Nimbly\Limber\Exceptions\NotFoundHttpException
- * @covers Nimbly\Limber\Exceptions\CallableResolutionException
- * @covers Nimbly\Limber\Exceptions\ClassResolutionException
- * @covers Nimbly\Limber\Exceptions\ParameterResolutionException
  * @covers Nimbly\Limber\EmptyStream
  *
  * @uses Nimbly\Limber\Router\RouterInterface
@@ -110,26 +92,6 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_normalize_callable_middleware(): void
-	{
-		$application = new Application(
-			new Router
-		);
-
-		$middleware = function(ServerRequestInterface $request, RequestHandler $handler): ResponseInterface {
-			return $handler->handle($request);
-		};
-
-		$reflection = new ReflectionClass($application);
-		$method = $reflection->getMethod('normalizeMiddleware');
-		$method->setAccessible(true);
-
-		$this->assertEquals(
-			[new CallableMiddleware($middleware)],
-			$method->invoke($application, [$middleware])
-		);
-	}
-
 	public function test_normalize_instance_middleware(): void
 	{
 		$application = new Application(
@@ -146,7 +108,7 @@ class ApplicationTest extends TestCase
 		};
 
 		$reflection = new ReflectionClass($application);
-		$method = $reflection->getMethod('normalizeMiddleware');
+		$method = $reflection->getMethod("normalizeMiddleware");
 		$method->setAccessible(true);
 
 		$this->assertEquals(
@@ -162,7 +124,7 @@ class ApplicationTest extends TestCase
 		);
 
 		$reflection = new ReflectionClass($application);
-		$method = $reflection->getMethod('normalizeMiddleware');
+		$method = $reflection->getMethod("normalizeMiddleware");
 		$method->setAccessible(true);
 
 		$normalized_middleware = $method->invoke($application, [SampleMiddleware::class]);
@@ -173,31 +135,6 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	public function test_normalize_class_reference_middleware_with_user_args(): void
-	{
-		$application = new Application(
-			new Router
-		);
-
-		$reflection = new ReflectionClass($application);
-		$method = $reflection->getMethod('normalizeMiddleware');
-		$method->setAccessible(true);
-
-		$normalized_middleware = $method->invoke($application, [
-			SampleMiddleware::class => ["param" => "bar"]
-		]);
-
-		$this->assertInstanceOf(
-			SampleMiddleware::class,
-			$normalized_middleware[0]
-		);
-
-		$this->assertEquals(
-			"bar",
-			$normalized_middleware[0]->getParam()
-		);
-	}
-
 	public function test_normalize_middleware_throws_exception_if_unknown_type(): void
 	{
 		$application = new Application(
@@ -205,7 +142,7 @@ class ApplicationTest extends TestCase
 		);
 
 		$reflection = new ReflectionClass($application);
-		$method = $reflection->getMethod('normalizeMiddleware');
+		$method = $reflection->getMethod("normalizeMiddleware");
 		$method->setAccessible(true);
 
 		$this->expectException(ApplicationException::class);
@@ -227,7 +164,7 @@ class ApplicationTest extends TestCase
 		);
 
 		$reflection = new ReflectionClass($application);
-		$method = $reflection->getMethod('handleException');
+		$method = $reflection->getMethod("handleException");
 		$method->setAccessible(true);
 
 		$response = $method->invokeArgs($application, [new NotFoundHttpException("Route not found"), new ServerRequest("get", "/")]);
@@ -241,7 +178,7 @@ class ApplicationTest extends TestCase
 		$application = new Application(new Router);
 
 		$reflection = new ReflectionClass($application);
-		$method = $reflection->getMethod('handleException');
+		$method = $reflection->getMethod("handleException");
 		$method->setAccessible(true);
 
 		$this->expectException(NotFoundHttpException::class);
@@ -398,477 +335,5 @@ class ApplicationTest extends TestCase
 		$responseData = \ob_get_flush();
 
 		$this->assertEquals("Limber send() test", $responseData);
-	}
-
-	public function test_get_reflection_parameters_for_callable_on_closure(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("getReflectionParametersForCallable");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = function(string $firstname, string $lastname): void {
-			echo "{$firstname} {$lastname}";
-		};
-
-		$parameters = $reflectionMethod->invokeArgs($application, [$callable]);
-
-		$this->assertCount(
-			2,
-			$parameters
-		);
-	}
-
-	public function test_get_reflection_parameters_for_callable_on_array(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("getReflectionParametersForCallable");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = [new DateTime, "format"];
-
-		$parameters = $reflectionMethod->invokeArgs($application, [$callable]);
-
-		$this->assertCount(
-			1,
-			$parameters
-		);
-	}
-
-	public function test_get_reflection_parameters_for_callable_on_invokable_instance(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("getReflectionParametersForCallable");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = new InvokableClass;
-
-		$parameters = $reflectionMethod->invokeArgs($application, [$callable]);
-
-		$this->assertCount(
-			2,
-			$parameters
-		);
-	}
-
-	public function test_get_reflection_parameters_for_callable_on_string(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("getReflectionParametersForCallable");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = "\strtolower";
-
-		$parameters = $reflectionMethod->invokeArgs($application, [$callable]);
-
-		$this->assertCount(
-			1,
-			$parameters
-		);
-	}
-
-	public function test_resolve_reflection_parameters_with_primitive_in_user_args(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = function(string $firstname, string $lastname): void {
-			echo "{$firstname} {$lastname}";
-		};
-
-		$reflectionFunction = new ReflectionFunction($callable);
-
-		$dependencies = $reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters(), ["firstname" => "Nimbly", "lastname" => "Limber"]]);
-
-		$this->assertEquals(
-			["Nimbly", "Limber"],
-			$dependencies
-		);
-	}
-
-	public function test_resolve_reflection_parameters_with_primitive_using_default_value(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = function(string $firstname, string $lastname = "Limber"): void {
-			echo "{$firstname} {$lastname}";
-		};
-
-		$reflectionFunction = new ReflectionFunction($callable);
-
-		$dependencies = $reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters(), ["firstname" => "Nimbly"]]);
-
-		$this->assertEquals(
-			["Nimbly", "Limber"],
-			$dependencies
-		);
-	}
-
-	public function test_resolve_reflection_parameters_with_primitive_using_optional_or_allows_null(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = function(string $firstname, ?string $lastname): void {
-			echo "{$firstname} {$lastname}";
-		};
-
-		$reflectionFunction = new ReflectionFunction($callable);
-
-		$dependencies = $reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters(), ["firstname" => "Nimbly"]]);
-
-		$this->assertEquals(
-			["Nimbly", null],
-			$dependencies
-		);
-	}
-
-	public function test_resolve_reflection_parameters_with_class_using_container(): void
-	{
-		$container = new Container;
-
-		$application = new Application(
-			router: new Router,
-			container: $container
-		);
-
-		$container->set(Application::class, $application);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = function(Application $application): bool {
-			return true;
-		};
-
-		$reflectionFunction = new ReflectionFunction($callable);
-
-		$dependencies = $reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
-
-		$this->assertEquals(
-			[$application],
-			$dependencies
-		);
-	}
-
-	public function test_resolve_reflection_parameters_with_server_request_instance(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = function(ServerRequestInterface $request): ResponseInterface {
-			return new Response(
-				ResponseStatus::OK
-			);
-		};
-
-		$reflectionFunction = new ReflectionFunction($callable);
-
-		$serverRequest = new ServerRequest("GET", "/");
-
-		$dependencies = $reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters(), [ServerRequestInterface::class => $serverRequest]]);
-
-		$this->assertEquals(
-			[$serverRequest],
-			$dependencies
-		);
-	}
-
-	public function test_resolve_reflection_parameters_with_making_class_with_constructor(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = function(ConstructorClass $class): void {
-			echo $class->getParam1();
-		};
-
-		$reflectionFunction = new ReflectionFunction($callable);
-
-		$dependencies = $reflectionMethod->invokeArgs(
-			$application,
-			[
-				$reflectionFunction->getParameters(),
-				[
-					"param1" => ":param1:"
-				]
-			]
-		);
-
-		$this->assertInstanceOf(
-			ConstructorClass::class,
-			$dependencies[0]
-		);
-	}
-
-	public function test_resolve_reflection_parameters_with_non_reflection_named_type_throws_parameter_resolution_exception(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = function(DateTime|DateTimeImmutable $dateTime): void {
-			echo "The date is now: " . $dateTime;
-		};
-
-		$reflectionFunction = new ReflectionFunction($callable);
-
-		$this->expectException(ParameterResolutionException::class);
-		$reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
-	}
-
-	public function test_resolve_reflection_parameters_with_unmakeable_throws_parameter_resolution_exception(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = function(ServerRequest $request): void {
-			echo "Hello world!";
-		};
-
-		$reflectionFunction = new ReflectionFunction($callable);
-
-		$this->expectException(ParameterResolutionException::class);
-		$reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
-	}
-
-	public function test_resolve_reflection_parameters_with_unresolvable_throws_parameter_resolution_exception(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = function(string $dateTime): void {
-			echo "The date is now: " . $dateTime;
-		};
-
-		$reflectionFunction = new ReflectionFunction($callable);
-
-		$this->expectException(ParameterResolutionException::class);
-		$reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
-	}
-
-	public function test_resolve_reflection_parameters_with_default_values(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("resolveReflectionParameters");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = function(string $option = "opt1", ?string $option2 = null): void {
-			echo "Hello world with " . $option;
-		};
-
-		$reflectionFunction = new ReflectionFunction($callable);
-
-		$parameters = $reflectionMethod->invokeArgs($application, [$reflectionFunction->getParameters()]);
-
-		$this->assertEquals(
-			["opt1", null],
-			$parameters
-		);
-	}
-
-	public function test_call(): void
-	{
-		$application = new Application(new Router);
-
-		$name = $application->call(
-			function(string $name): string {
-				return $name;
-			},
-			[
-				"name" => "Limber"
-			]
-		);
-
-		$this->assertEquals(
-			"Limber",
-			$name
-		);
-	}
-
-	public function test_make_with_class_already_in_container(): void
-	{
-		$instance = new ConstructorClass(":param1:");
-
-		$container = new Container;
-		$container->set(ConstructorClass::class, $instance);
-
-		$application = new Application(
-			router: new Router,
-			container: $container
-		);
-
-		$this->assertSame(
-			$instance,
-			$application->make(ConstructorClass::class)
-		);
-	}
-
-	public function test_make_with_interface_throws_application_exception(): void
-	{
-		$application = new Application(new Router);
-
-		$this->expectException(ClassResolutionException::class);
-		$application->make(RouterInterface::class);
-	}
-
-	public function test_make_with_abstract_throws_application_exception(): void
-	{
-		$application = new Application(new Router);
-
-		$this->expectException(ClassResolutionException::class);
-		$application->make(HttpException::class);
-	}
-
-	public function test_make_on_class_with_no_constructor(): void
-	{
-		$application = new Application(new Router);
-
-		$instance = $application->make(EmptyStream::class);
-
-		$this->assertInstanceOf(
-			EmptyStream::class,
-			$instance
-		);
-	}
-
-	public function test_make_on_class_with_constructor(): void
-	{
-		$application = new Application(new Router);
-
-		$instance = $application->make(
-			ConstructorClass::class,
-			[
-				"param1" => ":param1:"
-			]
-		);
-
-		$this->assertInstanceOf(
-			ConstructorClass::class,
-			$instance
-		);
-	}
-
-	public function test_make_callable_on_class_string(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("makeCallable");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = $reflectionMethod->invokeArgs($application, [InvokableClass::class]);
-
-		$this->assertIsCallable($callable);
-		$this->assertInstanceOf(InvokableClass::class, $callable);
-	}
-
-	public function test_make_callable_on_class_and_method_string(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("makeCallable");
-		$reflectionMethod->setAccessible(true);
-
-		$class_string = HandlerClass::class . "@handle";
-
-		$callable = $reflectionMethod->invokeArgs($application, [$class_string]);
-
-		$this->assertIsCallable($callable);
-		$this->assertIsArray($callable);
-		$this->assertInstanceOf(HandlerClass::class, $callable[0]);
-		$this->assertEquals("handle", $callable[1]);
-	}
-
-	public function test_make_callable_on_callable_returns_callable(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("makeCallable");
-		$reflectionMethod->setAccessible(true);
-
-		$callable = $reflectionMethod->invokeArgs($application, ["\\strtolower"]);
-
-		$this->assertIsCallable($callable);
-		$this->assertEquals("\\strtolower", $callable);
-	}
-
-	public function test_make_callable_on_non_callable_throws_callable_resolution_exception(): void
-	{
-		$application = new Application(new Router);
-
-		$reflectionClass = new ReflectionClass($application);
-		$reflectionMethod = $reflectionClass->getMethod("makeCallable");
-		$reflectionMethod->setAccessible(true);
-
-		$this->expectException(CallableResolutionException::class);
-		$reflectionMethod->invokeArgs($application, ["\\non_existent_callable"]);
-	}
-
-	public function test_make_on_class_with_constructor_and_user_args(): void
-	{
-		$application = new Application(new Router);
-
-		$instance = $application->make(
-			ConstructorClass::class,
-			[
-				"param1" => ":param1:"
-			]
-		);
-
-		$this->assertInstanceOf(
-			ConstructorClass::class,
-			$instance
-		);
-
-		$this->assertEquals(
-			":param1:",
-			$instance->getParam1()
-		);
-	}
-
-	public function test_make_on_non_makeable_class_throws_class_resolution_exception(): void
-	{
-		$application = new Application(new Router);
-
-		$this->expectException(ClassResolutionException::class);
-
-		$application->make("\\Non\\Existent\\Class");
 	}
 }

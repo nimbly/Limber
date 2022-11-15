@@ -22,7 +22,7 @@ class Route
 	 * @param string|callable $handler Handler to invoke for this route.
 	 * @param string|null $scheme HTTP scheme (http or https) route responds to.
 	 * @param array<string> $hostnames Array of hostnames route responds to.
-	 * @param array<string|MiddlewareInterface> $middleware Array of middleware to apply when route matches.
+	 * @param array<MiddlewareInterface|class-string> $middleware Array of middleware to apply when route matches.
 	 * @param array<string,mixed> $attributes Array of key/value pair attributes to be passed to ServerRequestInterface instance.
 	 */
 	public function __construct(
@@ -73,7 +73,7 @@ class Route
 	/**
 	 * Get the middleware that should be applied to this route.
 	 *
-	 * @return array<string|MiddlewareInterface>
+	 * @return array<MiddlewareInterface|class-string>
 	 */
 	public function getMiddleware(): array
 	{
@@ -133,41 +133,47 @@ class Route
 	}
 
 	/**
-	 * Compile the regular expression for path matching.
+	 * Get the compiled regular expression for path matching.
 	 *
-	 * @param string $path
 	 * @return string Returns compiled regular expression.
 	 */
-	private function compileRegexPattern(string $path): string
+	private function getCompiledRegexPattern(): string
 	{
-		$parts = [];
+		if( empty($this->path_regex) ){
+			$parts = \array_reduce(
+				\explode("/", \trim($this->path, "/")),
+				function(array $parts, string $part): array {
+					// Is this a named parameter?
+					if( \preg_match("/{([a-z0-9_]+)(?:\:([a-z0-9_]+))?}/i", $part, $match) ){
 
-		foreach( \explode("/", \trim($path, "/")) as $part ){
+						// Predefined pattern
+						if( isset($match[2]) ){
+							$part = Router::getPattern($match[2]);
 
-			// Is this a named parameter?
-			if( \preg_match("/{([a-z0-9_]+)(?:\:([a-z0-9_]+))?}/i", $part, $match) ){
+							if( empty($part) ){
+								throw new RouteException("Router pattern \"{$match[2]}\" not found.");
+							}
+						}
 
-				// Predefined pattern
-				if( isset($match[2]) ){
-					$part = Router::getPattern($match[2]);
+						// Match anything
+						else {
+							$part = "[^\/]+";
+						}
 
-					if( empty($part) ){
-						throw new RouteException("Router pattern \"{$match[2]}\" not found.");
+						$part = "(?<{$match[1]}>{$part})";
 					}
-				}
 
-				// Match anything
-				else {
-					$part = "[^\/]+";
-				}
+					$parts[] = $part;
 
-				$part = "(?<{$match[1]}>{$part})";
-			}
+					return $parts;
+				},
+				[]
+			);
 
-			$parts[] = $part;
+			$this->path_regex = \sprintf("/^%s$/", \implode("\/", $parts));
 		}
 
-		return \sprintf("/^%s$/", \implode("\/", $parts));
+		return $this->path_regex;
 	}
 
 	/**
@@ -222,11 +228,10 @@ class Route
 	 */
 	public function matchPath(string $path): bool
 	{
-		if( empty($this->path_regex) ){
-			$this->path_regex = $this->compileRegexPattern($this->path);
-		}
-
-		$match = \preg_match($this->path_regex, \trim($path, "/"));
+		$match = \preg_match(
+			$this->getCompiledRegexPattern(),
+			\trim($path, "/")
+		);
 
 		if( $match === false ){
 			throw new RouteException("Route path regular expression is invalid.");
@@ -243,11 +248,13 @@ class Route
 	 */
 	public function getPathParameters(string $path): array
 	{
-		if( empty($this->path_regex) ){
-			$this->path_regex = $this->compileRegexPattern($this->path);
-		}
+		$match  = \preg_match(
+			$this->getCompiledRegexPattern(),
+			\trim($path, "/"),
+			$path_parameters
+		);
 
-		if( \preg_match($this->path_regex, \trim($path, "/"), $path_parameters) === false ){
+		if( $match === false ){
 			throw new RouteException("Route path regular expression is invalid.");
 		}
 
