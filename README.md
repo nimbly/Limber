@@ -1,8 +1,8 @@
 # Limber
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/nimbly/limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
-[![Build Status](https://img.shields.io/travis/nimbly/Limber.svg?style=flat-square)](https://travis-ci.com/nimbly/Limber)
-[![Code Coverage](https://img.shields.io/coveralls/github/nimbly/Limber.svg?style=flat-square)](https://coveralls.io/github/nimbly/Limber)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/nimbly/limber/php.yml?style=flat-square)](https://github.com/nimbly/Limber/actions/workflows/php.yml)
+[![Codecov branch](https://img.shields.io/codecov/c/github/nimbly/limber/master?style=flat-square)](https://app.codecov.io/github/nimbly/Limber)
 [![License](https://img.shields.io/github/license/nimbly/Limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
 
 A super minimal PSR-7, 15, and 11 compliant HTTP framework that doesn't get in your way.
