@@ -25,10 +25,8 @@
         "phpunit/phpunit": "^9.0",
         "vimeo/psalm": "^4.0",
         "symfony/var-dumper": "^4.2",
-        "php-coveralls/php-coveralls": "^2.1",
         "nimbly/capsule": "^1.0",
-        "nimbly/carton": "^1.0",
-        "infection/infection": "^0.26.14"
+        "nimbly/carton": "^1.0"
     },
     "autoload-dev": {
         "psr-4": {
