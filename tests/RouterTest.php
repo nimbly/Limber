@@ -1,6 +1,6 @@
 <?php
 
-namespace Limber\Tests;
+namespace Nimbly\Limber\Tests;
 
 use Nimbly\Limber\Router\Router;
 use PHPUnit\Framework\TestCase;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Limber\Tests;
+namespace Nimbly\Limber\Tests;
 
 use Nimbly\Limber\Exceptions\BadGatewayHttpException;
 use Nimbly\Limber\Exceptions\BadRequestHttpException;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Limber\Tests;
+namespace Nimbly\Limber\Tests;
 
 use Nimbly\Limber\EmptyStream;
 use PHPUnit\Framework\TestCase;
