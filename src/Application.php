@@ -95,7 +95,8 @@ class Application
 							$this->getReflectionParametersForCallable($routeHandler),
 							\array_merge(
 								[ServerRequestInterface::class => $request],
-								$route->getPathParameters($request->getUri()->getPath())
+								$route->getPathParameters($request->getUri()->getPath()),
+								$request->getAttributes()
 							)
 						)
 					);
