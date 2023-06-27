@@ -16,6 +16,7 @@ use Nimbly\Limber\Exceptions\ServiceUnavailableHttpException;
 use Nimbly\Limber\Exceptions\TooManyRequestsHttpException;
 use Nimbly\Limber\Exceptions\UnauthorizedHttpException;
 use Nimbly\Limber\Exceptions\UnprocessableEntityHttpException;
+use Nimbly\Limber\Exceptions\UnsupportedMediaTypeHttpException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -34,6 +35,7 @@ use PHPUnit\Framework\TestCase;
  * @covers Nimbly\Limber\Exceptions\TooManyRequestsHttpException
  * @covers Nimbly\Limber\Exceptions\UnauthorizedHttpException
  * @covers Nimbly\Limber\Exceptions\UnprocessableEntityHttpException
+ * @covers Nimbly\Limber\Exceptions\UnsupportedMediaTypeHttpException
  */
 class ExceptionTest extends TestCase
 {
@@ -131,5 +133,11 @@ class ExceptionTest extends TestCase
 	{
 		$exception = new UnprocessableEntityHttpException;
 		$this->assertEquals(422, $exception->getHttpStatus());
+	}
+
+	public function test_unsupported_media_type_http_exception(): void
+	{
+		$exception = new UnsupportedMediaTypeHttpException;
+		$this->assertEquals(415, $exception->getHttpStatus());
 	}
 }
