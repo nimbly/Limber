@@ -1,8 +1,8 @@
 # Limber
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/nimbly/limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
-[![Build Status](https://img.shields.io/travis/com/nimbly/Limber.svg?style=flat-square)](https://app.travis-ci.com/github/nimbly/Limber)
-[![Code Coverage](https://img.shields.io/coveralls/github/nimbly/Limber.svg?style=flat-square)](https://coveralls.io/github/nimbly/Limber)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/nimbly/limber/php.yml?style=flat-square)](https://github.com/nimbly/Limber/actions/workflows/php.yml)
+[![Codecov branch](https://img.shields.io/codecov/c/github/nimbly/limber/master?style=flat-square)](https://app.codecov.io/github/nimbly/Limber)
 [![License](https://img.shields.io/github/license/nimbly/Limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
 
 A super minimal PSR-7, 15, and 11 compliant HTTP framework that doesn't get in your way.
@@ -59,14 +59,14 @@ require __DIR__ . "/vendor/autoload.php";
 
 // Create a Router instance and define a route.
 $router = new Nimbly\Limber\Router\Router;
-$router->get("/", fn() => new Capsule\Response(200, "Hello World!"));
+$router->get("/", fn() => new Nimbly\Capsule\Response(200, "Hello World!"));
 
 // Create Application instance with router.
 $application = new Nimbly\Limber\Application($router);
 
 // Dispatch a PSR-7 ServerRequestInterface instance and get back a PSR-7 ResponseInterface instance
 $response = $application->dispatch(
-	Capsule\Factory\ServerRequestFactory::createFromGlobals()
+	Nimbly\Capsule\Factory\ServerRequestFactory::createFromGlobals()
 );
 
 // Send the ResponseInterface instance
@@ -101,13 +101,7 @@ And update our entry point by passing the container instance into the `Applicati
 ```php
 <?php
 
-require __DIR__ . "/vendor/autoload.php";
-
-// Create a Router instance and define a route.
-$router = new Nimbly\Limber\Router\Router;
-$router->get("/", fn() => new Capsule\Response(200, "Hello World!"));
-
-// Create PSR-11 container instance and configure.
+// Create PSR-11 container instance and configure as needed.
 $container = new Container;
 $container->set(
 	Foo:class,
@@ -151,33 +145,23 @@ class SampleMiddleware implements MiddlewareInterface
 }
 ```
 
-Now let's add this middleware layer to the Limber application instance.
+Now let's add this global middleware layer to the Limber application instance.
 
 ```php
-<?php
-
-require __DIR__ . "/vendor/autoload.php";
-
-// Create a Router instance and define a route.
-$router = new Nimbly\Limber\Router\Router;
-$router->get("/", fn() => new Capsule\Response(200, "Hello World!"));
-
-// Create PSR-11 container instance and configure.
-$container = new Container;
-$container->set(
-	Foo:class,
-	fn(): Foo => new Foo(\getenv("FOO_NAME"))
-);
-
-// Create Application instance with router and container.
 $application = new Nimbly\Limber\Application(
 	router: $router,
 	container: $container,
 	middleware: [
-		App\Http\Middleware\SampleMiddlware::class
+		App\Http\Middleware\SampleMiddleware::class
 	]
 );
 ```
+
+### HTTP Exceptions
+
+Limber has most major HTTP error response codes (4xx and 5xx response codes) mapped to exceptions that extend the `Nimbly\Limber\Exceptions\HttpException` abstract. For example `Nimbly\Limber\Exceptions\NotFoundHttpException` (404 Not Found). These exceptions have methods to get the HTTP response status code and as well as any response headers that may be required for that response code.
+
+Coupled with a default exception handler (see next section), you can create a single source for crafting HTTP error responses.
 
 ### Exception handling
 
@@ -197,7 +181,8 @@ class ExceptionHandler implements ExceptionHandlerInterface
 {
 	public function handle(Throwable $exception, ServerRequestInterface $request): ResponseInterface
 	{
-		$status_code = $exception instanceof HttpException ? $exception->getCode() : 500;
+		$status_code = $exception instanceof HttpException ? $exception->getHttpStatus() : 500;
+		$response_headers = $exception instanceof HttpException ? $exception->getHeaders() : [];
 
 		return new Response(
 			$status_code,
@@ -207,9 +192,12 @@ class ExceptionHandler implements ExceptionHandlerInterface
 					"message" => $exception->getMessage()
 				]
 			]),
-			[
-				"Content-Type" => "application/json"
-			]
+			\array_merge(
+				$response_headers,
+				[
+					"Content-Type" => "application/json"
+				]
+			)
 		);
 	}
 }
@@ -290,10 +278,10 @@ Your named parameters can also enforce a specific regular expression pattern whe
 
 Limber has several predefined path patterns you can use:
 
-* `alpha` Alphabetic characters only (A-Z), of any length
+* `alpha` Alphabetic characters only (A-Z and a-z), of any length
 * `int` Integer number of any length
 * `alphanumeric` Any combination of number or alphabetic character
-* `uuid` A Universally Unique Identifier
+* `uuid` A Universally Unique Identifier or sometimes known as a GUID.
 * `hex` A hexidecimal value, of any length
 
 ```php
@@ -316,9 +304,15 @@ Route handlers may either be a `callable` or a string in the format **Fully\Qual
 
 Route handlers *must* return a `ResponseInterface` instance.
 
+<<<<<<< HEAD
 Limber uses reflection based autowiring to automatically resolve your route handlers including constructor and function/method parameters. The `ServerRequestInterface` instance, path parameters, and any attributes attached to the  `ServerRequestInterface` instance will be resolved and injected for you. This applies for both closure based handlers as well as **Class@Method** based handlers.
 
 You may also optionally supply a PSR-11 compliant `ContainerInterface` instance to aid in route handler parameter resolution. By doing this, you can easily have your application specific dependencies resolved and injected into your handlers by Limber. See **PSR-11 Container support** section for more information.
+=======
+Limber uses reflection based autowiring to automatically resolve your route handler's parameters - including the `ServerRequestInterface` instance and any path parameters. This applies for both closure based handlers as well as **Class@Method** based handlers.
+
+You may also optionally supply a PSR-11 compliant `ContainerInterface` instance to aid in route handler resolution. By doing this, you can easily have your application specific dependencies resolved and injected into your handlers by Limber. See **PSR-11 Container support** section for more information.
+>>>>>>> master
 
 ```php
 // Closure based handler
@@ -461,6 +455,7 @@ $router->group(
 Because Limber is PSR-7 compliant, it works very well with [react/http](https://github.com/reactphp/http) to create a standalone HTTP service without the need for an additional HTTP server (nginx, Apache, etc) - great for containerizing your service with minimal dependencies.
 
 ### Install React/Http
+
 ```bash
 composer install react/http
 ```
@@ -500,16 +495,32 @@ $httpServer->listen(
 );
 ```
 
+### Adding process signal handlers
+
+React/Http supports tapping into processing signals, commonly used by container orchestration systems to shutdown processes. You can use these interrupts to signal to React/Http to stop the event loop. This functionality requires  the PHP `pcntl` module be installed. (See next section.)
+
+```php
+$loop = React\EventLoop\Loop::get();
+
+$loop->addSignal(
+	SIGINT,
+	function(int $signal) use ($loop): void {
+		\error_log("SIGINT received: Shutting down gracefully.");
+		$loop->stop();
+	}
+);
+```
+
 ### Create Dockerfile
 
 Create a `Dockerfile` in the root of your application.
 
-We'll extend from the official PHP 8 docker image and add some useful tools like `composer`, a better event loop library from PECL, and install support for process control (`pcntl`).
+We'll extend from the official PHP 8.2 docker image and add some useful tools like `composer`, a better event loop library from PECL, and install support for process control (`pcntl`). Process control will allow your service to shutdown gracefully when a `SIGINT` or `SIGHUP` signal is received.
 
 Obviously, edit this file to match your specific needs.
 
 ```docker
-FROM php:8.0-cli
+FROM php:8.2-cli
 
 RUN apt-get update && apt-get upgrade --yes
 RUN curl --silent --show-error https://getcomposer.org/installer | php && \
@@ -532,6 +543,7 @@ docker image build -t my-service:latest .
 ```
 
 ### Run as container
+
 ```bash
 docker container run -p 8000:8000 --env-file=.env my-service:latest
 ```
