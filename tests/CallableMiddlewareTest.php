@@ -2,9 +2,9 @@
 
 namespace Limber\Tests;
 
-use Capsule\Response;
-use Capsule\ResponseStatus;
-use Capsule\ServerRequest;
+use Nimbly\Capsule\Response;
+use Nimbly\Capsule\ResponseStatus;
+use Nimbly\Capsule\ServerRequest;
 use Nimbly\Limber\Middleware\CallableMiddleware;
 use Nimbly\Limber\Middleware\RequestHandler;
 use PHPUnit\Framework\TestCase;

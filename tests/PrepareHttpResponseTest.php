@@ -2,10 +2,10 @@
 
 namespace Limber\Tests;
 
-use Capsule\Response;
-use Capsule\ResponseStatus;
-use Capsule\ServerRequest;
-use Capsule\Stream\ResourceStream;
+use Nimbly\Capsule\Response;
+use Nimbly\Capsule\ResponseStatus;
+use Nimbly\Capsule\ServerRequest;
+use Nimbly\Capsule\Stream\ResourceStream;
 use Nimbly\Limber\EmptyStream;
 use Nimbly\Limber\Middleware\PrepareHttpResponse;
 use Nimbly\Limber\Middleware\RequestHandler;

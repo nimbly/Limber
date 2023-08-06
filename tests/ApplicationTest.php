@@ -2,10 +2,10 @@
 
 namespace Limber\Tests;
 
-use Capsule\Response;
-use Capsule\ResponseStatus;
-use Capsule\ServerRequest;
-use Carton\Container;
+use Nimbly\Capsule\Response;
+use Nimbly\Capsule\ResponseStatus;
+use Nimbly\Capsule\ServerRequest;
+use Nimbly\Carton\Container;
 use DateTime;
 use DateTimeImmutable;
 use Nimbly\Limber\Application;

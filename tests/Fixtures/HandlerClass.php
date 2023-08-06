@@ -2,8 +2,8 @@
 
 namespace Nimbly\Limber\Tests\Fixtures;
 
-use Capsule\Response;
-use Capsule\ResponseStatus;
+use Nimbly\Capsule\Response;
+use Nimbly\Capsule\ResponseStatus;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
