@@ -26,7 +26,6 @@
         "phpunit/phpunit": "^9.0",
         "vimeo/psalm": "^4.0",
         "symfony/var-dumper": "^4.2",
-        "php-coveralls/php-coveralls": "^2.1",
         "nimbly/capsule": "^2.0",
         "nimbly/carton": "^1.0",
         "fakerphp/faker": "^1.20"
