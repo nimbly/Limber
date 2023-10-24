@@ -8,6 +8,10 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
+/**
+ * This middleware normalizes each response to adhere to HTTP standards for certain edge cases that
+ * may cause issues with proxies and clients.
+ */
 class PrepareHttpResponse implements MiddlewareInterface
 {
 	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
