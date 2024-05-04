@@ -71,6 +71,33 @@ class ApplicationTest extends TestCase
 		);
 	}
 
+	public function test_dispatch(): void
+	{
+		$router = new Router;
+		$router->get(
+			"/foo",
+			function(): ResponseInterface {
+				return new Response(
+					ResponseStatus::OK,
+					"Okay"
+				);
+			}
+		);
+
+		$application = new Application($router);
+		$response = $application->dispatch(new ServerRequest("get", "/foo"));
+
+		$this->assertEquals(
+			ResponseStatus::OK,
+			$response->getStatusCode()
+		);
+
+		$this->assertEquals(
+			"Okay",
+			$response->getBody()->getContents()
+		);
+	}
+
 	public function test_send(): void
 	{
 		$application = new Application(new Router);

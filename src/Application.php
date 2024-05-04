@@ -2,13 +2,9 @@
 
 namespace Nimbly\Limber;
 
-use Nimbly\Limber\Exceptions\ApplicationException;
 use Nimbly\Limber\Middleware\PrepareHttpResponse;
-use Nimbly\Limber\Middleware\RequestHandler;
 use Nimbly\Limber\Middleware\RouteResolver;
-use Nimbly\Limber\Router\Route;
 use Nimbly\Limber\Router\Router;
-use Nimbly\Resolve\Resolve;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -18,8 +14,6 @@ use Throwable;
 
 class Application
 {
-	use Resolve;
-
 	protected RequestHandlerInterface $requestHandler;
 
 	/**
@@ -48,37 +42,7 @@ class Application
 				)
 			),
 
-			kernel: new RequestHandler(function(ServerRequestInterface $request): ResponseInterface {
-
-				/** @var Route|null */
-				$route = $request->getAttribute(Route::class);
-
-				if( empty($route) ){
-					throw new ApplicationException("Route request attribute not found.");
-				}
-
-				// Make the Route handler callable
-				$routeHandler = $this->makeCallable(
-					thing: $route->getHandler(),
-					container: $this->container,
-					parameters: \array_merge(
-						[ServerRequestInterface::class => $request],
-						$route->getPathParameters($request->getUri()->getPath()),
-						$request->getAttributes(),
-					)
-				);
-
-				// Call the request handler
-				return $this->call(
-					callable: $routeHandler,
-					container: $this->container,
-					parameters: \array_merge(
-						[ServerRequestInterface::class => $request],
-						$route->getPathParameters($request->getUri()->getPath()),
-						$request->getAttributes(),
-					)
-				);
-			})
+			kernel: new Kernel($container)
 		);
 	}
 
