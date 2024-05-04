@@ -10,7 +10,6 @@ use Nimbly\Limber\ExceptionHandlerInterface;
 use Nimbly\Limber\Exceptions\ApplicationException;
 use Nimbly\Limber\Exceptions\NotFoundHttpException;
 use Nimbly\Limber\MiddlewareManager;
-use Nimbly\Limber\Router\Router;
 use Nimbly\Limber\Tests\Fixtures\SampleMiddleware;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
