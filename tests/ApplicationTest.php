@@ -2,7 +2,7 @@
 
 namespace Nimbly\Limber\Tests;
 
-use Carton\Container;
+use Nimbly\Carton\Container;
 use Nimbly\Capsule\Response;
 use Nimbly\Capsule\ResponseStatus;
 use Nimbly\Capsule\ServerRequest;
