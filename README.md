@@ -18,7 +18,7 @@ Limber is intended for advanced users who are comfortable setting up their own f
 
 ## Requirements
 
-* PHP 8.0+
+* PHP 8.2+
 * PSR-7 HTTP Message library
 
 ## Installation
@@ -81,8 +81,6 @@ Limber will invoke your route handlers using reflection based autowiring. The `S
 
 However, any domain specific services and classes that are required in your handlers, should be defined in a PSR-11 container instance.
 
-**NOTE:** *Union type autowiring is currently not supported.*
-
 ### Adding PSR-11 container support
 
 Limber is able to autowire your request handlers and middleware with the aid of a PSR-11 container instance. However, Limber *does not ship* with a PSR-11 Container implementation, so you will need to bring your own if you require one. Here are some options:
@@ -125,7 +123,7 @@ You can pass middleware as one or more of the following types:
 * A `class-string` that implements `MiddlewareInterface`
 * A `class-string` that implements `MiddlewareInterface` as an index and an array of key=>value pairs as parameters to be used in dependency injection when autowiring.
 
-Any `class-string` types will be auto wired using the `Container` instance (if any) for dependency injection.
+Any `class-string` types will be autowired using the `Container` instance (if any) for dependency injection.
 
 If auto wiring fails, a `DependencyResolutionException` exception will be thrown.
 
@@ -304,15 +302,9 @@ Route handlers may either be a `callable` or a string in the format **Fully\Qual
 
 Route handlers *must* return a `ResponseInterface` instance.
 
-<<<<<<< HEAD
 Limber uses reflection based autowiring to automatically resolve your route handlers including constructor and function/method parameters. The `ServerRequestInterface` instance, path parameters, and any attributes attached to the  `ServerRequestInterface` instance will be resolved and injected for you. This applies for both closure based handlers as well as **Class@Method** based handlers.
 
 You may also optionally supply a PSR-11 compliant `ContainerInterface` instance to aid in route handler parameter resolution. By doing this, you can easily have your application specific dependencies resolved and injected into your handlers by Limber. See **PSR-11 Container support** section for more information.
-=======
-Limber uses reflection based autowiring to automatically resolve your route handler's parameters - including the `ServerRequestInterface` instance and any path parameters. This applies for both closure based handlers as well as **Class@Method** based handlers.
-
-You may also optionally supply a PSR-11 compliant `ContainerInterface` instance to aid in route handler resolution. By doing this, you can easily have your application specific dependencies resolved and injected into your handlers by Limber. See **PSR-11 Container support** section for more information.
->>>>>>> master
 
 ```php
 // Closure based handler
