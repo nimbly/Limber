@@ -273,14 +273,14 @@ class Application
 
 				$parameter_type = $reflectionParameter->getType();
 
-				if( $parameter_type instanceof \ReflectionNamedType === false ) {
+				if( \is_object($parameter_type) && $parameter_type instanceof \ReflectionNamedType === false ) {
 					throw new ParameterResolutionException("Cannot resolve union or intersection types");
 				}
 
 				/**
 				 * Check container and parameters for a match by type.
 				 */
-				if( !$parameter_type->isBuiltin() ) {
+				if( $parameter_type && !$parameter_type->isBuiltin() ) {
 
 					if( $this->container && $this->container->has($parameter_type->getName()) ){
 						return $this->container->get($parameter_type->getName());
