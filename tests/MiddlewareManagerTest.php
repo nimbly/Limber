@@ -5,7 +5,6 @@ namespace Nimbly\Limber\Tests;
 use Nimbly\Capsule\Response;
 use Nimbly\Capsule\ResponseStatus;
 use Nimbly\Capsule\ServerRequest;
-use Nimbly\Limber\Application;
 use Nimbly\Limber\ExceptionHandlerInterface;
 use Nimbly\Limber\Exceptions\ApplicationException;
 use Nimbly\Limber\Exceptions\NotFoundHttpException;
