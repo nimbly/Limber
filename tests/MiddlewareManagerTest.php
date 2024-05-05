@@ -24,10 +24,63 @@ use Throwable;
  */
 class MiddlewareManagerTest extends TestCase
 {
-	public function test_normalize_instance_middleware(): void
+	public function test_compile(): void
 	{
+		$middleware = [
+			new class implements MiddlewareInterface {
+				public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+				{
+					return $handler->handle(
+						$request->withAddedHeader("X-Request", "Request Middleware")
+					);
+				}
+			},
+
+			new class implements MiddlewareInterface {
+				public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+				{
+					$response = $handler->handle($request);
+					return $response->withAddedHeader("X-Response", "Response Middleware");
+				}
+			},
+		];
+
 		$middlewareManager = new MiddlewareManager;
 
+		$compiled_middleware = $middlewareManager->compile(
+			$middleware,
+			new class implements RequestHandlerInterface {
+				public function handle(ServerRequestInterface $request): ResponseInterface
+				{
+					return new Response(
+						ResponseStatus::OK,
+						\json_encode([
+							"X_Request" => $request->getHeaderLine("X-Request")
+						]),
+						["Content-Type" => "application/json"]
+					);
+				}
+			}
+		);
+
+		$request = new ServerRequest("get", "http://api.example.com");
+		$response = $compiled_middleware->handle($request);
+
+		$parsed_response = \json_decode($response->getBody());
+
+		$this->assertEquals(
+			"Request Middleware",
+			$parsed_response->X_Request
+		);
+
+		$this->assertEquals(
+			"Response Middleware",
+			$response->getHeaderLine("X-Response")
+		);
+	}
+
+	public function test_normalize_instance_middleware(): void
+	{
 		$middleware = new class implements MiddlewareInterface {
 			public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
 			{
@@ -35,25 +88,18 @@ class MiddlewareManagerTest extends TestCase
 			}
 		};
 
-		$reflection = new ReflectionClass($middlewareManager);
-		$method = $reflection->getMethod("normalize");
-		$method->setAccessible(true);
+		$middlewareManager = new MiddlewareManager;
 
 		$this->assertEquals(
 			[$middleware],
-			$method->invoke($middlewareManager, [$middleware])
+			$middlewareManager->normalize([$middleware])
 		);
 	}
 
 	public function test_normalize_class_reference_middleware(): void
 	{
 		$middlewareManager = new MiddlewareManager;
-
-		$reflection = new ReflectionClass($middlewareManager);
-		$method = $reflection->getMethod("normalize");
-		$method->setAccessible(true);
-
-		$normalized_middleware = $method->invoke($middlewareManager, [SampleMiddleware::class]);
+		$normalized_middleware = $middlewareManager->normalize([SampleMiddleware::class]);
 
 		$this->assertInstanceOf(
 			SampleMiddleware::class,
@@ -65,12 +111,8 @@ class MiddlewareManagerTest extends TestCase
 	{
 		$middlewareManager = new MiddlewareManager;
 
-		$reflection = new ReflectionClass($middlewareManager);
-		$method = $reflection->getMethod("normalize");
-		$method->setAccessible(true);
-
 		$this->expectException(ApplicationException::class);
-		$method->invoke($middlewareManager, [new \stdClass]);
+		$middlewareManager->normalize([new \stdClass]);
 	}
 
 	public function test_handle_exception_with_exception_handler_set(): void
