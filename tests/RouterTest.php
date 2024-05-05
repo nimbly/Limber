@@ -112,6 +112,33 @@ class RouterTest extends TestCase
 		$this->assertNull($resolved_route);
 	}
 
+	public function test_get_supported_methods(): void
+	{
+		$router = new Router;
+		$route = $router->add(["get", "put"], "books/{id}", "BooksHandler@get");
+
+		$supported_methods = $router->getSupportedMethods(
+			new ServerRequest("patch", "/books/1234")
+		);
+
+		$this->assertEquals(
+			["GET", "PUT"],
+			$supported_methods
+		);
+	}
+
+	public function test_get_supported_methods_empty_if_no_match(): void
+	{
+		$router = new Router;
+		$route = $router->add(["get", "put"], "books/{id}", "BooksHandler@get");
+
+		$supported_methods = $router->getSupportedMethods(
+			new ServerRequest("patch", "/books")
+		);
+
+		$this->assertEmpty($supported_methods);
+	}
+
 	public function test_adding_get_route(): void
 	{
 		$router = new Router;
