@@ -2,6 +2,7 @@
 
 namespace Nimbly\Limber\Tests;
 
+use Nimbly\Limber\Exceptions\RouteException;
 use Nimbly\Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -70,6 +71,22 @@ class RouteTest extends TestCase
 			"/^books\/(?<id>[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\/comments\/(?<cid>[^\/]+)$/",
 			$regex
 		);
+	}
+
+	public function test_get_compiled_regex_pattern_unknown_router_pattern_throws_route_exception(): void
+	{
+		$route = new Route(
+			methods: ["get"],
+			path: "/books/{id:unknown}/comments/{cid}",
+			handler: "BooksHandler@getById"
+		);
+
+		$reflectionClass = new ReflectionClass($route);
+		$reflectionMethod = $reflectionClass->getMethod("getCompiledRegexPattern");
+		$reflectionMethod->setAccessible(true);
+
+		$this->expectException(RouteException::class);
+		$reflectionMethod->invoke($route);
 	}
 
 	public function test_get_compiled_regex_pattern_sets_pattern_on_instance(): void
