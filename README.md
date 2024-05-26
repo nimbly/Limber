@@ -387,13 +387,13 @@ $router->post(
 
 You can group routes together using the `group` method and all routes contained will inherit the configuration you have defined.
 
-* `scheme` *string* The HTTP scheme (`http` or `https`) to match against. A `null` value will match against any value.
-* `middleware` *array&lt;string&gt;* or *array&lt;MiddlewareInterface&gt;* or *array&lt;callable&gt;* An array of all middleware classes (fully qualified namespace) or actual instances of middleware.
-* `prefix` *string* A string prepended to all URIs when matching the request.
-* `namespace` *string* A string prepended to all string based handlers before instantiating a new class.
-* `hostnames` *array&lt;string&gt;* An array of hostnames to be matched against.
-* `attributes` *array&lt;string,mixed&gt;* An array of key=>value pairs representing attributes that will be attached to the `ServerRequestInterface` instance if the route matches.
-* `routes` *callable* A callable that accepts the `Router` instance where you can add additional routes within the group.
+* `scheme` (optional) *string* The HTTP scheme (`http` or `https`) to match against. A `null` value will match against any value.
+* `middleware` (optional) *array&lt;string&gt;* or *array&lt;MiddlewareInterface&gt;* or *array&lt;callable&gt;* An array of all middleware classes (fully qualified namespace) or actual instances of middleware.
+* `prefix` (optional) *string* A string prepended to all URIs when matching the request.
+* `namespace` (optional) *string* A string prepended to all string based handlers before instantiating a new class.
+* `hostnames` (optional) *array&lt;string&gt;* An array of hostnames to be matched against.
+* `attributes` (optional) *array&lt;string,mixed&gt;* An array of key=>value pairs representing attributes that will be attached to the `ServerRequestInterface` instance if the route matches.
+* `routes` (required) *callable* A callable that accepts the `Router` instance where you can add additional routes within the group.
 
 ```php
 $router->group(
