@@ -23,7 +23,7 @@
         }
     },
     "require-dev": {
-		"ext/xdebug": "*",
+		"ext-xdebug": "*",
         "phpunit/phpunit": "^9.0",
         "vimeo/psalm": "^5.0",
         "symfony/var-dumper": "^4.2",
