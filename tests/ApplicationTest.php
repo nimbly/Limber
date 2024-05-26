@@ -98,27 +98,66 @@ class ApplicationTest extends TestCase
 		);
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 */
 	public function test_send(): void
 	{
 		$application = new Application(new Router);
 
-		$output = "";
-		\ob_start(function(string $buffer) use (&$output){
-			$output .= $buffer;
-		});
-
+		\ob_start();
 		$application->send(
 			new Response(
-				ResponseStatus::OK,
+				ResponseStatus::CREATED,
 				"Limber send() test",
 				[
-					"Header1" => "Value1"
+					"Header1" => "Value1",
+					"Header2" => "Value2",
 				]
 			)
 		);
 
-		$responseData = \ob_get_flush();
+		$body = \ob_get_contents();
+		\ob_end_clean();
 
-		$this->assertEquals("Limber send() test", $responseData);
+		$this->assertEquals(
+			"Limber send() test",
+			$body
+		);
+
+		$this->assertEquals(
+			"201",
+			\http_response_code()
+		);
+
+		$headers = \xdebug_get_headers();
+		$this->assertCount(2, $headers);
+		$this->assertEquals("Header1: Value1", $headers[0]);
+		$this->assertEquals("Header2: Value2", $headers[1]);
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 */
+	public function test_send_does_not_send_contents_on_204_no_content_responses(): void
+	{
+		$application = new Application(new Router);
+
+		\ob_start();
+		$application->send(
+			new Response(
+				ResponseStatus::NO_CONTENT,
+				"Limber send() test",
+				[
+					"Header1" => "Value1",
+					"Header2" => "Value2",
+				]
+			)
+		);
+
+		$body = \ob_get_contents();
+		\ob_end_clean();
+
+		$this->assertEmpty($body);
 	}
 }
