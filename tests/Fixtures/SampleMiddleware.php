@@ -10,20 +10,12 @@ use Psr\Http\Server\RequestHandlerInterface;
 class SampleMiddleware implements MiddlewareInterface
 {
 	/**
-	 * Parameter
-	 *
-	 * @var string
-	 */
-	protected $param;
-
-	/**
-	 * A sample middleware.
+	 * A sample middleware that adds a Request and Response header.
 	 *
 	 * @param string $param
 	 */
-	public function __construct(string $param = "foo")
+	public function __construct(protected string $param = "foo")
 	{
-		$this->param = $param;
 	}
 
 	/**
@@ -43,6 +35,8 @@ class SampleMiddleware implements MiddlewareInterface
 		ServerRequestInterface $request,
 		RequestHandlerInterface $handler): ResponseInterface
 	{
-		return $handler->handle($request);
+		$request = $request->withAddedHeader("X-Limber-Request", $this->param);
+		$response = $handler->handle($request);
+		return $response->withAddedHeader("X-Limber-Response", $this->param);
 	}
 }

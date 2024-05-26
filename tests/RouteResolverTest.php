@@ -10,6 +10,7 @@ use Nimbly\Limber\Exceptions\NotFoundHttpException;
 use Nimbly\Limber\Middleware\RouteResolver;
 use Nimbly\Limber\MiddlewareManager;
 use Nimbly\Limber\Router\Router;
+use Nimbly\Limber\Tests\Fixtures\SampleMiddleware;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -137,6 +138,40 @@ class RouteResolveTest extends TestCase
 		$this->assertEquals(
 			"Value",
 			((array) $payload->attributes)["Attribute"]
+		);
+	}
+
+	public function test_route_specific_middleware(): void
+	{
+		$router = new Router;
+		$router->add(
+			methods: ["get"],
+			path: "/^books$/",
+			middleware: [new SampleMiddleware("Routed Middleware")],
+			handler: function(): Response {
+				return new Response(
+					ResponseStatus::NO_CONTENT,
+				);
+			},
+		);
+
+		$routeResolver = new RouteResolver($router, new MiddlewareManager);
+
+		$response = $routeResolver->process(
+			new ServerRequest("get", "http://example.org/books"),
+			new class implements RequestHandlerInterface {
+				public function handle(ServerRequestInterface $request): ResponseInterface
+				{
+					return new Response(
+						ResponseStatus::NO_CONTENT,
+					);
+				}
+			}
+		);
+
+		$this->assertEquals(
+			"Routed Middleware",
+			$response->getHeaderLine("X-Limber-Response")
 		);
 	}
 
