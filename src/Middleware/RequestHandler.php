@@ -9,15 +9,13 @@ use Psr\Http\Server\RequestHandlerInterface;
 class RequestHandler implements RequestHandlerInterface
 {
 	/**
-	 * The callable handler.
+	 * The callable request handler.
 	 *
 	 * @var callable
 	 */
 	protected $handler;
 
 	/**
-	 * RequestHandler constructor.
-	 *
 	 * @param callable $handler
 	 */
 	public function __construct(callable $handler)

@@ -1,7 +1,9 @@
 <?php
 
-namespace Limber\Tests;
+namespace Nimbly\Limber\Tests;
 
+use Nimbly\Capsule\ServerRequest;
+use Nimbly\Limber\Router\Route;
 use Nimbly\Limber\Router\Router;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -27,6 +29,114 @@ class RouterTest extends TestCase
 	public function test_get_pattern_not_found(): void
 	{
 		$this->assertNull(Router::getPattern("ean13"));
+	}
+
+	public function test_constructor_can_build_routes(): void
+	{
+		$route1 = new Route(["get", "post"], "/books", "BooksHandler@create");
+		$route2 = new Route(["patch"], "/books", "BooksHandler@update");
+		$routes = [$route1, $route2];
+
+		$router = new Router($routes);
+
+		$reflectionClass = new ReflectionClass($router);
+		$reflectionProperty = $reflectionClass->getProperty("routes");
+		$reflectionProperty->setAccessible(true);
+		$assigned_routes = $reflectionProperty->getValue($router);
+
+		$this->assertCount(1, $assigned_routes["GET"]);
+		$this->assertCount(1, $assigned_routes["POST"]);
+		$this->assertCount(1, $assigned_routes["PATCH"]);
+
+		$this->assertEquals(
+			$assigned_routes["GET"][0],
+			$route1
+		);
+
+		$this->assertEquals(
+			$assigned_routes["POST"][0],
+			$route1
+		);
+
+		$this->assertEquals(
+			$assigned_routes["PATCH"][0],
+			$route2
+		);
+	}
+
+	public function test_add(): void
+	{
+		$router = new Router;
+		$route = $router->get("books/{id}", "BooksHandler@get");
+
+		$this->assertEquals(
+			["GET", "HEAD"],
+			$route->getMethods()
+		);
+
+		$this->assertEquals(
+			"books/{id}",
+			$route->getPath()
+		);
+
+		$this->assertEquals(
+			"BooksHandler@get",
+			$route->getHandler()
+		);
+	}
+
+	public function test_resolve_returns_route(): void
+	{
+		$router = new Router;
+		$route = $router->get("books/{id}", "BooksHandler@get");
+
+		$resolved_route = $router->resolve(
+			new ServerRequest("get", "/books/12345")
+		);
+
+		$this->assertEquals(
+			$route,
+			$resolved_route
+		);
+	}
+
+	public function test_resolve_unmatch_returns_null(): void
+	{
+		$router = new Router;
+		$route = $router->get("books/{id}", "BooksHandler@get");
+
+		$resolved_route = $router->resolve(
+			new ServerRequest("get", "/books")
+		);
+
+		$this->assertNull($resolved_route);
+	}
+
+	public function test_get_supported_methods(): void
+	{
+		$router = new Router;
+		$route = $router->add(["get", "put"], "books/{id}", "BooksHandler@get");
+
+		$supported_methods = $router->getSupportedMethods(
+			new ServerRequest("patch", "/books/1234")
+		);
+
+		$this->assertEquals(
+			["GET", "PUT"],
+			$supported_methods
+		);
+	}
+
+	public function test_get_supported_methods_empty_if_no_match(): void
+	{
+		$router = new Router;
+		$route = $router->add(["get", "put"], "books/{id}", "BooksHandler@get");
+
+		$supported_methods = $router->getSupportedMethods(
+			new ServerRequest("patch", "/books")
+		);
+
+		$this->assertEmpty($supported_methods);
 	}
 
 	public function test_adding_get_route(): void

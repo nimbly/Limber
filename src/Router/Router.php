@@ -21,7 +21,7 @@ class Router implements RouterInterface
 	];
 
 	/**
-	 * @var array{scheme:string|null,prefix:string|null,namespace:string|null,hostnames:array<string>,middleware:array<string|MiddlewareInterface>,attributes:array<string,mixed>}
+	 * @var array{scheme:string|null,prefix:string|null,namespace:string|null,hostnames:array<string>,middleware:array<MiddlewareInterface|class-string>,attributes:array<string,mixed>}
 	 */
 	protected array $group_config = [
 		"scheme" => null,
@@ -165,7 +165,7 @@ class Router implements RouterInterface
 	 * @param string|callable $handler The handler for this route.
 	 * @param string|null $scheme The scheme this route responds to (http or https). Null responds to any.
 	 * @param array<string> $hostnames Hostnames this route responds to.
-	 * @param array<string|MiddlewareInterface> $middleware Middleware to be applied to this route.
+	 * @param array<MiddlewareInterface|class-string> $middleware Middleware to be applied to this route.
 	 * @param array<string,mixed> $attributes Key value pair of attributes to be passed to ServerRequestInterface instance.
 	 * @return Route
 	 */
@@ -195,7 +195,7 @@ class Router implements RouterInterface
 	 * @param string|callable $handler The handler for this route.
 	 * @param string|null $scheme The scheme this route responds to (http or https). Null responds to any.
 	 * @param array<string> $hostnames Hostnames this route responds to.
-	 * @param array<string|MiddlewareInterface> $middleware Middleware to be applied to this route.
+	 * @param array<MiddlewareInterface|class-string> $middleware Middleware to be applied to this route.
 	 * @param array<string,mixed> $attributes Key value pair of attributes to be passed to ServerRequestInterface instance.
 	 * @return Route
 	 */
@@ -225,7 +225,7 @@ class Router implements RouterInterface
 	 * @param string|callable $handler The handler for this route.
 	 * @param string|null $scheme The scheme this route responds to (http or https). Null responds to any.
 	 * @param array<string> $hostnames Hostnames this route responds to.
-	 * @param array<string|MiddlewareInterface> $middleware Middleware to be applied to this route.
+	 * @param array<MiddlewareInterface|class-string> $middleware Middleware to be applied to this route.
 	 * @param array<string,mixed> $attributes Key value pair of attributes to be passed to ServerRequestInterface instance.
 	 * @return Route
 	 */
@@ -255,7 +255,7 @@ class Router implements RouterInterface
 	 * @param string|callable $handler The handler for this route.
 	 * @param string|null $scheme The scheme this route responds to (http or https). Null responds to any.
 	 * @param array<string> $hostnames Hostnames this route responds to.
-	 * @param array<string|MiddlewareInterface> $middleware Middleware to be applied to this route.
+	 * @param array<MiddlewareInterface|class-string> $middleware Middleware to be applied to this route.
 	 * @param array<string,mixed> $attributes Key value pair of attributes to be passed to ServerRequestInterface instance.
 	 * @return Route
 	 */
@@ -285,7 +285,7 @@ class Router implements RouterInterface
 	 * @param string|callable $handler The handler for this route.
 	 * @param string|null $scheme The scheme this route responds to (http or https). Null responds to any.
 	 * @param array<string> $hostnames Hostnames this route responds to.
-	 * @param array<string|MiddlewareInterface> $middleware Middleware to be applied to this route.
+	 * @param array<MiddlewareInterface|class-string> $middleware Middleware to be applied to this route.
 	 * @param array<string,mixed> $attributes Key value pair of attributes to be passed to ServerRequestInterface instance.
 	 * @return Route
 	 */
@@ -315,7 +315,7 @@ class Router implements RouterInterface
 	 * @param string|callable $handler The handler for this route.
 	 * @param string|null $scheme The scheme this route responds to (http or https). Null responds to any.
 	 * @param array<string> $hostnames Hostnames this route responds to.
-	 * @param array<string|MiddlewareInterface> $middleware Middleware to be applied to this route.
+	 * @param array<MiddlewareInterface|class-string> $middleware Middleware to be applied to this route.
 	 * @param array<string,mixed> $attributes Key value pair of attributes to be passed to ServerRequestInterface instance.
 	 * @return Route
 	 */
@@ -345,7 +345,7 @@ class Router implements RouterInterface
 	 * @param string|callable $handler The handler for this route.
 	 * @param string|null $scheme The scheme this route responds to (http or https). Null responds to any.
 	 * @param array<string> $hostnames Hostnames this route responds to.
-	 * @param array<string|MiddlewareInterface> $middleware Middleware to be applied to this route.
+	 * @param array<MiddlewareInterface|class-string> $middleware Middleware to be applied to this route.
 	 * @param array<string,mixed> $attributes Key value pair of attributes to be passed to ServerRequestInterface instance.
 	 * @return Route
 	 */
@@ -375,7 +375,7 @@ class Router implements RouterInterface
 	 * @param string|null $namespace Namespace prepended to all string based handlers.
 	 * @param string|null $prefix URI prefix predended to all paths.
 	 * @param string|null $scheme Scheme (https or https) that routes will respond to. Null responds to any.
-	 * @param array<string|MiddlewareInterface> $middleware Middleware to be applied to all routes.
+	 * @param array<MiddlewareInterface|class-string> $middleware Middleware to be applied to all routes.
 	 * @param array<string> $hostnames Hostnames that routes will respond to.
 	 * @param array<string,mixed> $attributes Key value pair of attributes that will be passed to ServerRequestInterface instance.
 	 * @return void
