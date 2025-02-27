@@ -34,7 +34,7 @@ class KernelTest extends TestCase
 		$response = $kernel->handle($request);
 
 		$this->assertEquals(
-			ResponseStatus::ACCEPTED,
+			ResponseStatus::ACCEPTED->value,
 			$response->getStatusCode()
 		);
 	}
@@ -59,7 +59,7 @@ class KernelTest extends TestCase
 		$response = $kernel->handle($request);
 
 		$this->assertEquals(
-			ResponseStatus::ACCEPTED,
+			ResponseStatus::ACCEPTED->value,
 			$response->getStatusCode()
 		);
 
@@ -86,7 +86,7 @@ class KernelTest extends TestCase
 		$response = $kernel->handle($request);
 
 		$this->assertEquals(
-			ResponseStatus::ACCEPTED,
+			ResponseStatus::ACCEPTED->value,
 			$response->getStatusCode()
 		);
 
@@ -113,7 +113,7 @@ class KernelTest extends TestCase
 		$response = $kernel->handle($request);
 
 		$this->assertEquals(
-			ResponseStatus::ACCEPTED,
+			ResponseStatus::ACCEPTED->value,
 			$response->getStatusCode()
 		);
 

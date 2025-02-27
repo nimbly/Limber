@@ -24,10 +24,10 @@
     },
     "require-dev": {
 		"ext-xdebug": "*",
-        "phpunit/phpunit": "^9.0",
-        "vimeo/psalm": "^5.0",
+        "phpunit/phpunit": "^10.0",
+        "vimeo/psalm": "^6.0",
         "symfony/var-dumper": "^4.2",
-        "nimbly/capsule": "^2.0",
+        "nimbly/capsule": "^3.0",
         "nimbly/carton": "^2.0",
         "fakerphp/faker": "^1.20"
     },

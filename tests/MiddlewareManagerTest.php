@@ -133,8 +133,15 @@ class MiddlewareManagerTest extends TestCase
 
 		$response = $method->invokeArgs($middlewareManager, [new NotFoundHttpException("Route not found"), new ServerRequest("get", "/")]);
 
-		$this->assertEquals(ResponseStatus::NOT_FOUND, $response->getStatusCode());
-		$this->assertEquals("Route not found", $response->getBody()->getContents());
+		$this->assertEquals(
+			ResponseStatus::NOT_FOUND->value,
+			$response->getStatusCode()
+		);
+
+		$this->assertEquals(
+			"Route not found",
+			$response->getBody()->getContents()
+		);
 	}
 
 	public function test_handle_exception_with_no_exception_handler_set(): void

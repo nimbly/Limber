@@ -18,7 +18,7 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function __toString()
+	public function __toString(): string
 	{
 		return $this->getContents();
 	}
@@ -42,7 +42,7 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function getSize()
+	public function getSize(): int
 	{
 		return 0;
 	}
@@ -50,7 +50,7 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function tell()
+	public function tell(): int
 	{
 		return 0;
 	}
@@ -58,7 +58,7 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function eof()
+	public function eof(): bool
 	{
 		return true;
 	}
@@ -66,18 +66,15 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function isSeekable()
+	public function isSeekable(): bool
 	{
 		return false;
 	}
 
 	/**
 	 * @inheritDoc
-	 * @param int $offset
-	 * @param int $whence
-	 * @return void
 	 */
-	public function seek($offset, $whence = SEEK_SET)
+	public function seek(int $offset, int $whence = SEEK_SET): void
 	{
 		throw new RuntimeException("Stream not seekable");
 	}
@@ -86,7 +83,7 @@ class EmptyStream implements StreamInterface
 	 * @inheritDoc
 	 * @return void
 	 */
-	public function rewind()
+	public function rewind(): void
 	{
 		$this->seek(0);
 	}
@@ -94,7 +91,7 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function isWritable()
+	public function isWritable(): bool
 	{
 		return false;
 	}
@@ -102,7 +99,7 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function write($string)
+	public function write(string $string): int
 	{
 		throw new RuntimeException("Stream not writeable.");
 	}
@@ -110,7 +107,7 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function isReadable()
+	public function isReadable(): bool
 	{
 		return true;
 	}
@@ -118,7 +115,7 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function read($length)
+	public function read(int $length): string
 	{
 		return "";
 	}
@@ -126,7 +123,7 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function getContents()
+	public function getContents(): string
 	{
 		return "";
 	}
@@ -134,7 +131,7 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function getMetadata($key = null)
+	public function getMetadata(?string $key = null): mixed
 	{
 		return null;
 	}

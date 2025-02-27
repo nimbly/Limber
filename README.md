@@ -1,7 +1,7 @@
 # Limber
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/nimbly/limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/nimbly/limber/php.yml?style=flat-square)](https://github.com/nimbly/Limber/actions/workflows/php.yml)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/nimbly/limber/coverage.yml?style=flat-square)](https://github.com/nimbly/Limber/actions/workflows/coverage.yml)
 [![Codecov branch](https://img.shields.io/codecov/c/github/nimbly/limber/master?style=flat-square)](https://app.codecov.io/github/nimbly/Limber)
 [![License](https://img.shields.io/github/license/nimbly/Limber.svg?style=flat-square)](https://packagist.org/packages/nimbly/Limber)
 
