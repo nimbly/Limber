@@ -286,6 +286,108 @@ class RouterTest extends TestCase
 		);
 	}
 
+	public function test_resource_adds_routes(): void
+	{
+		$router = new Router;
+		$router->group(
+			namespace: "App\\Http\\v1\\Handlers",
+			prefix: "v1",
+			routes: function(Router $router): void {
+				$router->resource("widgets");
+			},
+		);
+
+		$routes = $router->getRoutes();
+
+		$this->assertEquals(
+			["GET", "HEAD"],
+			$routes["GET"][0]->getMethods()
+		);
+
+		$this->assertEquals(
+			"v1/widgets",
+			$routes["GET"][0]->getPath(),
+		);
+
+		$this->assertEquals(
+			"\\App\\Http\\v1\\Handlers\\WidgetsHandler@list",
+			$routes["GET"][0]->getHandler()
+		);
+
+		$this->assertSame(
+			$routes["GET"][0],
+			$routes["HEAD"][0]
+		);
+
+
+		$this->assertEquals(
+			["POST"],
+			$routes["POST"][0]->getMethods()
+		);
+
+		$this->assertEquals(
+			"v1/widgets",
+			$routes["POST"][0]->getPath(),
+		);
+
+		$this->assertEquals(
+			"\\App\\Http\\v1\\Handlers\\WidgetsHandler@create",
+			$routes["POST"][0]->getHandler()
+		);
+
+
+		$this->assertEquals(
+			["GET", "HEAD"],
+			$routes["GET"][1]->getMethods()
+		);
+
+		$this->assertEquals(
+			"v1/widgets/{id:uuid}",
+			$routes["GET"][1]->getPath(),
+		);
+
+		$this->assertEquals(
+			"\\App\\Http\\v1\\Handlers\\WidgetsHandler@get",
+			$routes["GET"][1]->getHandler()
+		);
+
+		$this->assertSame(
+			$routes["GET"][1],
+			$routes["HEAD"][1]
+		);
+
+
+		$this->assertEquals(
+			["PUT"],
+			$routes["PUT"][0]->getMethods()
+		);
+
+		$this->assertEquals(
+			"v1/widgets/{id:uuid}",
+			$routes["PUT"][0]->getPath(),
+		);
+
+		$this->assertEquals(
+			"\\App\\Http\\v1\\Handlers\\WidgetsHandler@update",
+			$routes["PUT"][0]->getHandler()
+		);
+
+		$this->assertEquals(
+			["DELETE"],
+			$routes["DELETE"][0]->getMethods()
+		);
+
+		$this->assertEquals(
+			"v1/widgets/{id:uuid}",
+			$routes["DELETE"][0]->getPath(),
+		);
+
+		$this->assertEquals(
+			"\\App\\Http\\v1\\Handlers\\WidgetsHandler@delete",
+			$routes["DELETE"][0]->getHandler()
+		);
+	}
+
 	public function test_group(): void
 	{
 		$router = new Router;

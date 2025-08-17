@@ -11,8 +11,8 @@ interface ExceptionHandlerInterface
 	/**
 	 * Handle an exception thrown within middleware.
 	 *
-	 * @param Throwable $exception
-	 * @param ServerRequestInterface $request
+	 * @param Throwable $exception The thrown exception.
+	 * @param ServerRequestInterface $request The incoming HTTP request.
 	 * @return ResponseInterface
 	 */
 	public function handle(Throwable $exception, ServerRequestInterface $request): ResponseInterface;

@@ -6,9 +6,10 @@ use Nimbly\Capsule\Response;
 use Nimbly\Capsule\ResponseStatus;
 use Nimbly\Capsule\ServerRequest;
 use Nimbly\Limber\ExceptionHandlerInterface;
+use Nimbly\Limber\MiddlewareManager;
 use Nimbly\Limber\Exceptions\ApplicationException;
 use Nimbly\Limber\Exceptions\NotFoundHttpException;
-use Nimbly\Limber\MiddlewareManager;
+use Nimbly\Limber\Exceptions\InternalServerErrorHttpException;
 use Nimbly\Limber\Tests\Fixtures\SampleMiddleware;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
@@ -155,5 +156,75 @@ class MiddlewareManagerTest extends TestCase
 		$this->expectException(NotFoundHttpException::class);
 
 		$method->invokeArgs($middlewareManager, [new NotFoundHttpException("Route not found"), new ServerRequest("get", "/")]);
+	}
+
+	public function test_kernel_exception_handling_with_empty_middleware(): void
+	{
+		$middlewareManager = new MiddlewareManager(
+			exceptionHandler: new class implements ExceptionHandlerInterface {
+				public function handle(Throwable $exception, ServerRequestInterface $request): ResponseInterface {
+					return new Response(
+						$exception->getCode(),
+						$exception->getMessage()
+					);
+				}
+			}
+		);
+
+		$middleware = $middlewareManager->compile(
+			[],
+			new class implements RequestHandlerInterface {
+				public function handle(ServerRequestInterface $request): Response {
+					throw new InternalServerErrorHttpException("Route not found");
+				}
+			}
+		);
+
+		$response = $middleware->handle(new ServerRequest("get", "http://api.example.com/v1/foo"));
+
+		$this->assertEquals(
+			ResponseStatus::INTERNAL_SERVER_ERROR->value,
+			$response->getStatusCode()
+		);
+
+		$this->assertEquals(
+			"Route not found",
+			$response->getBody()->getContents()
+		);
+	}
+
+	public function test_kernel_exception_handling_with_middleware(): void
+	{
+		$middlewareManager = new MiddlewareManager(
+			exceptionHandler: new class implements ExceptionHandlerInterface {
+				public function handle(Throwable $exception, ServerRequestInterface $request): ResponseInterface {
+					return new Response(
+						$exception->getCode(),
+						$exception->getMessage()
+					);
+				}
+			}
+		);
+
+		$middleware = $middlewareManager->compile(
+			[new SampleMiddleware],
+			new class implements RequestHandlerInterface {
+				public function handle(ServerRequestInterface $request): Response {
+					throw new InternalServerErrorHttpException("Route not found");
+				}
+			}
+		);
+
+		$response = $middleware->handle(new ServerRequest("get", "http://api.example.com/v1/foo"));
+
+		$this->assertEquals(
+			ResponseStatus::INTERNAL_SERVER_ERROR->value,
+			$response->getStatusCode()
+		);
+
+		$this->assertEquals(
+			"Route not found",
+			$response->getBody()->getContents()
+		);
 	}
 }

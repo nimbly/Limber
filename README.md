@@ -442,6 +442,58 @@ $router->group(
 );
 ```
 
+### Route resources
+
+If you prefer convention over configuration, Limber offers Route resources: a shortcut to defining multiple routes with a single line.
+
+```php
+$router->resource("books");
+```
+
+The above will generate all Limber routes for the common CRUD endpoints:
+
+|HTTP Method|Endpoint|Handler|
+|-----------|--------|-------|
+GET|`/books`|BooksHandler@list
+GET|`/books/{id:uuid}`|BooksHandler@get
+POST|`/books`|BooksHandler@create
+PUT|`/books/{id:uuid}`|BooksHandler@update
+DELETE|`/books/{id:uuid}`|BooksHandler@delete
+
+The default route handler class name will be the name of the resource plus `Handler`. The default identifier type is a `uuid` and the default update HTTP method is `PUT`.
+
+All of these are configurable by calling `Router::setResourceConfig()`.
+
+```php
+Router::setResourceConfig(
+	handler_suffix: "Controller",
+	update_method: "PATCH",
+	identifier_pattern: null
+);
+```
+
+Resources will inherit all group defined configurations like URI prefix, handler namespace, middleware, etc.
+
+```php
+$router->group(
+	middleware: [FooMiddleware::class, BarMiddleware::class],
+	namespace: "\\App\\Http\\Handlers\\v1",
+	prefix: "v1",
+	routes: function(Router $router): void {
+		$router->resource("books");
+	}
+)
+```
+
+If you need a resource that should only implement _some_ of the CRUD endpoints, you can define them when creating the resource:
+
+```php
+$router->resource(
+	name: "books",
+	actions: [ResourceAction::get, ResourceAction::list]
+);
+```
+
 ## Using with React/Http
 
 Because Limber is PSR-7 compliant, it works very well with [react/http](https://github.com/reactphp/http) to create a standalone HTTP service without the need for an additional HTTP server (nginx, Apache, etc) - great for containerizing your service with minimal dependencies.

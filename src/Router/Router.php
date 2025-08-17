@@ -32,6 +32,12 @@ class Router implements RouterInterface
 		"attributes" => [],
 	];
 
+	protected static array $resourceConfig = [
+		"handler_suffix" => "Handler",
+		"update_method" => "PUT",
+		"identifier_pattern" => "uuid"
+	];
+
 	/**
 	 * Array of routes indexed by HTTP method.
 	 *
@@ -49,6 +55,18 @@ class Router implements RouterInterface
 				$this->routes[$method][] = $route;
 			}
 		}
+	}
+
+	/**
+	 * Get all routes.
+	 *
+	 * Routes are indexed by HTTP method, for faster lookup and matching.
+	 *
+	 * @return array<string,array<Route>>
+	 */
+	public function getRoutes(): array
+	{
+		return $this->routes;
 	}
 
 	/**
@@ -72,6 +90,26 @@ class Router implements RouterInterface
 	public static function getPattern(string $name): ?string
 	{
 		return self::$patterns[$name] ?? null;
+	}
+
+	/**
+	 * Set the resource configuration options.
+	 *
+	 * @param string $handler_suffix The suffix applied to the class name. For example: FooHandler, where "Handler" is the suffix.
+	 * @param string $update_method HTTP method to use for updating a resource (typically PUT or PATCH).
+	 * @param string|null $identifier_pattern Default pattern to use for resource identifiers. Eg, uuid or int.
+	 * @return void
+	 */
+	public static function setResourceConfig(
+		string $handler_suffix = "Handler",
+		string $update_method = "PUT",
+		?string $identifier_pattern = "uuid"): void
+	{
+		self::$resourceConfig = [
+			"handler_suffix" => $handler_suffix,
+			"update_method" => $update_method,
+			"identifier_pattern" => $identifier_pattern
+		];
 	}
 
 	/**
@@ -366,6 +404,64 @@ class Router implements RouterInterface
 			middleware: $middleware,
 			attributes: $attributes
 		);
+	}
+
+	/**
+	 * Add routes for a resource.
+	 *
+	 * This is a shortcut method to add standard CRUD routes for a resource.
+	 * Several assumptions are made with regards to the path and the handler
+	 * name.
+	 *
+	 * @param string $name The resource name. This name may include a base URL that will be included in all endpoints.
+	 * @param array<ResourceAction> $actions Which HTTP actions should be supported for this resource.
+	 * @param string|null $identifier Override the default identifier type set with Router::setResourceConfig().
+	 * @return array
+	 */
+	public function resource(
+		string $name,
+		array $actions = [ResourceAction::get, ResourceAction::list, ResourceAction::create, ResourceAction::update, ResourceAction::delete],
+		?string $identifier_pattern = null): array
+	{
+		$path = \strrpos($name, "/");
+
+		if( $path !== false ){
+			$resource = \trim(\substr($name, $path), "/");
+			$base_url = \trim(\substr($name, 0, $path), "/") . "/" . $resource;
+			$name = $resource;
+		}
+		else {
+			$base_url = \trim($name, "/");
+		}
+
+		$handler = \ucfirst($name) . self::$resourceConfig["handler_suffix"];
+
+		$routes = [];
+
+		if( \in_array(ResourceAction::list, $actions) ){
+			$routes[] = $this->get($base_url, "{$handler}@list");
+		}
+
+		if( \in_array(ResourceAction::create, $actions) ){
+			$routes[] = $this->post($base_url, "{$handler}@create");
+		}
+
+		$identifier_pattern ??= self::$resourceConfig["identifier_pattern"];
+		$id = $identifier_pattern ? "{id:{$identifier_pattern}}" : "{id}";
+
+		if( \in_array(ResourceAction::get, $actions) ){
+			$routes[] = $this->get("{$base_url}/{$id}", "{$handler}@get");
+		}
+
+		if( \in_array(ResourceAction::update, $actions) ){
+			$routes[] = $this->add([self::$resourceConfig["update_method"]], "{$base_url}/{$id}", "{$handler}@update");
+		}
+
+		if( \in_array(ResourceAction::delete, $actions) ){
+			$routes[] = $this->delete("{$base_url}/{$id}", "{$handler}@delete");
+		}
+
+		return $routes;
 	}
 
 	/**

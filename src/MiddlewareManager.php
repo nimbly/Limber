@@ -40,6 +40,20 @@ class MiddlewareManager
 	 */
 	public function compile(array $middleware, RequestHandlerInterface $kernel): RequestHandlerInterface
 	{
+		if( empty($middleware) ){
+			return new RequestHandler(
+				function(ServerRequestInterface $request) use ($kernel): ResponseInterface {
+					try {
+
+						return $kernel->handle($request);
+					}
+					catch( Throwable $exception ){
+						return $this->handleException($exception, $request);
+					}
+				}
+			);
+		}
+
 		return \array_reduce(
 			$middleware,
 			function(RequestHandlerInterface $handler, MiddlewareInterface $middleware): RequestHandler {
@@ -55,17 +69,7 @@ class MiddlewareManager
 					}
 				);
 			},
-			new RequestHandler(
-				function(ServerRequestInterface $request) use ($kernel): ResponseInterface {
-					try {
-
-						return $kernel->handle($request);
-					}
-					catch( Throwable $exception ){
-						return $this->handleException($exception, $request);
-					}
-				}
-			)
+			$kernel
 		);
 	}
 

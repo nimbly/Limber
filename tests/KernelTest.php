@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
  */
 class KernelTest extends TestCase
 {
-	public function test_route_attribute_not_found_throws_application_exception(): void
+	public function test_route_attribute_not_found_throws_route_exception(): void
 	{
 		$kernel = new Kernel;
 		$this->expectException(RouteException::class);
