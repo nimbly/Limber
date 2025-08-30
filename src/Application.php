@@ -18,7 +18,7 @@ class Application
 
 	/**
 	 * @param Router $router Router instance with routes defined.
-	 * @param array<MiddlewareInterface|class-string|array<class-string,array<string,mixed>>> $middleware Global middleware to apply.
+	 * @param array<MiddlewareInterface|class-string|array<class-string,array<string,mixed>>> $middleware Global middleware to apply to all incoming requests.
 	 * @param ContainerInterface|null $container ContainerInterface instance with your dependencies already added.
 	 * @param ExceptionHandlerInterface|null $exceptionHandler Default/fallback exception handler called within the middleware pipeline.
 	 */
