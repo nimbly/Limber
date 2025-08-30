@@ -19,7 +19,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 /**
  * @covers Nimbly\Limber\Middleware\RouteResolver
  */
-class RouteResolveTest extends TestCase
+class RouteResolverTest extends TestCase
 {
 	public function test_unresolvable_route(): void
 	{
@@ -197,7 +197,7 @@ class RouteResolveTest extends TestCase
 			}
 		);
 
-		$this->assertEquals(ResponseStatus::OK, $response->getStatusCode());
+		$this->assertEquals(ResponseStatus::OK->value, $response->getStatusCode());
 		$this->assertEquals("OK", $response->getBody()->getContents());
 	}
 }

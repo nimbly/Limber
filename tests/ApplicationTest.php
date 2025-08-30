@@ -88,7 +88,7 @@ class ApplicationTest extends TestCase
 		$response = $application->dispatch(new ServerRequest("get", "/foo"));
 
 		$this->assertEquals(
-			ResponseStatus::OK,
+			ResponseStatus::OK->value,
 			$response->getStatusCode()
 		);
 

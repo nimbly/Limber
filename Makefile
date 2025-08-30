@@ -1,8 +1,8 @@
 test:
-	vendor/bin/phpunit
+	vendor/bin/phpunit --display-deprecations
 
 coverage:
-	php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-clover=build/logs/clover.xml
+	php -d xdebug.mode=coverage vendor/bin/phpunit --display-deprecations --coverage-clover=build/logs/clover.xml
 
 analyze:
 	vendor/bin/psalm

@@ -50,7 +50,7 @@ class EmptyStream implements StreamInterface
 	/**
 	 * @inheritDoc
 	 */
-	public function tell(): bool
+	public function tell(): int
 	{
 		return 0;
 	}
