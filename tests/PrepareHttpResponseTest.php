@@ -9,14 +9,12 @@ use Nimbly\Capsule\Stream\BufferStream;
 use Nimbly\Limber\EmptyStream;
 use Nimbly\Limber\Middleware\PrepareHttpResponse;
 use Nimbly\Limber\Middleware\RequestHandler;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-/**
- * @covers Nimbly\Limber\Middleware\PrepareHttpResponse
- * @covers Nimbly\Limber\Middleware\RequestHandler
- */
+#[CoversClass(PrepareHttpResponse::class)]
 class PrepareHttpResponseTest extends TestCase
 {
 	public function test_204_no_content_responses_removes_content_based_headers(): void

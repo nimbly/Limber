@@ -17,26 +17,23 @@ use Nimbly\Limber\Exceptions\TooManyRequestsHttpException;
 use Nimbly\Limber\Exceptions\UnauthorizedHttpException;
 use Nimbly\Limber\Exceptions\UnprocessableEntityHttpException;
 use Nimbly\Limber\Exceptions\UnsupportedMediaTypeHttpException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @covers Nimbly\Limber\Exceptions\HttpException
- * @covers Nimbly\Limber\Exceptions\BadGatewayHttpException
- * @covers Nimbly\Limber\Exceptions\BadRequestHttpException
- * @covers Nimbly\Limber\Exceptions\ConflictHttpException
- * @covers Nimbly\Limber\Exceptions\ForbiddenHttpException
- * @covers Nimbly\Limber\Exceptions\GatewayTimeoutHttpException
- * @covers Nimbly\Limber\Exceptions\GoneHttpException
- * @covers Nimbly\Limber\Exceptions\InternalServerErrorHttpException
- * @covers Nimbly\Limber\Exceptions\MethodNotAllowedHttpException
- * @covers Nimbly\Limber\Exceptions\NotAcceptableHttpException
- * @covers Nimbly\Limber\Exceptions\NotFoundHttpException
- * @covers Nimbly\Limber\Exceptions\ServiceUnavailableHttpException
- * @covers Nimbly\Limber\Exceptions\TooManyRequestsHttpException
- * @covers Nimbly\Limber\Exceptions\UnauthorizedHttpException
- * @covers Nimbly\Limber\Exceptions\UnprocessableEntityHttpException
- * @covers Nimbly\Limber\Exceptions\UnsupportedMediaTypeHttpException
- */
+#[CoversClass(BadGatewayHttpException::class)]
+#[CoversClass(BadRequestHttpException::class)]
+#[CoversClass(ConflictHttpException::class)]
+#[CoversClass(ForbiddenHttpException::class)]
+#[CoversClass(GatewayTimeoutHttpException::class)]
+#[CoversClass(GoneHttpException::class)]
+#[CoversClass(InternalServerErrorHttpException::class)]
+#[CoversClass(MethodNotAllowedHttpException::class)]
+#[CoversClass(NotAcceptableHttpException::class)]
+#[CoversClass(ServiceUnavailableHttpException::class)]
+#[CoversClass(TooManyRequestsHttpException::class)]
+#[CoversClass(UnauthorizedHttpException::class)]
+#[CoversClass(UnprocessableEntityHttpException::class)]
+#[CoversClass(UnsupportedMediaTypeHttpException::class)]
 class ExceptionTest extends TestCase
 {
 	public function test_bad_gateway_http_exception(): void

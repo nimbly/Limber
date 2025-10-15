@@ -3,12 +3,11 @@
 namespace Nimbly\Limber\Tests;
 
 use Nimbly\Limber\EmptyStream;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
-/**
- * @covers Nimbly\Limber\EmptyStream
- */
+#[CoversClass(EmptyStream::class)]
 class EmptyStreamTest extends TestCase
 {
 	public function test_casting_to_string_returns_empty_string(): void

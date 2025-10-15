@@ -9,13 +9,12 @@ use Nimbly\Limber\Exceptions\BadRequestHttpException;
 use Nimbly\Limber\Exceptions\NotAcceptableHttpException;
 use Nimbly\Limber\Middleware\JsonMiddleware;
 use Nimbly\Limber\Middleware\RequestHandler;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-/**
- * @covers Nimbly\Limber\Middleware\JsonMiddleware
- */
+#[CoversClass(JsonMiddleware::class)]
 class JsonMiddlewareTest extends TestCase
 {
 	public function test_non_json_content_type_throws_not_acceptable_http_exception(): void

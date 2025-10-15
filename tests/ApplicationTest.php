@@ -8,31 +8,16 @@ use Nimbly\Capsule\ResponseStatus;
 use Nimbly\Capsule\ServerRequest;
 use Nimbly\Limber\Application;
 use Nimbly\Limber\ExceptionHandlerInterface;
-use Nimbly\Limber\Exceptions\MethodNotAllowedHttpException;
-use Nimbly\Limber\Exceptions\NotFoundHttpException;
 use Nimbly\Limber\Router\Router;
 use Nimbly\Limber\Tests\Fixtures\SampleMiddleware;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
 use Throwable;
 
-/**
- * @covers Nimbly\Limber\Application
- * @covers Nimbly\Limber\Router\Router
- * @covers Nimbly\Limber\Router\Route
- * @covers Nimbly\Limber\Middleware\RequestHandler
- * @covers Nimbly\Limber\Middleware\PrepareHttpResponse
- * @covers Nimbly\Limber\Exceptions\ApplicationException
- * @covers Nimbly\Limber\Exceptions\RouteException
- * @covers Nimbly\Limber\Exceptions\HttpException
- * @covers Nimbly\Limber\Exceptions\MethodNotAllowedHttpException
- * @covers Nimbly\Limber\Exceptions\NotFoundHttpException
- * @covers Nimbly\Limber\EmptyStream
- *
- * @uses Nimbly\Limber\Router\RouterInterface
- */
+#[CoversClass(Application::class)]
 class ApplicationTest extends TestCase
 {
 	public function test_constructor(): void
@@ -103,9 +88,9 @@ class ApplicationTest extends TestCase
 	 */
 	public function test_send(): void
 	{
-		$application = new Application(new Router);
-
 		\ob_start();
+
+		$application = new Application(new Router);
 		$application->send(
 			new Response(
 				ResponseStatus::CREATED,
@@ -141,9 +126,9 @@ class ApplicationTest extends TestCase
 	 */
 	public function test_send_does_not_send_contents_on_204_no_content_responses(): void
 	{
-		$application = new Application(new Router);
-
 		\ob_start();
+
+		$application = new Application(new Router);
 		$application->send(
 			new Response(
 				ResponseStatus::NO_CONTENT,

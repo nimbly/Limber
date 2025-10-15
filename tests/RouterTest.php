@@ -5,15 +5,11 @@ namespace Nimbly\Limber\Tests;
 use Nimbly\Capsule\ServerRequest;
 use Nimbly\Limber\Router\Route;
 use Nimbly\Limber\Router\Router;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
-/**
- * @covers Nimbly\Limber\Router\Router
- * @covers Nimbly\Limber\Router\Route
- *
- * @uses Nimbly\Limber\Router\RouterInterface
- */
+#[CoversClass(Router::class)]
 class RouterTest extends TestCase
 {
 	public function test_set_get_pattern(): void

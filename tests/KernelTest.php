@@ -10,11 +10,10 @@ use Nimbly\Carton\Container;
 use Nimbly\Limber\Exceptions\RouteException;
 use Nimbly\Limber\Kernel;
 use Nimbly\Limber\Router\Route;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @covers Nimbly\Limber\Kernel
- */
+#[CoversClass(Kernel::class)]
 class KernelTest extends TestCase
 {
 	public function test_route_attribute_not_found_throws_application_exception(): void

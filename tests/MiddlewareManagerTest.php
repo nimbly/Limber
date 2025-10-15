@@ -10,6 +10,7 @@ use Nimbly\Limber\Exceptions\ApplicationException;
 use Nimbly\Limber\Exceptions\NotFoundHttpException;
 use Nimbly\Limber\MiddlewareManager;
 use Nimbly\Limber\Tests\Fixtures\SampleMiddleware;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -18,9 +19,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
 use Throwable;
 
-/**
- * @covers Nimbly\Limber\MiddlewareManager
- */
+#[CoversClass(MiddlewareManager::class)]
 class MiddlewareManagerTest extends TestCase
 {
 	public function test_compile(): void

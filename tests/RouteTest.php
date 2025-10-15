@@ -2,15 +2,13 @@
 
 namespace Nimbly\Limber\Tests;
 
-use Nimbly\Limber\Exceptions\RouteException;
+use ReflectionClass;
 use Nimbly\Limber\Router\Route;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
+use Nimbly\Limber\Exceptions\RouteException;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/**
- * @covers Nimbly\Limber\Router\Route
- * @covers Nimbly\Limber\Router\Router
- */
+#[CoversClass(Route::class)]
 class RouteTest extends TestCase
 {
 	public function test_constructor(): void

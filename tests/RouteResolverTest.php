@@ -11,14 +11,13 @@ use Nimbly\Limber\Middleware\RouteResolver;
 use Nimbly\Limber\MiddlewareManager;
 use Nimbly\Limber\Router\Router;
 use Nimbly\Limber\Tests\Fixtures\SampleMiddleware;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-/**
- * @covers Nimbly\Limber\Middleware\RouteResolver
- */
+#[CoversClass(RouteResolver::class)]
 class RouteResolverTest extends TestCase
 {
 	public function test_unresolvable_route(): void
