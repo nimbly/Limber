@@ -9,10 +9,10 @@ use Nimbly\Limber\Exceptions\BadRequestHttpException;
 use Nimbly\Limber\Exceptions\NotAcceptableHttpException;
 use Nimbly\Limber\Middleware\JsonMiddleware;
 use Nimbly\Limber\Middleware\RequestHandler;
-use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 #[CoversClass(JsonMiddleware::class)]
 class JsonMiddlewareTest extends TestCase

@@ -3,6 +3,9 @@
 namespace Nimbly\Limber\Tests;
 
 use Nimbly\Limber\Exceptions\BadGatewayHttpException;
+use Nimbly\Limber\Exceptions\RequestTimeoutHttpException;
+use Nimbly\Limber\Exceptions\LockedHttpException;
+use Nimbly\Limber\Exceptions\ContentTooLargeHttpException;
 use Nimbly\Limber\Exceptions\BadRequestHttpException;
 use Nimbly\Limber\Exceptions\ConflictHttpException;
 use Nimbly\Limber\Exceptions\ForbiddenHttpException;
@@ -18,6 +21,7 @@ use Nimbly\Limber\Exceptions\UnauthorizedHttpException;
 use Nimbly\Limber\Exceptions\UnprocessableEntityHttpException;
 use Nimbly\Limber\Exceptions\UnsupportedMediaTypeHttpException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use Nimbly\Limber\Exceptions\PaymentRequiredHttpException;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(BadGatewayHttpException::class)]
@@ -29,29 +33,35 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(InternalServerErrorHttpException::class)]
 #[CoversClass(MethodNotAllowedHttpException::class)]
 #[CoversClass(NotAcceptableHttpException::class)]
+#[CoversClass(NotFoundHttpException::class)]
 #[CoversClass(ServiceUnavailableHttpException::class)]
 #[CoversClass(TooManyRequestsHttpException::class)]
 #[CoversClass(UnauthorizedHttpException::class)]
 #[CoversClass(UnprocessableEntityHttpException::class)]
 #[CoversClass(UnsupportedMediaTypeHttpException::class)]
+#[CoversClass(PaymentRequiredHttpException::class)]
+#[CoversClass(RequestTimeoutHttpException::class)]
 class ExceptionTest extends TestCase
 {
-	public function test_bad_gateway_http_exception(): void
-	{
-		$exception = new BadGatewayHttpException;
-		$this->assertEquals(502, $exception->getHttpStatus());
-	}
-
 	public function test_bad_request_http_exception(): void
 	{
 		$exception = new BadRequestHttpException;
 		$this->assertEquals(400, $exception->getHttpStatus());
 	}
 
-	public function test_conflict_http_exception(): void
+	public function test_unauthorized_http_exception(): void
 	{
-		$exception = new ConflictHttpException;
-		$this->assertEquals(409, $exception->getHttpStatus());
+		$exception = new UnauthorizedHttpException('Bearer');
+		$this->assertEquals(401, $exception->getHttpStatus());
+		$this->assertEquals([
+			"WWW-Authenticate" => "Bearer"
+		], $exception->getHeaders());
+	}
+
+	public function test_payment_required_http_exception(): void
+	{
+		$exception = new PaymentRequiredHttpException;
+		$this->assertEquals(402, $exception->getHttpStatus());
 	}
 
 	public function test_forbidden_http_exception(): void
@@ -60,22 +70,10 @@ class ExceptionTest extends TestCase
 		$this->assertEquals(403, $exception->getHttpStatus());
 	}
 
-	public function test_gateway_timeout_http_exception(): void
+	public function test_not_found_http_exception(): void
 	{
-		$exception = new GatewayTimeoutHttpException;
-		$this->assertEquals(504, $exception->getHttpStatus());
-	}
-
-	public function test_gone_http_exception(): void
-	{
-		$exception = new GoneHttpException;
-		$this->assertEquals(410, $exception->getHttpStatus());
-	}
-
-	public function test_internal_server_error_http_exception(): void
-	{
-		$exception = new InternalServerErrorHttpException;
-		$this->assertEquals(500, $exception->getHttpStatus());
+		$exception = new NotFoundHttpException;
+		$this->assertEquals(404, $exception->getHttpStatus());
 	}
 
 	public function test_method_not_allowed_http_exception(): void
@@ -93,19 +91,46 @@ class ExceptionTest extends TestCase
 		$this->assertEquals(406, $exception->getHttpStatus());
 	}
 
-	public function test_not_found_http_exception(): void
+	public function test_request_timeout_http_exception(): void
 	{
-		$exception = new NotFoundHttpException;
-		$this->assertEquals(404, $exception->getHttpStatus());
+		$exception = new RequestTimeoutHttpException;
+		$this->assertEquals(408, $exception->getHttpStatus());
 	}
 
-	public function test_service_unavailable_http_exception(): void
+	public function test_conflict_http_exception(): void
 	{
-		$exception = new ServiceUnavailableHttpException('Wed, 21 Oct 2015 07:28:00 GMT');
-		$this->assertEquals(503, $exception->getHttpStatus());
-		$this->assertEquals([
-			'Retry-After' => 'Wed, 21 Oct 2015 07:28:00 GMT'
-		], $exception->getHeaders());
+		$exception = new ConflictHttpException;
+		$this->assertEquals(409, $exception->getHttpStatus());
+	}
+
+	public function test_gone_http_exception(): void
+	{
+		$exception = new GoneHttpException;
+		$this->assertEquals(410, $exception->getHttpStatus());
+	}
+
+	public function test_content_too_large_http_exception(): void
+	{
+		$exception = new ContentTooLargeHttpException;
+		$this->assertEquals(413, $exception->getHttpStatus());
+	}
+
+	public function test_unsupported_media_type_http_exception(): void
+	{
+		$exception = new UnsupportedMediaTypeHttpException;
+		$this->assertEquals(415, $exception->getHttpStatus());
+	}
+
+	public function test_unprocessable_entity_http_exception(): void
+	{
+		$exception = new UnprocessableEntityHttpException;
+		$this->assertEquals(422, $exception->getHttpStatus());
+	}
+
+	public function test_locked_http_exception(): void
+	{
+		$exception = new LockedHttpException;
+		$this->assertEquals(423, $exception->getHttpStatus());
 	}
 
 	public function test_too_many_requests_http_exception(): void
@@ -117,24 +142,30 @@ class ExceptionTest extends TestCase
 		], $exception->getHeaders());
 	}
 
-	public function test_unauthorized_http_exception(): void
+	public function test_internal_server_error_http_exception(): void
 	{
-		$exception = new UnauthorizedHttpException('Bearer');
-		$this->assertEquals(401, $exception->getHttpStatus());
+		$exception = new InternalServerErrorHttpException;
+		$this->assertEquals(500, $exception->getHttpStatus());
+	}
+
+	public function test_bad_gateway_http_exception(): void
+	{
+		$exception = new BadGatewayHttpException;
+		$this->assertEquals(502, $exception->getHttpStatus());
+	}
+
+	public function test_service_unavailable_http_exception(): void
+	{
+		$exception = new ServiceUnavailableHttpException('Wed, 21 Oct 2015 07:28:00 GMT');
+		$this->assertEquals(503, $exception->getHttpStatus());
 		$this->assertEquals([
-			'WWW-Authenticate' => 'Bearer'
+			'Retry-After' => 'Wed, 21 Oct 2015 07:28:00 GMT'
 		], $exception->getHeaders());
 	}
 
-	public function test_unprocessable_entity_http_exception(): void
+	public function test_gateway_timeout_http_exception(): void
 	{
-		$exception = new UnprocessableEntityHttpException;
-		$this->assertEquals(422, $exception->getHttpStatus());
-	}
-
-	public function test_unsupported_media_type_http_exception(): void
-	{
-		$exception = new UnsupportedMediaTypeHttpException;
-		$this->assertEquals(415, $exception->getHttpStatus());
+		$exception = new GatewayTimeoutHttpException;
+		$this->assertEquals(504, $exception->getHttpStatus());
 	}
 }

@@ -10,7 +10,7 @@ use Throwable;
 class ServiceUnavailableHttpException extends HttpException
 {
 	/**
-	 * ServiceUnavailableHttpException contructor
+	 * ServiceUnavailableHttpException constructor.
 	 *
 	 * This HTTP status requires a Retry-After header to be sent.
 	 *
@@ -18,13 +18,14 @@ class ServiceUnavailableHttpException extends HttpException
 	 * @param string|null $message
 	 * @param integer|null $code
 	 * @param Throwable|null $previous
+	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503
 	 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
 	 */
 	public function __construct(string $retryAfter, ?string $message = null, ?int $code = null, ?Throwable $previous = null)
 	{
 		parent::__construct(
 			503,
-			$message ?? "Service unavailable",
+			$message ?? "Service Unavailable",
 			["Retry-After" => $retryAfter],
 			$code,
 			$previous

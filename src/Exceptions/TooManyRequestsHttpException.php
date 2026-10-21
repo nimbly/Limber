@@ -24,7 +24,7 @@ class TooManyRequestsHttpException extends HttpException
 	{
 		parent::__construct(
 			429,
-			$message ?? "Too many requests",
+			$message ?? "Too Many Requests",
 			$retryAfter ? ["Retry-After" => $retryAfter] : [],
 			$code,
 			$previous

@@ -189,6 +189,38 @@ class Router implements RouterInterface
 	}
 
 	/**
+	 * Add a QUERY route.
+	 *
+	 * @param string $path
+	 * @param string|callable $handler
+	 * @param array $middleware
+	 * @param string|null $scheme
+	 * @param array $hostnames
+	 * @param array $attributes
+	 * @return Route
+	 */
+	public function query(
+		string $path,
+		string|callable $handler,
+		array $middleware = [],
+		?string $scheme = null,
+		array $hostnames = [],
+		array $attributes = []
+	): Route
+	{
+		return $this->add(
+			methods: ["QUERY"],
+			path: $path,
+			handler: $handler,
+			scheme: $scheme,
+			hostnames: $hostnames,
+			middleware: $middleware,
+			attributes: $attributes
+		);
+	}
+
+
+	/**
 	 * Add a POST route.
 	 *
 	 * @param string $path The URI path this route will respond to.

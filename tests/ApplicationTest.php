@@ -41,14 +41,12 @@ class ApplicationTest extends TestCase
 		$reflection = new ReflectionClass($application);
 
 		$property = $reflection->getProperty("requestHandler");
-		$property->setAccessible(true);
 
 		$this->assertNotNull(
 			$property->getValue($application)
 		);
 
 		$property = $reflection->getProperty("container");
-		$property->setAccessible(true);
 
 		$this->assertSame(
 			$container,
@@ -83,9 +81,6 @@ class ApplicationTest extends TestCase
 		);
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 */
 	public function test_send(): void
 	{
 		\ob_start();
@@ -121,9 +116,6 @@ class ApplicationTest extends TestCase
 		$this->assertEquals("Header2: Value2", $headers[1]);
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 */
 	public function test_send_does_not_send_contents_on_204_no_content_responses(): void
 	{
 		\ob_start();

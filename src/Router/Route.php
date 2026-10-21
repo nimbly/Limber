@@ -135,7 +135,7 @@ class Route
 	/**
 	 * Get the compiled regular expression for path matching.
 	 *
-	 * @return string Returns compiled regular expression.
+	 * @return non-empty-string Returns compiled regular expression.
 	 */
 	private function getCompiledRegexPattern(): string
 	{

@@ -24,7 +24,7 @@ class MethodNotAllowedHttpException extends HttpException
 	{
 		parent::__construct(
 			405,
-			$message ?? "Method not allowed",
+			$message ?? "Method Not Allowed",
 			["Allow" => \implode(", ", $methodsAllowed)],
 			$code,
 			$previous

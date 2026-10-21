@@ -128,7 +128,6 @@ class MiddlewareManagerTest extends TestCase
 
 		$reflection = new ReflectionClass($middlewareManager);
 		$method = $reflection->getMethod("handleException");
-		$method->setAccessible(true);
 
 		$response = $method->invokeArgs($middlewareManager, [new NotFoundHttpException("Route not found"), new ServerRequest("get", "/")]);
 
@@ -149,7 +148,6 @@ class MiddlewareManagerTest extends TestCase
 
 		$reflection = new ReflectionClass($middlewareManager);
 		$method = $reflection->getMethod("handleException");
-		$method->setAccessible(true);
 
 		$this->expectException(NotFoundHttpException::class);
 

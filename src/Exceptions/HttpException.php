@@ -15,16 +15,16 @@ abstract class HttpException extends Exception
 	protected int $httpStatus;
 
 	/**
-	 * Additional headers to send with this exception.
+	 * Additional headers to be sent with this exception.
 	 *
-	 * @var array<array-key,string>
+	 * @var array<string,string>
 	 */
 	protected array $headers = [];
 
 	/**
 	 * @param integer $httpStatus
 	 * @param string $message
-	 * @param array<array-key,string> $headers
+	 * @param array<string,string> $headers
 	 * @param integer|null $code
 	 * @param Throwable|null $previous
 	 */
@@ -48,7 +48,7 @@ abstract class HttpException extends Exception
 	/**
 	 * Get additional headers that should be sent with the response.
 	 *
-	 * @return array<array-key,string>
+	 * @return array<string,string>
 	 */
 	public function getHeaders(): array
 	{

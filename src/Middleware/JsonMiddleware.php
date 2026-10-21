@@ -2,6 +2,7 @@
 
 namespace Nimbly\Limber\Middleware;
 
+use JsonException;
 use Nimbly\Limber\Exceptions\BadRequestHttpException;
 use Nimbly\Limber\Exceptions\NotAcceptableHttpException;
 use Psr\Http\Message\ResponseInterface;
@@ -36,7 +37,7 @@ class JsonMiddleware implements MiddlewareInterface
 	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
 	{
 		if( empty($request->getParsedBody()) &&
-			\in_array(\strtolower($request->getMethod()), ["post", "put", "patch"]) ){
+			\in_array(\strtolower($request->getMethod()), ["query", "post", "put", "patch"]) ){
 
 			$content_type = \trim($request->getHeaderLine("Content-Type"));
 
@@ -45,7 +46,14 @@ class JsonMiddleware implements MiddlewareInterface
 			}
 
 			$body_contents = \trim($request->getBody()->getContents());
-			$parsed_body = \json_decode($body_contents, $this->deserialize_as_array);
+
+			try {
+
+				$parsed_body = \json_decode($body_contents, $this->deserialize_as_array);
+			}
+			catch( JsonException $exception ){
+				throw new BadRequestHttpException($exception->getMessage());
+			}
 
 			if( \json_last_error() !== JSON_ERROR_NONE ) {
 				throw new BadRequestHttpException("Malformed JSON request body.");

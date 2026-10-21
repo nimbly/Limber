@@ -37,7 +37,6 @@ class RouterTest extends TestCase
 
 		$reflectionClass = new ReflectionClass($router);
 		$reflectionProperty = $reflectionClass->getProperty("routes");
-		$reflectionProperty->setAccessible(true);
 		$assigned_routes = $reflectionProperty->getValue($router);
 
 		$this->assertCount(1, $assigned_routes["GET"]);
@@ -63,10 +62,10 @@ class RouterTest extends TestCase
 	public function test_add(): void
 	{
 		$router = new Router;
-		$route = $router->get("books/{id}", "BooksHandler@get");
+		$route = $router->add(["get"], "books/{id}", "BooksHandler@get");
 
 		$this->assertEquals(
-			["GET", "HEAD"],
+			["GET"],
 			$route->getMethods()
 		);
 
@@ -142,6 +141,27 @@ class RouterTest extends TestCase
 
 		$this->assertEquals(
 			["GET", "HEAD"],
+			$route->getMethods()
+		);
+
+		$this->assertEquals(
+			"books/{id}",
+			$route->getPath()
+		);
+
+		$this->assertEquals(
+			"BooksHandler@get",
+			$route->getHandler()
+		);
+	}
+
+	public function test_adding_query_route(): void
+	{
+		$router = new Router;
+		$route = $router->query("books/{id}", "BooksHandler@get");
+
+		$this->assertEquals(
+			["QUERY"],
 			$route->getMethods()
 		);
 
@@ -300,7 +320,6 @@ class RouterTest extends TestCase
 
 		$reflectionClass = new ReflectionClass($router);
 		$reflectionProperty = $reflectionClass->getProperty("routes");
-		$reflectionProperty->setAccessible(true);
 		$routes = $reflectionProperty->getValue($router)["GET"];
 
 		$this->assertEquals("https", $routes[0]->getScheme());
@@ -341,7 +360,6 @@ class RouterTest extends TestCase
 
 		$reflectionClass = new ReflectionClass($router);
 		$reflectionProperty = $reflectionClass->getProperty("routes");
-		$reflectionProperty->setAccessible(true);
 		$routes = $reflectionProperty->getValue($router)["GET"];
 
 		$this->assertEquals("http", $routes[0]->getScheme());
@@ -376,7 +394,6 @@ class RouterTest extends TestCase
 
 		$reflectionClass = new ReflectionClass($router);
 		$reflectionProperty = $reflectionClass->getProperty("routes");
-		$reflectionProperty->setAccessible(true);
 		$routes = $reflectionProperty->getValue($router)["GET"];
 
 		$this->assertEquals("https", $routes[0]->getScheme());

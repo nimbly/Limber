@@ -3,9 +3,9 @@
 namespace Nimbly\Limber\Tests;
 
 use Nimbly\Limber\EmptyStream;
-use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 #[CoversClass(EmptyStream::class)]
 class EmptyStreamTest extends TestCase
@@ -19,7 +19,8 @@ class EmptyStreamTest extends TestCase
 	public function test_close_returns_void(): void
 	{
 		$emptyStream = new EmptyStream;
-		$this->assertNull($emptyStream->close());
+		$result = $emptyStream->close();
+		$this->assertEmpty($result);
 	}
 
 	public function test_detach_returns_null(): void

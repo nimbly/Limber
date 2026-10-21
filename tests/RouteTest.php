@@ -2,8 +2,8 @@
 
 namespace Nimbly\Limber\Tests;
 
-use ReflectionClass;
 use Nimbly\Limber\Router\Route;
+use ReflectionClass;
 use PHPUnit\Framework\TestCase;
 use Nimbly\Limber\Exceptions\RouteException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -62,7 +62,6 @@ class RouteTest extends TestCase
 
 		$reflectionClass = new ReflectionClass($route);
 		$reflectionMethod = $reflectionClass->getMethod("getCompiledRegexPattern");
-		$reflectionMethod->setAccessible(true);
 		$regex = $reflectionMethod->invoke($route);
 
 		$this->assertEquals(
@@ -81,7 +80,6 @@ class RouteTest extends TestCase
 
 		$reflectionClass = new ReflectionClass($route);
 		$reflectionMethod = $reflectionClass->getMethod("getCompiledRegexPattern");
-		$reflectionMethod->setAccessible(true);
 
 		$this->expectException(RouteException::class);
 		$reflectionMethod->invoke($route);
@@ -97,11 +95,9 @@ class RouteTest extends TestCase
 
 		$reflectionClass = new ReflectionClass($route);
 		$reflectionMethod = $reflectionClass->getMethod("getCompiledRegexPattern");
-		$reflectionMethod->setAccessible(true);
 		$reflectionMethod->invoke($route);
 
 		$reflectionProperty = $reflectionClass->getProperty("path_regex");
-		$reflectionProperty->setAccessible(true);
 		$regex = $reflectionProperty->getValue($route);
 
 		$this->assertEquals(
