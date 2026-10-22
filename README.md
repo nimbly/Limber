@@ -220,11 +220,12 @@ The `Router` builds and collects `Route` instances and provides helper methods t
 
 ### Defining routes
 
-Create a `Router` instance and begin defining your routes. There are convenience methods for all major HTTP verbs (get, post, put, patch, and delete).
+Create a `Router` instance and begin defining your routes. There are convenience methods for all major HTTP verbs (get, post, put, patch, delete, and query).
 
 ```php
 $router = new Nimbly\Limber\Router\Router;
-$router->get("/fruits", "FruitsHandler@all");
+$router->get("/fruits/{id}", "FruitsHandler@findById");
+$router->query("/fruits", "FruitsHandler@search");
 $router->post("/fruits", "FruitsHandler@create");
 $router->patch("/fruits/{id}", "FruitsHandler@update");
 $router->delete("/fruits/{id}", "FruitsHandler@delete");
