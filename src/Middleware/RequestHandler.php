@@ -24,10 +24,7 @@ class RequestHandler implements RequestHandlerInterface
 	}
 
 	/**
-	 * Handle server request.
-	 *
-	 * @param ServerRequestInterface $request
-	 * @return ResponseInterface
+	 * @inheritDoc
 	 */
 	public function handle(ServerRequestInterface $request): ResponseInterface
 	{

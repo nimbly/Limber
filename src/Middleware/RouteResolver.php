@@ -12,6 +12,11 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
+/**
+ * This middleware resolves a ServerRequest instance to a matching Route and attaches the Route
+ * instance as a ServerRequest attribute. This middleware is already included in the default
+ * middleware stack and there is no need for you to manually include it.
+ */
 class RouteResolver implements MiddlewareInterface
 {
 	public function __construct(

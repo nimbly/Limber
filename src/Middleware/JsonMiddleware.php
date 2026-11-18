@@ -51,8 +51,8 @@ class JsonMiddleware implements MiddlewareInterface
 
 				$parsed_body = \json_decode($body_contents, $this->deserialize_as_array);
 			}
-			catch( JsonException $exception ){
-				throw new BadRequestHttpException($exception->getMessage());
+			catch( JsonException ){
+				throw new BadRequestHttpException("Malformed JSON request body.");
 			}
 
 			if( \json_last_error() !== JSON_ERROR_NONE ) {

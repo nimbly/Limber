@@ -191,12 +191,12 @@ class Router implements RouterInterface
 	/**
 	 * Add a QUERY route.
 	 *
-	 * @param string $path
-	 * @param string|callable $handler
-	 * @param array $middleware
-	 * @param string|null $scheme
-	 * @param array $hostnames
-	 * @param array $attributes
+	 * @param string $path The URI path this route will respond to.
+	 * @param string|callable $handler The handler for this route.
+	 * @param array<MiddlewareInterface|class-string> $middleware Middleware to be applied to this route.
+	 * @param string|null $scheme The scheme this route responds to (http or https). Null responds to any.
+	 * @param array<string> $hostnames Hostnames this route responds to.
+	 * @param array $attributes Key value pair of attributes to be passed to ServerRequestInterface instance.
 	 * @return Route
 	 */
 	public function query(

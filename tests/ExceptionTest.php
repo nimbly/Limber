@@ -51,7 +51,7 @@ class ExceptionTest extends TestCase
 
 	public function test_unauthorized_http_exception(): void
 	{
-		$exception = new UnauthorizedHttpException('Bearer');
+		$exception = new UnauthorizedHttpException("Bearer");
 		$this->assertEquals(401, $exception->getHttpStatus());
 		$this->assertEquals([
 			"WWW-Authenticate" => "Bearer"
@@ -78,10 +78,10 @@ class ExceptionTest extends TestCase
 
 	public function test_method_not_allowed_http_exception(): void
 	{
-		$exception = new MethodNotAllowedHttpException(['GET','POST']);
+		$exception = new MethodNotAllowedHttpException(["GET","POST"]);
 		$this->assertEquals(405, $exception->getHttpStatus());
 		$this->assertEquals([
-			'Allow' => 'GET, POST'
+			"Allow" => "GET, POST"
 		], $exception->getHeaders());
 	}
 
@@ -135,10 +135,10 @@ class ExceptionTest extends TestCase
 
 	public function test_too_many_requests_http_exception(): void
 	{
-		$exception = new TooManyRequestsHttpException('Wed, 21 Oct 2015 07:28:00 GMT');
+		$exception = new TooManyRequestsHttpException("Wed, 21 Oct 2015 07:28:00 GMT");
 		$this->assertEquals(429, $exception->getHttpStatus());
 		$this->assertEquals([
-			'Retry-After' => 'Wed, 21 Oct 2015 07:28:00 GMT'
+			"Retry-After" => "Wed, 21 Oct 2015 07:28:00 GMT"
 		], $exception->getHeaders());
 	}
 
@@ -156,10 +156,10 @@ class ExceptionTest extends TestCase
 
 	public function test_service_unavailable_http_exception(): void
 	{
-		$exception = new ServiceUnavailableHttpException('Wed, 21 Oct 2015 07:28:00 GMT');
+		$exception = new ServiceUnavailableHttpException("Wed, 21 Oct 2015 07:28:00 GMT");
 		$this->assertEquals(503, $exception->getHttpStatus());
 		$this->assertEquals([
-			'Retry-After' => 'Wed, 21 Oct 2015 07:28:00 GMT'
+			"Retry-After" => "Wed, 21 Oct 2015 07:28:00 GMT"
 		], $exception->getHeaders());
 	}
 

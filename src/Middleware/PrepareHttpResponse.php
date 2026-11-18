@@ -10,10 +10,14 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 /**
  * This middleware normalizes each response to adhere to HTTP standards for certain edge cases that
- * may cause issues with proxies and clients.
+ * may cause issues with proxies and clients. This middleware is already included in the default
+ * middleware stack and there is no need for you to manually include it.
  */
 class PrepareHttpResponse implements MiddlewareInterface
 {
+	/**
+	 * @inheritDoc
+	 */
 	public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
 	{
 		$response = $handler->handle($request);

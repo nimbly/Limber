@@ -14,12 +14,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: [8.2, 8.3, 8.4]
+        php-version: [8.2, 8.3, 8.4, 8.5]
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
@@ -38,7 +38,7 @@ jobs:
     - name: Run test suite
       run: make coverage
 
-    - uses: codecov/codecov-action@v4
+    - uses: codecov/codecov-action@v7
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
